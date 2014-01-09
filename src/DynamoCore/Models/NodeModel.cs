@@ -583,33 +583,8 @@ namespace Dynamo.Models
         /// <param name="nodeElement">The XmlNode representing this Element.</param>
         protected virtual void LoadNode(XmlNode nodeElement) { }
 
-        public void Load(XmlNode elNode, Version workspaceVersion)
+        public void Load(XmlNode elNode)
         {
-            #region Process Migrations
-
-            var migrations = (from method in GetType().GetMethods()
-                              let attribute =
-                                  method.GetCustomAttributes(false).OfType<NodeMigrationAttribute>().FirstOrDefault()
-                              where attribute != null
-                              let result = new { method, attribute.From, attribute.To }
-                              orderby result.From
-                              select result).ToList();
-
-            Version currentVersion = dynSettings.Controller.DynamoModel.HomeSpace.WorkspaceVersion;
-
-            while (workspaceVersion != null && workspaceVersion < currentVersion)
-            {
-                var nextMigration = migrations.FirstOrDefault(x => x.From >= workspaceVersion);
-
-                if (nextMigration == null)
-                    break;
-
-                nextMigration.method.Invoke(this, new object[] { elNode });
-                workspaceVersion = nextMigration.To;
-            }
-
-            #endregion
-
             LoadNode(elNode);
 
             var portInfoProcessed = new HashSet<int>();

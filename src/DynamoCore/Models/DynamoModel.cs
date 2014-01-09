@@ -645,7 +645,13 @@ namespace Dynamo.Models
                     }
                 }
 
-                MigrationManager.Instance.ProcessWorkspaceMigrations(xmlDoc, version);
+                Version fileVersion = string.IsNullOrEmpty(version) ?
+                    new Version(0, 0, 0, 0) : new Version(version);
+
+                var dynamoModel = dynSettings.Controller.DynamoModel;
+                Version currentVersion = dynamoModel.HomeSpace.WorkspaceVersion;
+                if (fileVersion < currentVersion) // Opening an older file, migrate workspace.
+                    MigrationManager.Instance.ProcessWorkspaceMigrations(xmlDoc, fileVersion);
 
                 //set the zoom and offsets and trigger events
                 //to get the view to position iteself
@@ -712,6 +718,12 @@ namespace Dynamo.Models
                         continue;
                     }
 
+                    if (fileVersion < currentVersion) // Opening an older file...
+                    {
+                        // The node might have a newer representation, attempt migration.
+                        MigrationManager.Instance.MigrateXmlNode(elNode, type, fileVersion);
+                    }
+
                     bool isVisible = true;
                     if (isVisAttrib != null)
                         isVisible = isVisAttrib.Value == "true" ? true : false;
@@ -723,11 +735,7 @@ namespace Dynamo.Models
                     NodeModel el = CreateNodeInstance(type, nickname, guid);
                     el.WorkSpace = CurrentWorkspace;
 
-                    el.Load(
-                        elNode, 
-                        string.IsNullOrEmpty(version)
-                            ? new Version(0, 0, 0, 0) 
-                            : new Version(version));
+                    el.Load(elNode);
 
                     CurrentWorkspace.Nodes.Add(el);
 
@@ -1254,7 +1262,7 @@ namespace Dynamo.Models
             node.WorkSpace = CurrentWorkspace;
 
             if (null != xmlNode)
-                node.Load(xmlNode, HomeSpace.WorkspaceVersion);
+                node.Load(xmlNode);
 
             // Override the guid so we can store for connection lookup
             node.GUID = nodeId;

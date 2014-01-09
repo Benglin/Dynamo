@@ -629,6 +629,14 @@ namespace Dynamo.Utilities
                     }
                 }
 
+                Version fileVersion = string.IsNullOrEmpty(version) ?
+                    new Version(0, 0, 0, 0) : new Version(version);
+
+                var dynamoModel = dynSettings.Controller.DynamoModel;
+                Version currentVersion = dynamoModel.HomeSpace.WorkspaceVersion;
+                if (fileVersion < currentVersion) // Opening an older file, migrate workspace.
+                    MigrationManager.Instance.ProcessWorkspaceMigrations(xmlDoc, fileVersion);
+
                 // we have a dyf and it lacks an ID field, we need to assign it
                 // a deterministic guid based on its name.  By doing it deterministically,
                 // files remain compatible
@@ -728,6 +736,12 @@ namespace Dynamo.Utilities
                         continue;
                     }
 
+                    if (fileVersion < currentVersion) // Opening an older file...
+                    {
+                        // The node might have a newer representation, attempt migration.
+                        MigrationManager.Instance.MigrateXmlNode(elNode, type, fileVersion);
+                    }
+
                     NodeModel el = dynSettings.Controller.DynamoModel.CreateNodeInstance(type, nickname, guid);
 
                     if (lacingAttrib != null)
@@ -752,11 +766,7 @@ namespace Dynamo.Utilities
 
                     el.DisableReporting();
 
-                    el.Load(
-                        elNode,
-                        string.IsNullOrEmpty(version)
-                            ? new Version(0, 0, 0, 0) 
-                            : new Version(version));
+                    el.Load(elNode);
                 }
 
                 #endregion

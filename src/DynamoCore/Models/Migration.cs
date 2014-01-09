@@ -61,7 +61,7 @@ namespace Dynamo.Models
         /// </summary>
         /// <param name="xmlDoc"></param>
         /// <param name="version"></param>
-        public void ProcessWorkspaceMigrations(XmlDocument xmlDoc, string version)
+        public void ProcessWorkspaceMigrations(XmlDocument xmlDoc, Version workspaceVersion)
         {
             var methods = MigrationTargets.SelectMany(x => x.GetMethods(BindingFlags.Public | BindingFlags.Static));
 
@@ -77,7 +77,6 @@ namespace Dynamo.Models
                     select result).ToList();
 
             var currentVersion = dynSettings.Controller.DynamoModel.HomeSpace.WorkspaceVersion;
-            var workspaceVersion = String.IsNullOrEmpty(version) ? new Version() : new Version(version);
 
             while (workspaceVersion != null && workspaceVersion < currentVersion)
             {
@@ -87,6 +86,30 @@ namespace Dynamo.Models
                     break;
 
                 nextMigration.method.Invoke(null, new object[] { xmlDoc });
+                workspaceVersion = nextMigration.To;
+            }
+        }
+
+        public void MigrateXmlNode(XmlNode elNode, System.Type type, Version workspaceVersion)
+        {
+            var migrations = (from method in type.GetMethods()
+                              let attribute =
+                                  method.GetCustomAttributes(false).OfType<NodeMigrationAttribute>().FirstOrDefault()
+                              where attribute != null
+                              let result = new { method, attribute.From, attribute.To }
+                              orderby result.From
+                              select result).ToList();
+
+            Version currentVersion = dynSettings.Controller.DynamoModel.HomeSpace.WorkspaceVersion;
+
+            while (workspaceVersion != null && workspaceVersion < currentVersion)
+            {
+                var nextMigration = migrations.FirstOrDefault(x => x.From >= workspaceVersion);
+
+                if (nextMigration == null)
+                    break;
+
+                nextMigration.method.Invoke(this, new object[] { elNode });
                 workspaceVersion = nextMigration.To;
             }
         }
