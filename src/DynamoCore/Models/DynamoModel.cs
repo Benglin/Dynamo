@@ -721,7 +721,13 @@ namespace Dynamo.Models
                     if (fileVersion < currentVersion) // Opening an older file...
                     {
                         // The node might have a newer representation, attempt migration.
-                        MigrationManager.Instance.MigrateXmlNode(elNode, type, fileVersion);
+                        if (MigrationManager.Instance.MigrateXmlNode(elNode, type, fileVersion))
+                        {
+                            // After migration, we may have newr
+                            typeName = elNode.Attributes["type"].Value;
+                            typeName = Dynamo.Nodes.Utilities.PreprocessTypeName(typeName);
+                            type = Dynamo.Nodes.Utilities.ResolveType(typeName);
+                        }
                     }
 
                     bool isVisible = true;

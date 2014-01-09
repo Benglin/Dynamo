@@ -2279,6 +2279,15 @@ namespace Dynamo.Nodes
         {
             ArgumentLacing = LacingStrategy.Longest;
         }
+
+        protected static void MigrateToDsFunction(XmlNode xmlNode, string nickname, string funcdName)
+        {
+            XmlElement element = xmlNode as XmlElement;
+            element.SetAttribute("type", "Dynamo.Nodes.DSFunction");
+            element.SetAttribute("assembly", "");
+            element.SetAttribute("nickname", nickname);
+            element.SetAttribute("function", funcdName);
+        }
     }
 
     [NodeName("Add")]
@@ -2301,6 +2310,12 @@ namespace Dynamo.Nodes
             var y = ((Value.Number)args[1]).Item;
 
             return Value.NewNumber(x + y);
+        }
+
+        [NodeMigration(from: "0.6.3.20048", to: "0.7.0.0")]
+        public static void Migrate_0530_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "+", "+@,");
         }
     }
 

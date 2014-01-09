@@ -90,7 +90,7 @@ namespace Dynamo.Models
             }
         }
 
-        public void MigrateXmlNode(XmlNode elNode, System.Type type, Version workspaceVersion)
+        public bool MigrateXmlNode(XmlNode elNode, System.Type type, Version workspaceVersion)
         {
             var migrations = (from method in type.GetMethods()
                               let attribute =
@@ -102,6 +102,7 @@ namespace Dynamo.Models
 
             Version currentVersion = dynSettings.Controller.DynamoModel.HomeSpace.WorkspaceVersion;
 
+            bool migrationAttempted = false;
             while (workspaceVersion != null && workspaceVersion < currentVersion)
             {
                 var nextMigration = migrations.FirstOrDefault(x => x.From >= workspaceVersion);
@@ -109,9 +110,12 @@ namespace Dynamo.Models
                 if (nextMigration == null)
                     break;
 
+                migrationAttempted = true;
                 nextMigration.method.Invoke(this, new object[] { elNode });
                 workspaceVersion = nextMigration.To;
             }
+
+            return migrationAttempted;
         }
     }
 
