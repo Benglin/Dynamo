@@ -2282,9 +2282,15 @@ namespace Dynamo.Nodes
 
         protected static void MigrateToDsFunction(XmlNode xmlNode, string nickname, string funcdName)
         {
+            MigrateToDsFunction(xmlNode, "", nickname, funcdName);
+        }
+
+        protected static void MigrateToDsFunction(XmlNode xmlNode,
+            string assembly, string nickname, string funcdName)
+        {
             XmlElement element = xmlNode as XmlElement;
             element.SetAttribute("type", "Dynamo.Nodes.DSFunction");
-            element.SetAttribute("assembly", "");
+            element.SetAttribute("assembly", assembly);
             element.SetAttribute("nickname", nickname);
             element.SetAttribute("function", funcdName);
         }
@@ -2340,6 +2346,12 @@ namespace Dynamo.Nodes
 
             return Value.NewNumber(x - y);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "-", "-@,");
+        }
     }
 
     [NodeName("Multiply")]
@@ -2363,6 +2375,12 @@ namespace Dynamo.Nodes
 
             return Value.NewNumber(x * y);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "*", "*@,");
+        }
     }
 
     [NodeName("Divide")]
@@ -2385,6 +2403,12 @@ namespace Dynamo.Nodes
             var y = ((Value.Number)args[1]).Item;
 
             return Value.NewNumber(x / y);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "/", "/@,");
         }
     }
 
@@ -2410,6 +2434,12 @@ namespace Dynamo.Nodes
 
             return Value.NewNumber(x % y);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "%", "%@,");
+        }
     }
 
     [NodeName("Power")]
@@ -2434,6 +2464,12 @@ namespace Dynamo.Nodes
 
             return Value.NewNumber(Math.Pow(x,y));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Pow", "Math.Pow@double,double");
+        }
     }
 
     [NodeName("Round")]
@@ -2454,6 +2490,12 @@ namespace Dynamo.Nodes
             return Value.NewNumber(
                Math.Round(((Value.Number)args[0]).Item)
             );
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Round", "Math.Round@double");
         }
     }
 
@@ -2477,6 +2519,12 @@ namespace Dynamo.Nodes
                Math.Floor(((Value.Number)args[0]).Item)
             );
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Floor", "Math.Floor@double");
+        }
     }
 
     [NodeName("Ceiling")]
@@ -2498,6 +2546,12 @@ namespace Dynamo.Nodes
             return Value.NewNumber(
                Math.Ceiling(((Value.Number)args[0]).Item)
             );
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Ceiling", "Math.Ceiling@double");
         }
     }
 
@@ -2733,6 +2787,12 @@ namespace Dynamo.Nodes
                 return Value.NewNumber(Math.Sin(theta));
             }
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Sin", "Math.Sin@double");
+        }
     }
 
     [NodeName("Cosine")]
@@ -2768,6 +2828,12 @@ namespace Dynamo.Nodes
                 double theta = ((Value.Number)input).Item;
                 return Value.NewNumber(Math.Cos(theta));
             }
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Cos", "Math.Cos@double");
         }
     }
 
@@ -2805,6 +2871,12 @@ namespace Dynamo.Nodes
                 return Value.NewNumber(Math.Tan(theta));
             }
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Tan", "Math.Tan@double");
+        }
     }
 
     [NodeName("Inverse Sine")]
@@ -2827,6 +2899,12 @@ namespace Dynamo.Nodes
 
             double theta = ((Value.Number)input).Item;
             return Value.NewNumber(Math.Asin(theta));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Asin", "Math.Asin@double");
         }
     }
 
@@ -2851,6 +2929,12 @@ namespace Dynamo.Nodes
             double theta = ((Value.Number)input).Item;
             return Value.NewNumber(Math.Acos(theta));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Acos", "Math.Acos@double");
+        }
     }
 
     [NodeName("Inverse Tangent")]
@@ -2873,6 +2957,12 @@ namespace Dynamo.Nodes
 
             double theta = ((Value.Number)input).Item;
             return Value.NewNumber(Math.Atan(theta));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Atan", "Math.Atan@double");
         }
     }
 
@@ -2901,6 +2991,12 @@ namespace Dynamo.Nodes
             var average = vals.Average();
 
             return Value.NewNumber(average);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        {
+            MigrateToDsFunction(xmlNode, "Math.dll", "Average", "Average@double[]..[]");
         }
     }
 
