@@ -629,8 +629,7 @@ namespace Dynamo.Utilities
                     }
                 }
 
-                Version fileVersion = string.IsNullOrEmpty(version) ?
-                    new Version(0, 0, 0, 0) : new Version(version);
+                Version fileVersion = MigrationManager.VersionFromString(version);
 
                 var dynamoModel = dynSettings.Controller.DynamoModel;
                 Version currentVersion = dynamoModel.HomeSpace.WorkspaceVersion;

@@ -2312,8 +2312,8 @@ namespace Dynamo.Nodes
             return Value.NewNumber(x + y);
         }
 
-        [NodeMigration(from: "0.6.3.20048", to: "0.7.0.0")]
-        public static void Migrate_0530_to_0700(XmlNode xmlNode)
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static void Migrate_0630_to_0700(XmlNode xmlNode)
         {
             MigrateToDsFunction(xmlNode, "+", "+@,");
         }
