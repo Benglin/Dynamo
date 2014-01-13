@@ -118,18 +118,24 @@ namespace Dynamo.Models
             return migrationAttempted;
         }
 
+        /// <summary>
+        /// Remove revision number from 'fileVersion' (so we get '0.6.3.0' 
+        /// instead of '0.6.3.20048'). This way all migration methods with 
+        /// 'NodeMigration.from' attribute value '0.6.3.xyz' can be used to 
+        /// migrate nodes in workspace version '0.6.3.ijk' (i.e. the revision 
+        /// number does not have to be exact match for a migration method to 
+        /// work).
+        /// </summary>
+        /// <param name="version">The version string to convert into Version 
+        /// object. Valid examples include "0.6.3" and "0.6.3.20048".</param>
+        /// <returns>Returns the Version object representation of 'version' 
+        /// argument, except without the 'revision number'.</returns>
         internal static Version VersionFromString(string version)
         {
             Version ver = string.IsNullOrEmpty(version) ?
                 new Version(0, 0, 0, 0) : new Version(version);
 
-            // Remove revision number from 'fileVersion' (so we get '0.6.3.0' 
-            // instead of '0.6.3.20048'). This way all migration methods 
-            // with 'NodeMigration.from' attribute value '0.6.3.xyz' can be 
-            // used to migrate nodes in workspace version '0.6.3.ijk' (i.e. 
-            // the revision number does not have to be exact match for a 
-            // migration method to work).
-            // 
+            // Ignore revision number.
             return new Version(ver.Major, ver.Minor, ver.Build);
         }
     }
