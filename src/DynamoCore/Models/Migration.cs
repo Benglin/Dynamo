@@ -138,6 +138,34 @@ namespace Dynamo.Models
             // Ignore revision number.
             return new Version(ver.Major, ver.Minor, ver.Build);
         }
+
+        /// <summary>
+        /// Call this method to create a duplicated XmlElement with a set of 
+        /// attributes carried over from the source XmlElement.
+        /// </summary>
+        /// <param name="srcElement">The source XmlElement object.</param>
+        /// <param name="attribNames">The list of attribute names whose values 
+        /// are to be carried over to the resulting XmlElement.</param>
+        /// <returns></returns>
+        internal static XmlElement DuplicateWithAttributes(
+            XmlElement srcElement, string[] attribNames)
+        {
+            if (srcElement == null)
+                throw new ArgumentNullException("srcElement");
+            if (attribNames == null || (attribNames.Length <= 0))
+                throw new ArgumentException("Argument cannot be empty", "attribNames");
+
+            XmlDocument document = srcElement.OwnerDocument;
+            XmlElement dstElement = document.CreateElement(srcElement.Name);
+
+            foreach (string attribName in attribNames)
+            {
+                var value = srcElement.GetAttribute(attribName);
+                dstElement.SetAttribute(attribName, value);
+            }
+
+            return dstElement;
+        }
     }
 
     /// <summary>
