@@ -2301,19 +2301,22 @@ namespace Dynamo.Nodes
             ArgumentLacing = LacingStrategy.Longest;
         }
 
-        protected static void MigrateToDsFunction(XmlNode xmlNode, string nickname, string funcdName)
+        protected static IEnumerable<XmlElement> MigrateToDsFunction(
+            XmlNode xmlNode, string nickname, string funcdName)
         {
-            MigrateToDsFunction(xmlNode, "", nickname, funcdName);
+            return MigrateToDsFunction(xmlNode, "", nickname, funcdName);
         }
 
-        protected static void MigrateToDsFunction(XmlNode xmlNode,
-            string assembly, string nickname, string funcdName)
+        protected static IEnumerable<XmlElement> MigrateToDsFunction(
+            XmlNode xmlNode, string assembly, string nickname, string funcdName)
         {
-            XmlElement element = xmlNode as XmlElement;
+            var element = MigrationManager.DuplicateWithAllAttributes(xmlNode as XmlElement);
             element.SetAttribute("type", "Dynamo.Nodes.DSFunction");
             element.SetAttribute("assembly", assembly);
             element.SetAttribute("nickname", nickname);
             element.SetAttribute("function", funcdName);
+
+            return new List<XmlElement>() { element };
         }
     }
 
