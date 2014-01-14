@@ -94,5 +94,43 @@ namespace Dynamo.Tests
             Assert.AreEqual("", dstElement.Attributes["dummy"].Value);
             Assert.AreEqual("yeah", dstElement.Attributes["isUpstreamVisible"].Value);
         }
+
+        [Test]
+        public void DuplicateWithAllAttributes00()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                MigrationManager.DuplicateWithAllAttributes(null);
+            });
+        }
+
+        [Test]
+        public void DuplicateWithAllAttributes01()
+        {
+            XmlElement srcElement = xmlDocument.CreateElement("Element");
+            XmlElement dstElement = MigrationManager.DuplicateWithAllAttributes(srcElement);
+
+            Assert.IsNotNull(dstElement);
+            Assert.IsNotNull(dstElement.Attributes);
+            Assert.AreEqual(0, dstElement.Attributes.Count);
+        }
+
+        [Test]
+        public void DuplicateWithAllAttributes02()
+        {
+            XmlElement srcElement = xmlDocument.CreateElement("Element");
+            srcElement.SetAttribute("one", "1");
+            srcElement.SetAttribute("two", "2");
+            srcElement.SetAttribute("three", "3");
+
+            XmlElement dstElement = MigrationManager.DuplicateWithAllAttributes(srcElement);
+
+            Assert.IsNotNull(dstElement);
+            Assert.IsNotNull(dstElement.Attributes);
+            Assert.AreEqual(3, dstElement.Attributes.Count);
+            Assert.AreEqual("1", dstElement.Attributes["one"].Value);
+            Assert.AreEqual("2", dstElement.Attributes["two"].Value);
+            Assert.AreEqual("3", dstElement.Attributes["three"].Value);
+        }
     }
 }

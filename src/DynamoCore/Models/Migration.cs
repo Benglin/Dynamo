@@ -196,6 +196,28 @@ namespace Dynamo.Models
 
             return dstElement;
         }
+
+        /// <summary>
+        /// Call this method to create a duplicated XmlElement with 
+        /// all the attributes found from the source XmlElement.
+        /// </summary>
+        /// <param name="srcElement">The source XmlElement to duplicate.</param>
+        /// <returns>Returns the duplicated XmlElement with all attributes 
+        /// found in the source XmlElement.</returns>
+        /// 
+        internal static XmlElement DuplicateWithAllAttributes(XmlElement srcElement)
+        {
+            if (srcElement == null)
+                throw new ArgumentNullException("srcElement");
+
+            XmlDocument document = srcElement.OwnerDocument;
+            XmlElement dstElement = document.CreateElement(srcElement.Name);
+
+            foreach (XmlAttribute attribute in srcElement.Attributes)
+                dstElement.SetAttribute(attribute.Name, attribute.Value);
+
+            return dstElement;
+        }
     }
 
     /// <summary>
