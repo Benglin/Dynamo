@@ -130,6 +130,7 @@ namespace Dynamo.Models
         /// object. Valid examples include "0.6.3" and "0.6.3.20048".</param>
         /// <returns>Returns the Version object representation of 'version' 
         /// argument, except without the 'revision number'.</returns>
+        /// 
         internal static Version VersionFromString(string version)
         {
             Version ver = string.IsNullOrEmpty(version) ?
@@ -145,8 +146,13 @@ namespace Dynamo.Models
         /// </summary>
         /// <param name="srcElement">The source XmlElement object.</param>
         /// <param name="attribNames">The list of attribute names whose values 
-        /// are to be carried over to the resulting XmlElement.</param>
-        /// <returns></returns>
+        /// are to be carried over to the resulting XmlElement. This list is 
+        /// mandatory and it cannot be empty. If a specified attribute cannot 
+        /// be found in srcElement, an empty attribute with the same name will 
+        /// be created in the resulting XmlElement.</param>
+        /// <returns>Returns the resulting XmlElement with specified attributes
+        /// duplicated from srcElement.</returns>
+        /// 
         internal static XmlElement DuplicateWithAttributes(
             XmlElement srcElement, string[] attribNames)
         {
