@@ -2356,9 +2356,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "+", "+@,");
+            return MigrateToDsFunction(xmlNode, "+", "+@,");
         }
     }
 
@@ -2398,9 +2398,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "-", "-@,");
+            return MigrateToDsFunction(xmlNode, "-", "-@,");
         }
     }
 
@@ -2458,9 +2458,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "*", "*@,");
+            return MigrateToDsFunction(xmlNode, "*", "*@,");
         }
     }
 
@@ -2516,9 +2516,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "/", "/@,");
+            return MigrateToDsFunction(xmlNode, "/", "/@,");
         }
     }
 
@@ -2559,9 +2559,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "%", "%@,");
+            return MigrateToDsFunction(xmlNode, "%", "%@,");
         }
     }
 
@@ -2616,9 +2616,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Pow", "Math.Pow@double,double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Pow", "Math.Pow@double,double");
         }
     }
 
@@ -2643,9 +2643,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Round", "Math.Round@double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Round", "Math.Round@double");
         }
     }
 
@@ -2671,9 +2671,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Floor", "Math.Floor@double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Floor", "Math.Floor@double");
         }
     }
 
@@ -2699,9 +2699,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Ceiling", "Math.Ceiling@double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Ceiling", "Math.Ceiling@double");
         }
     }
 
@@ -2939,9 +2939,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Sin", "Math.Sin@double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Sin", "Math.Sin@double");
         }
     }
 
@@ -2981,9 +2981,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Cos", "Math.Cos@double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Cos", "Math.Cos@double");
         }
     }
 
@@ -3023,9 +3023,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Tan", "Math.Tan@double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Tan", "Math.Tan@double");
         }
     }
 
@@ -3052,9 +3052,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Asin", "Math.Asin@double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Asin", "Math.Asin@double");
         }
     }
 
@@ -3081,9 +3081,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Acos", "Math.Acos@double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Acos", "Math.Acos@double");
         }
     }
 
@@ -3110,9 +3110,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Math.Atan", "Math.Atan@double");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Math.Atan", "Math.Atan@double");
         }
     }
 
@@ -3144,9 +3144,9 @@ namespace Dynamo.Nodes
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static void Migrate_0630_to_0700(XmlNode xmlNode)
+        public static IEnumerable<XmlElement> Migrate_0630_to_0700(XmlNode xmlNode)
         {
-            MigrateToDsFunction(xmlNode, "Math.dll", "Average", "Average@double[]..[]");
+            return MigrateToDsFunction(xmlNode, "Math.dll", "Average", "Average@double[]..[]");
         }
     }
 
