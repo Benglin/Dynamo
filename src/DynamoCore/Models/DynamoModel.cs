@@ -650,7 +650,10 @@ namespace Dynamo.Models
                 var dynamoModel = dynSettings.Controller.DynamoModel;
                 Version currentVersion = dynamoModel.HomeSpace.WorkspaceVersion;
                 if (fileVersion < currentVersion) // Opening an older file, migrate workspace.
+                {
                     MigrationManager.Instance.ProcessWorkspaceMigrations(xmlDoc, fileVersion);
+                    MigrationManager.Instance.ProcessNodesInWorkspace(xmlDoc, fileVersion);
+                }
 
                 //set the zoom and offsets and trigger events
                 //to get the view to position iteself

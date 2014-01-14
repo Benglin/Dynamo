@@ -90,6 +90,30 @@ namespace Dynamo.Models
             }
         }
 
+        public void ProcessNodesInWorkspace(XmlDocument xmlDoc, Version workspaceVersion)
+        {
+            XmlNodeList elNodes = xmlDoc.GetElementsByTagName("Elements");
+            if (elNodes == null || (elNodes.Count == 0))
+                elNodes = xmlDoc.GetElementsByTagName("dynElements");
+
+            XmlNode elNodesList = elNodes[0];
+            foreach (XmlNode elNode in elNodesList.ChildNodes)
+            {
+                string typeName = elNode.Attributes["type"].Value;
+                typeName = Dynamo.Nodes.Utilities.PreprocessTypeName(typeName);
+                System.Type type = Dynamo.Nodes.Utilities.ResolveType(typeName);
+
+                // TODO(Ben): Implement this.
+                // 
+                // if (this.MigrateXmlNode(elNode, type, workspaceVersion))
+                // {
+                // }
+            }
+
+            // TODO(Ben): Replace the old child nodes with the new set.
+        }
+
+        // TODO(Ben): This method doesn't handle the case when a node gets turned into multiple ones.
         public bool MigrateXmlNode(XmlNode elNode, System.Type type, Version workspaceVersion)
         {
             var migrations = (from method in type.GetMethods()
