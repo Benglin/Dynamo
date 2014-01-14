@@ -26,56 +26,57 @@ namespace Dynamo.Tests
         }
 
         [Test]
-        public void DuplicateWithAttributes00()
+        public void CreateFunctionNodeFrom00()
         {
             Assert.Throws<ArgumentNullException>(() =>
             {
                 // First argument being null should throw an exception.
-                MigrationManager.DuplicateWithAttributes(null, null);
+                MigrationManager.CreateFunctionNodeFrom(null, null);
             });
         }
 
         [Test]
-        public void DuplicateWithAttributes01()
+        public void CreateFunctionNodeFrom01()
         {
             XmlElement srcElement = xmlDocument.CreateElement("Element");
 
             Assert.Throws<ArgumentException>(() =>
             {
                 // Second argument being null should throw an exception.
-                MigrationManager.DuplicateWithAttributes(srcElement, null);
+                MigrationManager.CreateFunctionNodeFrom(srcElement, null);
             });
         }
 
         [Test]
-        public void DuplicateWithAttributes02()
+        public void CreateFunctionNodeFrom02()
         {
             XmlElement srcElement = xmlDocument.CreateElement("Element");
 
             Assert.Throws<ArgumentException>(() =>
             {
                 // Second argument being empty should throw an exception.
-                MigrationManager.DuplicateWithAttributes(srcElement, new string[] { });
+                MigrationManager.CreateFunctionNodeFrom(srcElement, new string[] { });
             });
         }
 
         [Test]
-        public void DuplicateWithAttributes03()
+        public void CreateFunctionNodeFrom03()
         {
             XmlElement srcElement = xmlDocument.CreateElement("Element");
 
             // Non-existence attribute will result in a same-name attribute 
             // in the resulting XmlElement with an empty value.
-            XmlElement dstElement = MigrationManager.DuplicateWithAttributes(
+            XmlElement dstElement = MigrationManager.CreateFunctionNodeFrom(
                 srcElement, new string[] { "dummy" });
 
             Assert.IsNotNull(dstElement);
-            Assert.AreEqual(1, dstElement.Attributes.Count);
+            Assert.AreEqual(2, dstElement.Attributes.Count);
             Assert.AreEqual("", dstElement.Attributes["dummy"].Value);
+            Assert.AreEqual("Dynamo.Nodes.DSFunction", dstElement.Attributes["type"].Value);
         }
 
         [Test]
-        public void DuplicateWithAttributes04()
+        public void CreateFunctionNodeFrom04()
         {
             XmlElement srcElement = xmlDocument.CreateElement("Element");
             srcElement.SetAttribute("guid", "D514AA10-63F0-4479-BB9F-0FEBEB2274B0");
@@ -83,54 +84,57 @@ namespace Dynamo.Tests
 
             // Non-existence attribute will result in a same-name attribute 
             // in the resulting XmlElement with an empty value.
-            XmlElement dstElement = MigrationManager.DuplicateWithAttributes(
+            XmlElement dstElement = MigrationManager.CreateFunctionNodeFrom(
                 srcElement, new string[] { "guid", "dummy", "isUpstreamVisible" });
 
             Assert.IsNotNull(dstElement);
-            Assert.AreEqual(3, dstElement.Attributes.Count);
+            Assert.AreEqual(4, dstElement.Attributes.Count);
             Assert.AreEqual("D514AA10-63F0-4479-BB9F-0FEBEB2274B0",
                 dstElement.Attributes["guid"].Value);
 
             Assert.AreEqual("", dstElement.Attributes["dummy"].Value);
             Assert.AreEqual("yeah", dstElement.Attributes["isUpstreamVisible"].Value);
+            Assert.AreEqual("Dynamo.Nodes.DSFunction", dstElement.Attributes["type"].Value);
         }
 
         [Test]
-        public void DuplicateWithAllAttributes00()
+        public void CreateFunctionNodeFrom05()
         {
             Assert.Throws<ArgumentNullException>(() =>
             {
-                MigrationManager.DuplicateWithAllAttributes(null);
+                MigrationManager.CreateFunctionNodeFrom(null);
             });
         }
 
         [Test]
-        public void DuplicateWithAllAttributes01()
+        public void CreateFunctionNodeFrom06()
         {
             XmlElement srcElement = xmlDocument.CreateElement("Element");
-            XmlElement dstElement = MigrationManager.DuplicateWithAllAttributes(srcElement);
+            XmlElement dstElement = MigrationManager.CreateFunctionNodeFrom(srcElement);
 
             Assert.IsNotNull(dstElement);
             Assert.IsNotNull(dstElement.Attributes);
-            Assert.AreEqual(0, dstElement.Attributes.Count);
+            Assert.AreEqual(1, dstElement.Attributes.Count);
+            Assert.AreEqual("Dynamo.Nodes.DSFunction", dstElement.Attributes["type"].Value);
         }
 
         [Test]
-        public void DuplicateWithAllAttributes02()
+        public void CreateFunctionNodeFrom07()
         {
             XmlElement srcElement = xmlDocument.CreateElement("Element");
             srcElement.SetAttribute("one", "1");
             srcElement.SetAttribute("two", "2");
             srcElement.SetAttribute("three", "3");
 
-            XmlElement dstElement = MigrationManager.DuplicateWithAllAttributes(srcElement);
+            XmlElement dstElement = MigrationManager.CreateFunctionNodeFrom(srcElement);
 
             Assert.IsNotNull(dstElement);
             Assert.IsNotNull(dstElement.Attributes);
-            Assert.AreEqual(3, dstElement.Attributes.Count);
+            Assert.AreEqual(4, dstElement.Attributes.Count);
             Assert.AreEqual("1", dstElement.Attributes["one"].Value);
             Assert.AreEqual("2", dstElement.Attributes["two"].Value);
             Assert.AreEqual("3", dstElement.Attributes["three"].Value);
+            Assert.AreEqual("Dynamo.Nodes.DSFunction", dstElement.Attributes["type"].Value);
         }
     }
 }

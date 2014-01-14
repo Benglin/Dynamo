@@ -2310,8 +2310,7 @@ namespace Dynamo.Nodes
         protected static IEnumerable<XmlElement> MigrateToDsFunction(
             XmlNode xmlNode, string assembly, string nickname, string funcdName)
         {
-            var element = MigrationManager.DuplicateWithAllAttributes(xmlNode as XmlElement);
-            element.SetAttribute("type", "Dynamo.Nodes.DSFunction");
+            var element = MigrationManager.CreateFunctionNodeFrom(xmlNode as XmlElement);
             element.SetAttribute("assembly", assembly);
             element.SetAttribute("nickname", nickname);
             element.SetAttribute("function", funcdName);

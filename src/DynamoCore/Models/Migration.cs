@@ -165,8 +165,9 @@ namespace Dynamo.Models
         }
 
         /// <summary>
-        /// Call this method to create a duplicated XmlElement with a set of 
-        /// attributes carried over from the source XmlElement.
+        /// Call this method to create a XmlElement with a set of attributes 
+        /// carried over from the source XmlElement. The new XmlElement will 
+        /// have a name of "Dynamo.Nodes.DSFunction".
         /// </summary>
         /// <param name="srcElement">The source XmlElement object.</param>
         /// <param name="attribNames">The list of attribute names whose values 
@@ -175,9 +176,11 @@ namespace Dynamo.Models
         /// be found in srcElement, an empty attribute with the same name will 
         /// be created in the resulting XmlElement.</param>
         /// <returns>Returns the resulting XmlElement with specified attributes
-        /// duplicated from srcElement.</returns>
+        /// duplicated from srcElement. The resulting XmlElement will also have
+        /// a mandatory "type" attribute with value "Dynamo.Nodes.DSFunction".
+        /// </returns>
         /// 
-        internal static XmlElement DuplicateWithAttributes(
+        internal static XmlElement CreateFunctionNodeFrom(
             XmlElement srcElement, string[] attribNames)
         {
             if (srcElement == null)
@@ -186,7 +189,7 @@ namespace Dynamo.Models
                 throw new ArgumentException("Argument cannot be empty", "attribNames");
 
             XmlDocument document = srcElement.OwnerDocument;
-            XmlElement dstElement = document.CreateElement(srcElement.Name);
+            XmlElement dstElement = document.CreateElement("Dynamo.Nodes.DSFunction");
 
             foreach (string attribName in attribNames)
             {
@@ -194,6 +197,7 @@ namespace Dynamo.Models
                 dstElement.SetAttribute(attribName, value);
             }
 
+            dstElement.SetAttribute("type", "Dynamo.Nodes.DSFunction");
             return dstElement;
         }
 
@@ -203,19 +207,22 @@ namespace Dynamo.Models
         /// </summary>
         /// <param name="srcElement">The source XmlElement to duplicate.</param>
         /// <returns>Returns the duplicated XmlElement with all attributes 
-        /// found in the source XmlElement.</returns>
+        /// found in the source XmlElement. The resulting XmlElement will also 
+        /// have a mandatory "type" attribute with value "Dynamo.Nodes.DSFunction".
+        /// </returns>
         /// 
-        internal static XmlElement DuplicateWithAllAttributes(XmlElement srcElement)
+        internal static XmlElement CreateFunctionNodeFrom(XmlElement srcElement)
         {
             if (srcElement == null)
                 throw new ArgumentNullException("srcElement");
 
             XmlDocument document = srcElement.OwnerDocument;
-            XmlElement dstElement = document.CreateElement(srcElement.Name);
+            XmlElement dstElement = document.CreateElement("Dynamo.Nodes.DSFunction");
 
             foreach (XmlAttribute attribute in srcElement.Attributes)
                 dstElement.SetAttribute(attribute.Name, attribute.Value);
 
+            dstElement.SetAttribute("type", "Dynamo.Nodes.DSFunction");
             return dstElement;
         }
     }
