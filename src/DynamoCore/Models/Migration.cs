@@ -108,10 +108,7 @@ namespace Dynamo.Models
 
                 // Migrate the given node into one or more new nodes.
                 NodeMigrationData migrationData = this.MigrateXmlNode(elNode, type, workspaceVersion);
-                if (migrationData != null)
-                    migratedNodes.AddRange(migrationData.MigratedNodes);
-                else
-                    migratedNodes.Add(elNode as XmlElement); // No migration done.
+                migratedNodes.AddRange(migrationData.MigratedNodes);
             }
 
             // Replace the old child nodes with the migrated nodes. Note that 
@@ -139,7 +136,9 @@ namespace Dynamo.Models
             Version currentVersion = dynSettings.Controller.DynamoModel.HomeSpace.WorkspaceVersion;
 
             XmlElement nodeToMigrate = elNode as XmlElement;
-            NodeMigrationData migrationData = null;
+            NodeMigrationData migrationData = new NodeMigrationData();
+            migrationData.AppendNode(elNode as XmlElement);
+
             while (workspaceVersion != null && workspaceVersion < currentVersion)
             {
                 var nextMigration = migrations.FirstOrDefault(x => x.From >= workspaceVersion);
@@ -147,11 +146,7 @@ namespace Dynamo.Models
                 if (nextMigration == null)
                     break;
 
-                // TODO(Ben): Pass in NodeMigrationData instead of just XmlNode.
-                if (migrationData != null)
-                    nodeToMigrate = migrationData.MigratedNodes.ElementAt(0);
-
-                object ret = nextMigration.method.Invoke(this, new object[] { nodeToMigrate });
+                object ret = nextMigration.method.Invoke(this, new object[] { migrationData });
                 migrationData = ret as NodeMigrationData;
                 workspaceVersion = nextMigration.To;
             }
