@@ -96,6 +96,9 @@ namespace Dynamo.Models
             if (elNodes == null || (elNodes.Count == 0))
                 elNodes = xmlDoc.GetElementsByTagName("dynElements");
 
+            // A new list to store migrated nodes.
+            List<XmlElement> migratedNodes = new List<XmlElement>();
+
             XmlNode elNodesList = elNodes[0];
             foreach (XmlNode elNode in elNodesList.ChildNodes)
             {
@@ -103,18 +106,27 @@ namespace Dynamo.Models
                 typeName = Dynamo.Nodes.Utilities.PreprocessTypeName(typeName);
                 System.Type type = Dynamo.Nodes.Utilities.ResolveType(typeName);
 
-                // TODO(Ben): Implement this.
-                // 
-                // if (this.MigrateXmlNode(elNode, type, workspaceVersion))
-                // {
-                // }
+                // Migrate the given node into one or more new nodes.
+                NodeMigrationData migrationData = this.MigrateXmlNode(elNode, type, workspaceVersion);
+                if (migrationData != null)
+                    migratedNodes.AddRange(migrationData.MigratedNodes);
+                else
+                    migratedNodes.Add(elNode as XmlElement); // No migration done.
             }
 
-            // TODO(Ben): Replace the old child nodes with the new set.
+            // Replace the old child nodes with the migrated nodes. Note that 
+            // "RemoveAll" also remove all attributes, but since we don't have 
+            // any attribute here, it is safe. Added an assertion to make sure 
+            // we revisit this codes if we do add attributes to 'elNodesList'.
+            // 
+            System.Diagnostics.Debug.Assert(elNodesList.Attributes.Count == 0);
+            elNodesList.RemoveAll();
+
+            foreach (XmlElement migratedNode in migratedNodes)
+                elNodesList.AppendChild(migratedNode);
         }
 
-        // TODO(Ben): This method doesn't handle the case when a node gets turned into multiple ones.
-        public bool MigrateXmlNode(XmlNode elNode, System.Type type, Version workspaceVersion)
+        public NodeMigrationData MigrateXmlNode(XmlNode elNode, System.Type type, Version workspaceVersion)
         {
             var migrations = (from method in type.GetMethods()
                               let attribute =
@@ -126,7 +138,8 @@ namespace Dynamo.Models
 
             Version currentVersion = dynSettings.Controller.DynamoModel.HomeSpace.WorkspaceVersion;
 
-            bool migrationAttempted = false;
+            XmlElement nodeToMigrate = elNode as XmlElement;
+            NodeMigrationData migrationData = null;
             while (workspaceVersion != null && workspaceVersion < currentVersion)
             {
                 var nextMigration = migrations.FirstOrDefault(x => x.From >= workspaceVersion);
@@ -134,12 +147,16 @@ namespace Dynamo.Models
                 if (nextMigration == null)
                     break;
 
-                migrationAttempted = true;
-                nextMigration.method.Invoke(this, new object[] { elNode });
+                // TODO(Ben): Pass in NodeMigrationData instead of just XmlNode.
+                if (migrationData != null)
+                    nodeToMigrate = migrationData.MigratedNodes.ElementAt(0);
+
+                object ret = nextMigration.method.Invoke(this, new object[] { nodeToMigrate });
+                migrationData = ret as NodeMigrationData;
                 workspaceVersion = nextMigration.To;
             }
 
-            return migrationAttempted;
+            return migrationData;
         }
 
         /// <summary>

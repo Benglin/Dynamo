@@ -634,7 +634,10 @@ namespace Dynamo.Utilities
                 var dynamoModel = dynSettings.Controller.DynamoModel;
                 Version currentVersion = dynamoModel.HomeSpace.WorkspaceVersion;
                 if (fileVersion < currentVersion) // Opening an older file, migrate workspace.
+                {
                     MigrationManager.Instance.ProcessWorkspaceMigrations(xmlDoc, fileVersion);
+                    MigrationManager.Instance.ProcessNodesInWorkspace(xmlDoc, fileVersion);
+                }
 
                 // we have a dyf and it lacks an ID field, we need to assign it
                 // a deterministic guid based on its name.  By doing it deterministically,
@@ -733,12 +736,6 @@ namespace Dynamo.Utilities
                     {
                         badNodes.Add(guid);
                         continue;
-                    }
-
-                    if (fileVersion < currentVersion) // Opening an older file...
-                    {
-                        // The node might have a newer representation, attempt migration.
-                        MigrationManager.Instance.MigrateXmlNode(elNode, type, fileVersion);
                     }
 
                     NodeModel el = dynSettings.Controller.DynamoModel.CreateNodeInstance(type, nickname, guid);

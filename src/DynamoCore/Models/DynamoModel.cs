@@ -720,18 +720,6 @@ namespace Dynamo.Models
                         continue;
                     }
 
-                    if (fileVersion < currentVersion) // Opening an older file...
-                    {
-                        // The node might have a newer representation, attempt migration.
-                        if (MigrationManager.Instance.MigrateXmlNode(elNode, type, fileVersion))
-                        {
-                            // After migration, we may have newr
-                            typeName = elNode.Attributes["type"].Value;
-                            typeName = Dynamo.Nodes.Utilities.PreprocessTypeName(typeName);
-                            type = Dynamo.Nodes.Utilities.ResolveType(typeName);
-                        }
-                    }
-
                     bool isVisible = true;
                     if (isVisAttrib != null)
                         isVisible = isVisAttrib.Value == "true" ? true : false;
