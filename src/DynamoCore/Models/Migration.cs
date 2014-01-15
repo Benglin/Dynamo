@@ -228,6 +228,26 @@ namespace Dynamo.Models
     }
 
     /// <summary>
+    /// This class contains the resulting nodes as a result of node migration.
+    /// Note that this class may contain other information (e.g. connectors) in
+    /// the future in the event a migration process results in other elements.
+    /// </summary>
+    internal class NodeMigrationData
+    {
+        private List<XmlElement> migratedNodes = new List<XmlElement>();
+
+        internal void AppendNode(XmlElement node)
+        {
+            migratedNodes.Add(node);
+        }
+
+        internal IEnumerable<XmlElement> MigratedNodes
+        {
+            get { return this.migratedNodes; }
+        }
+    }
+
+    /// <summary>
     /// Marks methods on a NodeModel to be used for version migration.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]

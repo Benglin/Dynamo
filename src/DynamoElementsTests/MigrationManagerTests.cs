@@ -136,5 +136,28 @@ namespace Dynamo.Tests
             Assert.AreEqual("3", dstElement.Attributes["three"].Value);
             Assert.AreEqual("Dynamo.Nodes.DSFunction", dstElement.Attributes["type"].Value);
         }
+
+        [Test]
+        public void NodeMigrationData00()
+        {
+            // Should have a default list that is empty.
+            NodeMigrationData data = new NodeMigrationData();
+            Assert.IsNotNull(data.MigratedNodes);
+        }
+
+        [Test]
+        public void NodeMigrationData01()
+        {
+            NodeMigrationData data = new NodeMigrationData();
+
+            XmlElement first = xmlDocument.CreateElement("Element");
+            XmlElement second = xmlDocument.CreateElement("Element");
+            data.AppendNode(first);
+            data.AppendNode(second);
+
+            Assert.IsNotNull(data.MigratedNodes);
+            Assert.AreEqual(first, data.MigratedNodes.ElementAt(0));
+            Assert.AreEqual(second, data.MigratedNodes.ElementAt(1));
+        }
     }
 }
