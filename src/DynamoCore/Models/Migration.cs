@@ -192,7 +192,7 @@ namespace Dynamo.Models
         /// a mandatory "type" attribute with value "Dynamo.Nodes.DSFunction".
         /// </returns>
         /// 
-        internal static XmlElement CreateFunctionNodeFrom(
+        public static XmlElement CreateFunctionNodeFrom(
             XmlElement srcElement, string[] attribNames)
         {
             if (srcElement == null)
@@ -223,7 +223,7 @@ namespace Dynamo.Models
         /// have a mandatory "type" attribute with value "Dynamo.Nodes.DSFunction".
         /// </returns>
         /// 
-        internal static XmlElement CreateFunctionNodeFrom(XmlElement srcElement)
+        public static XmlElement CreateFunctionNodeFrom(XmlElement srcElement)
         {
             if (srcElement == null)
                 throw new ArgumentNullException("srcElement");
@@ -237,6 +237,14 @@ namespace Dynamo.Models
             dstElement.SetAttribute("type", "Dynamo.Nodes.DSFunction");
             return dstElement;
         }
+
+        public static void SetFunctionSignature(XmlElement element,
+            string assemblyName, string methodName, string signature)
+        {
+            element.SetAttribute("assembly", assemblyName);
+            element.SetAttribute("nickname", methodName);
+            element.SetAttribute("function", signature);
+        }
     }
 
     /// <summary>
@@ -248,12 +256,12 @@ namespace Dynamo.Models
     {
         private List<XmlElement> migratedNodes = new List<XmlElement>();
 
-        internal void AppendNode(XmlElement node)
+        public void AppendNode(XmlElement node)
         {
             migratedNodes.Add(node);
         }
 
-        internal IEnumerable<XmlElement> MigratedNodes
+        public IEnumerable<XmlElement> MigratedNodes
         {
             get { return this.migratedNodes; }
         }
