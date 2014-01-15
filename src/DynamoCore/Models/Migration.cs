@@ -232,7 +232,7 @@ namespace Dynamo.Models
     /// Note that this class may contain other information (e.g. connectors) in
     /// the future in the event a migration process results in other elements.
     /// </summary>
-    internal class NodeMigrationData
+    public class NodeMigrationData
     {
         private List<XmlElement> migratedNodes = new List<XmlElement>();
 
