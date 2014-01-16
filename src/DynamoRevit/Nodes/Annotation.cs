@@ -4,6 +4,7 @@ using Autodesk.Revit.DB;
 using Dynamo.Models;
 using Dynamo.Revit;
 using Dynamo.Utilities;
+using RevitServices.Persistence;
 
 namespace Dynamo.Nodes
 {
@@ -35,8 +36,10 @@ namespace Dynamo.Nodes
             var depth = ((FScheme.Value.Number) args[4]).Item;
             var textTypeName = ((FScheme.Value.String) args[5]).Item;
 
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+
             //find a text type in the document to use
-            var fec = new FilteredElementCollector(dynRevitSettings.Doc.Document);
+            var fec = new FilteredElementCollector(document);
             fec.OfClass(typeof(ModelTextType));
             ModelTextType mtt;
             if (fec.ToElements().Cast<ModelTextType>().Any(x => x.Name == textTypeName))
@@ -59,7 +62,7 @@ namespace Dynamo.Nodes
                     var currPos = mt.Location as LocationPoint;
                     if (!position.IsAlmostEqualTo(currPos.Point))
                     {
-                        dynRevitSettings.Doc.Document.Delete(Elements[0]);
+                        document.Delete(Elements[0]);
                         mt = CreateModelText(normal, position, -up, text, mtt, depth);
                         Elements.Add(mt.Id);
                     }
@@ -89,10 +92,18 @@ namespace Dynamo.Nodes
             var xAxis = normal.CrossProduct(up).Normalize();
             var yAxis = normal.CrossProduct(xAxis).Normalize();
             var plane = new Autodesk.Revit.DB.Plane(xAxis, yAxis, position);
-           
-            var sp = Autodesk.Revit.DB.SketchPlane.Create(dynRevitSettings.Doc.Document, plane);
-            mt = dynRevitSettings.Doc.Document.FamilyCreate.NewModelText(text, mtt, sp, position, HorizontalAlign.Left, depth);
+
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+            var sp = Autodesk.Revit.DB.SketchPlane.Create(document, plane);
+            mt = document.FamilyCreate.NewModelText(text, mtt, sp, position, HorizontalAlign.Left, depth);
             return mt;
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            // TODO(Ben): Implement this.
+            throw new NotImplementedException();
         }
     }
 }
