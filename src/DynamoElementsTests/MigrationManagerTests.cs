@@ -141,14 +141,14 @@ namespace Dynamo.Tests
         public void NodeMigrationData00()
         {
             // Should have a default list that is empty.
-            NodeMigrationData data = new NodeMigrationData();
+            NodeMigrationData data = new NodeMigrationData(xmlDocument);
             Assert.IsNotNull(data.MigratedNodes);
         }
 
         [Test]
         public void NodeMigrationData01()
         {
-            NodeMigrationData data = new NodeMigrationData();
+            NodeMigrationData data = new NodeMigrationData(xmlDocument);
 
             XmlElement first = xmlDocument.CreateElement("Element");
             XmlElement second = xmlDocument.CreateElement("Element");

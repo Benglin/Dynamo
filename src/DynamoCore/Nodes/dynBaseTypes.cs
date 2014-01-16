@@ -2374,7 +2374,7 @@ namespace Dynamo.Nodes
             element.SetAttribute("nickname", nickname);
             element.SetAttribute("function", funcdName);
 
-            NodeMigrationData migrationData = new NodeMigrationData();
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
             migrationData.AppendNode(element);
             return migrationData;
         }

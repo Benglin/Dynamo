@@ -136,7 +136,7 @@ namespace Dynamo.Models
             Version currentVersion = dynSettings.Controller.DynamoModel.HomeSpace.WorkspaceVersion;
 
             XmlElement nodeToMigrate = elNode as XmlElement;
-            NodeMigrationData migrationData = new NodeMigrationData();
+            NodeMigrationData migrationData = new NodeMigrationData(elNode.OwnerDocument);
             migrationData.AppendNode(elNode as XmlElement);
 
             while (workspaceVersion != null && workspaceVersion < currentVersion)
@@ -256,10 +256,17 @@ namespace Dynamo.Models
     {
         private List<XmlElement> migratedNodes = new List<XmlElement>();
 
+        public NodeMigrationData(XmlDocument document)
+        {
+            this.Document = document;
+        }
+
         public void AppendNode(XmlElement node)
         {
             migratedNodes.Add(node);
         }
+
+        public XmlDocument Document { get; private set; }
 
         public IEnumerable<XmlElement> MigratedNodes
         {

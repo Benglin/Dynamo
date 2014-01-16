@@ -89,7 +89,7 @@ namespace Dynamo.Nodes
             MigrationManager.SetFunctionSignature(newNodeElement, assemblyPath,
                 "DSTopography.ByPoints", "DSTopography.ByPoints@double[]..[]");
 
-            NodeMigrationData migrated = new NodeMigrationData();
+            NodeMigrationData migrated = new NodeMigrationData(data.Document);
             migrated.AppendNode(newNodeElement);
             return migrated;
         }
