@@ -248,6 +248,23 @@ namespace Dynamo.Models
     }
 
     /// <summary>
+    /// This structure uniquely identifies a given port in the graph.
+    /// </summary>
+    public struct PortId
+    {
+        public PortId(string owningNode, int portIndex, PortType type)
+        {
+            this.OwningNode = owningNode;
+            this.PortIndex = portIndex;
+            this.PortType = type;
+        }
+
+        public string OwningNode { get; private set; }
+        public int PortIndex { get; private set; }
+        public PortType PortType { get; private set; }
+    }
+
+    /// <summary>
     /// This class contains the resulting nodes as a result of node migration.
     /// Note that this class may contain other information (e.g. connectors) in
     /// the future in the event a migration process results in other elements.
@@ -261,10 +278,30 @@ namespace Dynamo.Models
             this.Document = document;
         }
 
+        #region Connector Management Methods
+
+        public XmlElement FindConnector(PortId startPort, PortId endPort)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ReconnectToPort(XmlElement connector, PortId port)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+        #region Node Management Methods
+
         public void AppendNode(XmlElement node)
         {
             migratedNodes.Add(node);
         }
+
+        #endregion
+
+        #region Public Class Properties
 
         public XmlDocument Document { get; private set; }
 
@@ -272,6 +309,8 @@ namespace Dynamo.Models
         {
             get { return this.migratedNodes; }
         }
+
+        #endregion
     }
 
     /// <summary>
