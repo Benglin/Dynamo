@@ -322,6 +322,53 @@ namespace Dynamo.Models
         }
 
         /// <summary>
+        /// Given a port, get all connectors that connect to it.
+        /// </summary>
+        /// <param name="portId">The identity of the port for which connectors 
+        /// are to be retrieved.</param>
+        /// <returns>Returns the list of connectors connecting to the given 
+        /// port, or null if no connection is found connecting to it.</returns>
+        public IEnumerable<XmlElement> FindConnectors(PortId portId)
+        {
+
+            if (connectors == null)
+                return null;
+
+            List<XmlElement> foundConnectors = null;
+            foreach (XmlNode node in connectors)
+            {
+                XmlElement connector = node as XmlElement;
+                XmlAttributeCollection attribs = connector.Attributes;
+
+                if (portId.PortType == PortType.INPUT)
+                {
+                    if (portId.OwningNode != attribs["end"].Value)
+                        continue;
+                    if (portId.PortIndex != Convert.ToInt16(attribs["end_index"].Value))
+                        continue;
+                }
+                else
+                {
+                    if (portId.OwningNode != attribs["start"].Value)
+                        continue;
+                    if (portId.PortIndex != Convert.ToInt16(attribs["start_index"].Value))
+                        continue;
+                }
+
+                if (foundConnectors == null)
+                    foundConnectors = new List<XmlElement>();
+
+                foundConnectors.Add(connector);
+
+                // There can only be one connector for input port...
+                if (portId.PortType == PortType.INPUT)
+                    break; // ... so look no further.
+            }
+
+            return foundConnectors;
+        }
+
+        /// <summary>
         /// Reconnect a given connector to another port identified by "port".
         /// </summary>
         /// <param name="connector">The connector to update.</param>
