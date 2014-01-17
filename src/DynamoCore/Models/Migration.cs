@@ -321,9 +321,24 @@ namespace Dynamo.Models
             return null;
         }
 
+        /// <summary>
+        /// Reconnect a given connector to another port identified by "port".
+        /// </summary>
+        /// <param name="connector">The connector to update.</param>
+        /// <param name="port">The new port to connect to.</param>
         public void ReconnectToPort(XmlElement connector, PortId port)
         {
-            throw new NotImplementedException();
+            XmlAttributeCollection attribs = connector.Attributes;
+            if (port.PortType == PortType.INPUT) // We're updating end point.
+            {
+                attribs["end"].Value = port.OwningNode;
+                attribs["end_index"].Value = port.PortIndex.ToString();
+            }
+            else // Updating the start point.
+            {
+                attribs["start"].Value = port.OwningNode;
+                attribs["start_index"].Value = port.PortIndex.ToString();
+            }
         }
 
         #endregion
