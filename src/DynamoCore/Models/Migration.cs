@@ -253,6 +253,7 @@ namespace Dynamo.Models
     public struct PortId
     {
         public PortId(string owningNode, int portIndex, PortType type)
+            : this()
         {
             this.OwningNode = owningNode;
             this.PortIndex = portIndex;
@@ -271,18 +272,53 @@ namespace Dynamo.Models
     /// </summary>
     public class NodeMigrationData
     {
+        private XmlNodeList connectors = null;
         private List<XmlElement> migratedNodes = new List<XmlElement>();
 
         public NodeMigrationData(XmlDocument document)
         {
             this.Document = document;
+
+            XmlNodeList cNodes = document.GetElementsByTagName("Connectors");
+            if (cNodes.Count == 0)
+                cNodes = document.GetElementsByTagName("dynConnectors");
+
+            connectors = cNodes[0].ChildNodes; // All the connectors in document.
         }
 
         #region Connector Management Methods
 
+        /// <summary>
+        /// Call this method to find the connector in the associate 
+        /// XmlDocument, given its start and end port information.
+        /// </summary>
+        /// <param name="startPort">The identity of the start port.</param>
+        /// <param name="endPort">The identity of the end port.</param>
+        /// <returns>Returns the matching connector if one is found, or null 
+        /// otherwise.</returns>
         public XmlElement FindConnector(PortId startPort, PortId endPort)
         {
-            throw new NotImplementedException();
+            if (connectors != null)
+            {
+                foreach (XmlNode node in connectors)
+                {
+                    XmlElement connector = node as XmlElement;
+                    XmlAttributeCollection attribs = connector.Attributes;
+                    if (startPort.OwningNode != attribs[0].Value)
+                        continue;
+                    if (endPort.OwningNode != attribs[2].Value)
+                        continue;
+
+                    if (startPort.PortIndex != Convert.ToInt16(attribs[1].Value))
+                        continue;
+                    if (endPort.PortIndex != Convert.ToInt16(attribs[3].Value))
+                        continue;
+
+                    return connector; // Found the matching connector.
+                }
+            }
+
+            return null;
         }
 
         public void ReconnectToPort(XmlElement connector, PortId port)
