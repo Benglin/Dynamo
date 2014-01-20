@@ -177,6 +177,29 @@ namespace Dynamo.Models
         }
 
         /// <summary>
+        /// Call this method to create an empty DSFunction node that contains 
+        /// basic function node information.
+        /// </summary>
+        /// <param name="document">The XmlDocument to create the node in.</param>
+        /// <param name="assembly">Name of the assembly that implements this 
+        /// function.</param>
+        /// <param name="nickname">The nickname to display on the node.</param>
+        /// <param name="signature">The signature of the function.</param>
+        /// <returns>Returns the XmlElement that represents a DSFunction node 
+        /// with its basic function information.</returns>
+        /// 
+        public static XmlElement CreateFunctionNode(XmlDocument document,
+            string assembly, string nickname, string signature)
+        {
+            XmlElement element = document.CreateElement("Dynamo.Nodes.DSFunction");
+            element.SetAttribute("type", "Dynamo.Nodes.DSFunction");
+            element.SetAttribute("assembly", assembly);
+            element.SetAttribute("nickname", nickname);
+            element.SetAttribute("function", signature);
+            return element;
+        }
+
+        /// <summary>
         /// Call this method to create a XmlElement with a set of attributes 
         /// carried over from the source XmlElement. The new XmlElement will 
         /// have a name of "Dynamo.Nodes.DSFunction".
