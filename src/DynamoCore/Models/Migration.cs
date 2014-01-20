@@ -196,6 +196,11 @@ namespace Dynamo.Models
             element.SetAttribute("assembly", assembly);
             element.SetAttribute("nickname", nickname);
             element.SetAttribute("function", signature);
+
+            // Attributes with default values (as in DynamoModel.OpenWorkspace).
+            element.SetAttribute("isVisible", "true");
+            element.SetAttribute("isUpstreamVisible", "true");
+            element.SetAttribute("lacing", "Disabled");
             return element;
         }
 
