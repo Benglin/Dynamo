@@ -186,7 +186,7 @@ namespace Dynamo.Models
         /// <param name="nickname">The nickname to display on the node.</param>
         /// <param name="signature">The signature of the function.</param>
         /// <returns>Returns the XmlElement that represents a DSFunction node 
-        /// with its basic function information.</returns>
+        /// with its basic function information with default attributes.</returns>
         /// 
         public static XmlElement CreateFunctionNode(XmlDocument document,
             string assembly, string nickname, string signature)
@@ -201,6 +201,9 @@ namespace Dynamo.Models
             element.SetAttribute("isVisible", "true");
             element.SetAttribute("isUpstreamVisible", "true");
             element.SetAttribute("lacing", "Disabled");
+            element.SetAttribute("x", "0.0");
+            element.SetAttribute("y", "0.0");
+            element.SetAttribute("guid", Guid.NewGuid().ToString());
             return element;
         }
 
@@ -273,6 +276,11 @@ namespace Dynamo.Models
             element.SetAttribute("nickname", methodName);
             element.SetAttribute("function", signature);
         }
+
+        public static string GetGuidFromXmlElement(XmlElement element)
+        {
+            return element.Attributes["guid"].Value;
+        }
     }
 
     /// <summary>
@@ -300,7 +308,7 @@ namespace Dynamo.Models
     /// </summary>
     public class NodeMigrationData
     {
-        private XmlNodeList connectors = null;
+        private XmlNode connectorRoot = null;
         private List<XmlElement> migratedNodes = new List<XmlElement>();
 
         public NodeMigrationData(XmlDocument document)
@@ -311,7 +319,7 @@ namespace Dynamo.Models
             if (cNodes.Count == 0)
                 cNodes = document.GetElementsByTagName("dynConnectors");
 
-            connectors = cNodes[0].ChildNodes; // All the connectors in document.
+            connectorRoot = cNodes[0]; // All the connectors in document.
         }
 
         #region Connector Management Methods
@@ -326,9 +334,9 @@ namespace Dynamo.Models
         /// otherwise.</returns>
         public XmlElement FindConnector(PortId startPort, PortId endPort)
         {
-            if (connectors != null)
+            if (connectorRoot != null && (connectorRoot.ChildNodes != null))
             {
-                foreach (XmlNode node in connectors)
+                foreach (XmlNode node in connectorRoot.ChildNodes)
                 {
                     XmlElement connector = node as XmlElement;
                     XmlAttributeCollection attribs = connector.Attributes;
@@ -359,11 +367,11 @@ namespace Dynamo.Models
         public IEnumerable<XmlElement> FindConnectors(PortId portId)
         {
 
-            if (connectors == null)
+            if (connectorRoot == null || (connectorRoot.ChildNodes == null))
                 return null;
 
             List<XmlElement> foundConnectors = null;
-            foreach (XmlNode node in connectors)
+            foreach (XmlNode node in connectorRoot.ChildNodes)
             {
                 XmlElement connector = node as XmlElement;
                 XmlAttributeCollection attribs = connector.Attributes;
@@ -414,6 +422,22 @@ namespace Dynamo.Models
                 attribs["start"].Value = port.OwningNode;
                 attribs["start_index"].Value = port.PortIndex.ToString();
             }
+        }
+
+        public void CreateConnector(XmlElement startNode,
+            int startIndex, XmlElement endNode, int endIndex)
+        {
+            XmlElement connector = this.Document.CreateElement(
+                "Dynamo.Models.ConnectorModel");
+
+            connector.SetAttribute("start", MigrationManager.GetGuidFromXmlElement(startNode));
+            connector.SetAttribute("start_index", startIndex.ToString());
+            connector.SetAttribute("end", MigrationManager.GetGuidFromXmlElement(endNode));
+            connector.SetAttribute("end_index", endIndex.ToString());
+            connector.SetAttribute("portType", "0"); // Always zero, probably legacy issue.
+
+            // Add new connector to document.
+            connectorRoot.AppendChild(connector);
         }
 
         #endregion
