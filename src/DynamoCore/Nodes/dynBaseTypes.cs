@@ -3483,6 +3483,16 @@ namespace Dynamo.Nodes
         {
             return new ConditionalNode(portNames);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+            migrationData.AppendNode(MigrationManager.CloneAndChangeType(
+                data.MigratedNodes.ElementAt(0), "DSCoreNodesUI.Logic.If"));
+
+            return migrationData;
+        }
     }
     
     [NodeName("Debug Breakpoint")]
