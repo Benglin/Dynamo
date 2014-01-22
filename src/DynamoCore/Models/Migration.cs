@@ -306,6 +306,7 @@ namespace Dynamo.Models
     /// Note that this class may contain other information (e.g. connectors) in
     /// the future in the event a migration process results in other elements.
     /// </summary>
+    /// 
     public class NodeMigrationData
     {
         private XmlNode connectorRoot = null;
@@ -332,6 +333,7 @@ namespace Dynamo.Models
         /// <param name="endPort">The identity of the end port.</param>
         /// <returns>Returns the matching connector if one is found, or null 
         /// otherwise.</returns>
+        /// 
         public XmlElement FindConnector(PortId startPort, PortId endPort)
         {
             if (connectorRoot != null && (connectorRoot.ChildNodes != null))
@@ -358,15 +360,58 @@ namespace Dynamo.Models
         }
 
         /// <summary>
+        /// Call this method to retrieve the first connector given a port. This
+        /// method is a near equivalent of FindConnectors, but only return the 
+        /// first connector found. This way the caller codes can be simplified 
+        /// in a way that it does not have the validate the returned list for 
+        /// item count before accessing its element.
+        /// </summary>
+        /// <param name="portId">The identity of the port for which the first 
+        /// connector is to be retrieved.</param>
+        /// <returns>Returns the first connector found to connect to the given 
+        /// port, or null otherwise.</returns>
+        /// 
+        public XmlElement FindFirstConnector(PortId portId)
+        {
+            if (connectorRoot == null || (connectorRoot.ChildNodes == null))
+                return null;
+
+            foreach (XmlNode node in connectorRoot.ChildNodes)
+            {
+                XmlElement connector = node as XmlElement;
+                XmlAttributeCollection attribs = connector.Attributes;
+
+                if (portId.PortType == PortType.INPUT)
+                {
+                    if (portId.OwningNode != attribs["end"].Value)
+                        continue;
+                    if (portId.PortIndex != Convert.ToInt16(attribs["end_index"].Value))
+                        continue;
+                }
+                else
+                {
+                    if (portId.OwningNode != attribs["start"].Value)
+                        continue;
+                    if (portId.PortIndex != Convert.ToInt16(attribs["start_index"].Value))
+                        continue;
+                }
+
+                return connector; // Found one, look no further.
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Given a port, get all connectors that connect to it.
         /// </summary>
         /// <param name="portId">The identity of the port for which connectors 
         /// are to be retrieved.</param>
         /// <returns>Returns the list of connectors connecting to the given 
         /// port, or null if no connection is found connecting to it.</returns>
+        /// 
         public IEnumerable<XmlElement> FindConnectors(PortId portId)
         {
-
             if (connectorRoot == null || (connectorRoot.ChildNodes == null))
                 return null;
 
@@ -413,6 +458,7 @@ namespace Dynamo.Models
         /// do a null-check before every call to this method (connectors may 
         /// not present).</param>
         /// <param name="port">The new port to connect to.</param>
+        /// 
         public void ReconnectToPort(XmlElement connector, PortId port)
         {
             if (connector == null) // Connector does not exist.

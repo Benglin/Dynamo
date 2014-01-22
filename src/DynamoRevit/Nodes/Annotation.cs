@@ -178,19 +178,19 @@ namespace Dynamo.Nodes
             // Move connector for "text" over to the new node.
             PortId oldInPort = new PortId(oldNodeId, 0, PortType.INPUT);
             PortId newInPort = new PortId(dsModelTextId, 0, PortType.INPUT);
-            XmlElement connector = data.FindConnectors(oldInPort).ElementAt(0);
+            XmlElement connector = data.FindFirstConnector(oldInPort);
             data.ReconnectToPort(connector, newInPort);
 
             // Move connector for "position" over to "Plane" node.
             oldInPort = new PortId(oldNodeId, 1, PortType.INPUT);
             newInPort = new PortId(planeId, 0, PortType.INPUT);
-            connector = data.FindConnectors(oldInPort).ElementAt(0);
+            connector = data.FindFirstConnector(oldInPort);
             data.ReconnectToPort(connector, newInPort);
 
             // Move connector for "normal" over to "Plane" node.
             oldInPort = new PortId(oldNodeId, 2, PortType.INPUT);
             newInPort = new PortId(planeId, 1, PortType.INPUT);
-            connector = data.FindConnectors(oldInPort).ElementAt(0);
+            connector = data.FindFirstConnector(oldInPort);
             data.ReconnectToPort(connector, newInPort);
 
             // Connect from "Plane" to "DSSketchPlane".
@@ -202,13 +202,13 @@ namespace Dynamo.Nodes
             // Move connector for "depth" over to the new node.
             oldInPort = new PortId(oldNodeId, 4, PortType.INPUT);
             newInPort = new PortId(dsModelTextId, 4, PortType.INPUT);
-            connector = data.FindConnectors(oldInPort).ElementAt(0);
+            connector = data.FindFirstConnector(oldInPort);
             data.ReconnectToPort(connector, newInPort);
 
             // Move connector for "text type name" over to "DSModelTextType" node.
             oldInPort = new PortId(oldNodeId, 5, PortType.INPUT);
             newInPort = new PortId(dsModelTextTypeId, 0, PortType.INPUT);
-            connector = data.FindConnectors(oldInPort).ElementAt(0);
+            connector = data.FindFirstConnector(oldInPort);
             data.ReconnectToPort(connector, newInPort);
 
             // Connect from "DSModelTextType" to the new node.
