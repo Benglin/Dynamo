@@ -269,6 +269,23 @@ namespace Dynamo.Models
             return dstElement;
         }
 
+        /// <summary>
+        /// Call this method to create a clone of the original XmlElement and 
+        /// change its type at one go. This method preserves all the attributes 
+        /// while updating only the type name.
+        /// </summary>
+        /// <param name="element">The XmlElement to be cloned and the type name 
+        /// updated.</param>
+        /// <param name="type">The fully qualified name of the new type.</param>
+        /// <returns>Returns the cloned and updated XmlElement.</returns>
+        /// 
+        public static XmlElement CloneAndChangeType(XmlElement element, string type)
+        {
+            XmlElement cloned = element.CloneNode(false) as XmlElement;
+            cloned.SetAttribute("type", type);
+            return cloned;
+        }
+
         public static void SetFunctionSignature(XmlElement element,
             string assemblyName, string methodName, string signature)
         {
