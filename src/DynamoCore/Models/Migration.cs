@@ -407,10 +407,17 @@ namespace Dynamo.Models
         /// <summary>
         /// Reconnect a given connector to another port identified by "port".
         /// </summary>
-        /// <param name="connector">The connector to update.</param>
+        /// <param name="connector">The connector to update. Note that this 
+        /// parameter can be null, in which case there won't be any movement 
+        /// performed. This simplifies the caller so that it does not have to 
+        /// do a null-check before every call to this method (connectors may 
+        /// not present).</param>
         /// <param name="port">The new port to connect to.</param>
         public void ReconnectToPort(XmlElement connector, PortId port)
         {
+            if (connector == null) // Connector does not exist.
+                return;
+
             XmlAttributeCollection attribs = connector.Attributes;
             if (port.PortType == PortType.INPUT) // We're updating end point.
             {
