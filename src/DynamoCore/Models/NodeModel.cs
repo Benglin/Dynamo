@@ -517,7 +517,6 @@ namespace Dynamo.Models
             ArgumentLacing = LacingStrategy.Disabled;
         }
 
-
         /// <summary>
         ///     Called when this node is being removed from the workspace.
         /// </summary>

@@ -754,13 +754,13 @@ namespace Dynamo.DSEngine
 
                 new FunctionDescriptor(null, null, Op.GetOpFunction(Operator.and), args, null, FunctionType.GenericFunction),
                 new FunctionDescriptor(null, null, Op.GetOpFunction(Operator.or), args, null, FunctionType.GenericFunction),
-                new FunctionDescriptor(null, null, Op.GetOpFunction(Operator.bitwisexor), args, null, FunctionType.GenericFunction),
+               
 
                 new FunctionDescriptor(null, null, Op.GetOpFunction(Operator.nq), args, null, FunctionType.GenericFunction),
                 new FunctionDescriptor(null, null, Op.GetOpFunction(Operator.assign), args, null, FunctionType.GenericFunction),
                 new FunctionDescriptor(null, null, Op.GetOpFunction(Operator.bitwiseand), args, null, FunctionType.GenericFunction),
                 new FunctionDescriptor(null, null, Op.GetOpFunction(Operator.bitwiseor), args, null, FunctionType.GenericFunction),
-                //new FunctionDescriptor(null, null, Op.GetOpFunction(UnaryOperator.Not), args, null, FunctionType.GenericFunction),
+                new FunctionDescriptor(null, null, Op.GetOpFunction(Operator.bitwisexor), args, null, FunctionType.GenericFunction),
             };
 
             AddBuiltinFunctions(functions);
