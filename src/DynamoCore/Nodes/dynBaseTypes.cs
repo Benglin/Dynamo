@@ -2793,6 +2793,12 @@ namespace Dynamo.Nodes
             random = new System.Random((int) ( (Value.Number) args[0] ).Item );
             return Value.NewNumber(random.NextDouble());
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "Math.dll", "Math.RandomSeed", "Math.RandomSeed@int");
+        }
     }
 
     [NodeName("Random Number")]
@@ -2820,6 +2826,13 @@ namespace Dynamo.Nodes
         public override Value Evaluate(FSharpList<Value> args)
         {
             return Value.NewNumber(_random.NextDouble());
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            //Method Math.Random not implemented in DSGeometry/Math.cs
+            return MigrateToDsFunction(data, "Math.dll", "Math.Random", "Math.Random");
         }
     }
 
@@ -2856,6 +2869,12 @@ namespace Dynamo.Nodes
                 result = FSharpList<Value>.Cons(Value.NewNumber(_random.NextDouble()), result);
 
             return Value.NewList(result);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "Math.dll", "Math.RandomList", "Math.RandomList@int");
         }
     }
 
@@ -2980,6 +2999,12 @@ namespace Dynamo.Nodes
                 preBuilt[this] = result;
             }
             return result[outPort];
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "Math.dll", "Math.PiTimes2", "Math.PiTimes2");
         }
     }
 
@@ -4807,6 +4832,12 @@ namespace Dynamo.Nodes
         {
             return Value.NewString(string.Concat(args.Cast<Value.String>().Select(x => x.Item)));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Concat", "String.Concat@string[]");
+        }
     }
 
     [NodeName("String to Number")]
@@ -4860,6 +4891,12 @@ namespace Dynamo.Nodes
         {
             return Value.NewNumber(((Value.String)args[0]).Item.Length);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Length", "String.Length@string");
+        }
     }
 
     [NodeName("To String")]
@@ -4878,6 +4915,12 @@ namespace Dynamo.Nodes
         public override Value Evaluate(FSharpList<Value> args)
         {
             return Value.NewString(NodeModel.PrintValue(args[0],0,10000,0, 25));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.FromObject", "String.FromObject@var");
         }
     }
 
@@ -4906,6 +4949,12 @@ namespace Dynamo.Nodes
                         ? str.ToCharArray().Select(c => Value.NewString(c.ToString()))
                         : str.Split(new[] { del }, StringSplitOptions.None).Select(Value.NewString)));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Split", "String.Split@string,string[]");
+        }
     }
 
     [NodeName("Join Strings")]
@@ -4930,6 +4979,12 @@ namespace Dynamo.Nodes
             return Value.NewString(
                 string.Join(del, strs.Select(x => ((Value.String)x).Item))
             );
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Join", "String.Join@string,string[]");
         }
     }
 
@@ -4956,6 +5011,12 @@ namespace Dynamo.Nodes
                 upper ? s.ToUpper() : s.ToLower()
             );
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.StringCase", "String.StringCase@string");
+        }
     }
 
     [NodeName("Substring")]
@@ -4980,6 +5041,12 @@ namespace Dynamo.Nodes
             double length = ((Value.Number)args[2]).Item;
 
             return Value.NewString(s.Substring((int)start, (int)length));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Substring", "String.Substring@string,int,int");
         }
     }
 
