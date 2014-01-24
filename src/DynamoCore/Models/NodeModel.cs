@@ -517,6 +517,26 @@ namespace Dynamo.Models
             ArgumentLacing = LacingStrategy.Disabled;
         }
 
+        protected static NodeMigrationData MigrateToDsFunction(
+            NodeMigrationData data, string nickname, string funcdName)
+        {
+            return MigrateToDsFunction(data, "", nickname, funcdName);
+        }
+
+        protected static NodeMigrationData MigrateToDsFunction(
+            NodeMigrationData data, string assembly, string nickname, string funcdName)
+        {
+            XmlElement xmlNode = data.MigratedNodes.ElementAt(0);
+            var element = MigrationManager.CreateFunctionNodeFrom(xmlNode);
+            element.SetAttribute("assembly", assembly);
+            element.SetAttribute("nickname", nickname);
+            element.SetAttribute("function", funcdName);
+
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+            migrationData.AppendNode(element);
+            return migrationData;
+        }
+
         /// <summary>
         ///     Called when this node is being removed from the workspace.
         /// </summary>

@@ -2160,6 +2160,13 @@ namespace Dynamo.Nodes
     public class LessThan : Comparison
     {
         public LessThan() : base(FScheme.LT, "<") { }
+
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "&lt;", "&lt;@,");
+        }
     }
 
     [NodeName("Less Than Or Equal")]
@@ -2169,6 +2176,12 @@ namespace Dynamo.Nodes
     public class LessThanEquals : Comparison
     {
         public LessThanEquals() : base(FScheme.LTE, "≤") { }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "&lt;=", "&lt;=@,");
+        }
     }
 
     [NodeName("Greater Than")]
@@ -2178,6 +2191,12 @@ namespace Dynamo.Nodes
     public class GreaterThan : Comparison
     {
         public GreaterThan() : base(FScheme.GT, ">") { }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "&gt;", "&gt;@,");
+        }
     }
 
     [NodeName("Greater Than Or Equal")]
@@ -2187,6 +2206,12 @@ namespace Dynamo.Nodes
     public class GreaterThanEquals : Comparison
     {
         public GreaterThanEquals() : base(FScheme.GTE, "≥") { }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "&gt;=", "&gt;=@,");
+        }
     }
 
     [NodeName("Equal")]
@@ -2196,6 +2221,12 @@ namespace Dynamo.Nodes
     public class Equal : Comparison
     {
         public Equal() : base(FSharpFunc<FSharpList<Value>, Value>.FromConverter(FScheme.EQ), "=") { }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "=", "=@,");
+        }
     }
 
     [NodeName("And")]
@@ -2255,6 +2286,12 @@ namespace Dynamo.Nodes
             }
             preBuilt[this] = result;
             return result[outPort];
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "=", "=@,");
         }
     }
 
@@ -2360,25 +2397,25 @@ namespace Dynamo.Nodes
             ArgumentLacing = LacingStrategy.Longest;
         }
 
-        protected static NodeMigrationData MigrateToDsFunction(
-            NodeMigrationData data, string nickname, string funcdName)
-        {
-            return MigrateToDsFunction(data, "", nickname, funcdName);
-        }
+        //protected static NodeMigrationData MigrateToDsFunction(
+        //    NodeMigrationData data, string nickname, string funcdName)
+        //{
+        //    return MigrateToDsFunction(data, "", nickname, funcdName);
+        //}
 
-        protected static NodeMigrationData MigrateToDsFunction(
-            NodeMigrationData data, string assembly, string nickname, string funcdName)
-        {
-            XmlElement xmlNode = data.MigratedNodes.ElementAt(0);
-            var element = MigrationManager.CreateFunctionNodeFrom(xmlNode);
-            element.SetAttribute("assembly", assembly);
-            element.SetAttribute("nickname", nickname);
-            element.SetAttribute("function", funcdName);
+        //protected static NodeMigrationData MigrateToDsFunction(
+        //    NodeMigrationData data, string assembly, string nickname, string funcdName)
+        //{
+        //    XmlElement xmlNode = data.MigratedNodes.ElementAt(0);
+        //    var element = MigrationManager.CreateFunctionNodeFrom(xmlNode);
+        //    element.SetAttribute("assembly", assembly);
+        //    element.SetAttribute("nickname", nickname);
+        //    element.SetAttribute("function", funcdName);
 
-            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
-            migrationData.AppendNode(element);
-            return migrationData;
-        }
+        //    NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+        //    migrationData.AppendNode(element);
+        //    return migrationData;
+        //}
     }
 
     [NodeName("Add")]
