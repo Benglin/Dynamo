@@ -517,25 +517,6 @@ namespace Dynamo.Models
             ArgumentLacing = LacingStrategy.Disabled;
         }
 
-        protected static NodeMigrationData MigrateToDsFunction(
-            NodeMigrationData data, string nickname, string funcdName)
-        {
-            return MigrateToDsFunction(data, "", nickname, funcdName);
-        }
-
-        protected static NodeMigrationData MigrateToDsFunction(
-            NodeMigrationData data, string assembly, string nickname, string funcdName)
-        {
-            XmlElement xmlNode = data.MigratedNodes.ElementAt(0);
-            var element = MigrationManager.CreateFunctionNodeFrom(xmlNode);
-            element.SetAttribute("assembly", assembly);
-            element.SetAttribute("nickname", nickname);
-            element.SetAttribute("function", funcdName);
-
-            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
-            migrationData.AppendNode(element);
-            return migrationData;
-        }
 
         /// <summary>
         ///     Called when this node is being removed from the workspace.
@@ -2013,6 +1994,30 @@ namespace Dynamo.Models
                         return !_previousOutputPortMappings.TryGetValue(output, out oldOutputs)
                                || !TryGetOutput(output, out newOutputs) || oldOutputs.SetEquals(newOutputs);
                     });
+        }
+
+        #endregion
+
+        #region Node Migration Helper Methods
+
+        protected static NodeMigrationData MigrateToDsFunction(
+            NodeMigrationData data, string nickname, string funcName)
+        {
+            return MigrateToDsFunction(data, "", nickname, funcName);
+        }
+
+        protected static NodeMigrationData MigrateToDsFunction(
+            NodeMigrationData data, string assembly, string nickname, string funcName)
+        {
+            XmlElement xmlNode = data.MigratedNodes.ElementAt(0);
+            var element = MigrationManager.CreateFunctionNodeFrom(xmlNode);
+            element.SetAttribute("assembly", assembly);
+            element.SetAttribute("nickname", nickname);
+            element.SetAttribute("function", funcName);
+
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+            migrationData.AppendNode(element);
+            return migrationData;
         }
 
         #endregion

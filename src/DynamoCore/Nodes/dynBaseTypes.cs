@@ -2396,26 +2396,6 @@ namespace Dynamo.Nodes
         {
             ArgumentLacing = LacingStrategy.Longest;
         }
-
-        //protected static NodeMigrationData MigrateToDsFunction(
-        //    NodeMigrationData data, string nickname, string funcdName)
-        //{
-        //    return MigrateToDsFunction(data, "", nickname, funcdName);
-        //}
-
-        //protected static NodeMigrationData MigrateToDsFunction(
-        //    NodeMigrationData data, string assembly, string nickname, string funcdName)
-        //{
-        //    XmlElement xmlNode = data.MigratedNodes.ElementAt(0);
-        //    var element = MigrationManager.CreateFunctionNodeFrom(xmlNode);
-        //    element.SetAttribute("assembly", assembly);
-        //    element.SetAttribute("nickname", nickname);
-        //    element.SetAttribute("function", funcdName);
-
-        //    NodeMigrationData migrationData = new NodeMigrationData(data.Document);
-        //    migrationData.AppendNode(element);
-        //    return migrationData;
-        //}
     }
 
     [NodeName("Add")]
@@ -2951,6 +2931,12 @@ namespace Dynamo.Nodes
             }
             return result[outPort];
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "Math.dll", "Math.E", "Math.E");
+        }
     }
 
     [NodeName("Pi")]
@@ -2987,6 +2973,12 @@ namespace Dynamo.Nodes
                 preBuilt[this] = result;
             }
             return result[outPort];
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "Math.dll", "Math.PI", "Math.PI");
         }
     }
 
