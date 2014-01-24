@@ -2165,7 +2165,7 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "&lt;", "&lt;@,");
+            return MigrateToDsFunction(data, "<", "<@,");
         }
     }
 
@@ -2180,7 +2180,7 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "&lt;=", "&lt;=@,");
+            return MigrateToDsFunction(data, "<=", "<=");
         }
     }
 
@@ -2195,7 +2195,7 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "&gt;", "&gt;@,");
+            return MigrateToDsFunction(data, ">", ">");
         }
     }
 
@@ -2210,7 +2210,7 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "&gt;=", "&gt;=@,");
+            return MigrateToDsFunction(data, ">=", ">=@,");
         }
     }
 
@@ -2291,7 +2291,7 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "=", "=@,");
+            return MigrateToDsFunction(data, "&&", "&&@,");
         }
     }
 
@@ -2354,6 +2354,11 @@ namespace Dynamo.Nodes
             preBuilt[this] = result;
             return result[outPort];
         }
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "||", "||@,");
+        }
     }
 
     [NodeName("Xor")]
@@ -2368,6 +2373,11 @@ namespace Dynamo.Nodes
             InPortData.Add(new PortData("b", "operand", typeof(bool)));
             OutPortData.Add(new PortData("a⊻b", "result", typeof(bool)));
             RegisterAllPorts();
+        }
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "^", "^@,");
         }
     }
 
