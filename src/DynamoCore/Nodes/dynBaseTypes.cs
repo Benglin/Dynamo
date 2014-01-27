@@ -647,7 +647,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Reverse", "List.Reverse@var[]");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Reverse", 
+                "List.Reverse@var[]");
         }
     }
 
@@ -1191,7 +1192,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.SplitList", "List.SplitList@var[]");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.SplitList", 
+                "List.SplitList@var[]");
         }
     }
 
@@ -1214,7 +1216,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.AddToFront", "List.AddToFront@var[],var");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.AddToFront", 
+                "List.AddToFront@var[],var");
         }
     }
 
@@ -1236,7 +1239,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Take", "List.Take@var[],int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Take", 
+                "List.Take@var[],int");
         }
     }
 
@@ -1258,7 +1262,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Drop", "List.Drop@var[],int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Drop", 
+                "List.Drop@var[],int");
         }
     }
 
@@ -1301,7 +1306,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.ShiftIndices", "List.ShiftIndices@var[],int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.ShiftIndices", 
+                "List.ShiftIndices@var[],int");
         }
     }
 
@@ -1347,7 +1353,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.GetFromList", "List.GetFromList@var[],int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.GetFromList", 
+                "List.GetFromList@var[],int");
         }
     }
 
@@ -1375,7 +1382,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Shuffle", "List.Shuffle@var[]");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Shuffle", 
+                "List.Shuffle@var[]");
         }
     }
 
@@ -1442,7 +1450,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.SliceList", "List.SliceList@var[],int,int,int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.SliceList", 
+                "List.SliceList@var[],int,int,int");
         }
     }
 
@@ -1490,7 +1499,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.RemoveAtIndex", "List.RemoveAtIndex@var[],int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.RemoveAtIndex", 
+                "List.RemoveAtIndex@var[],int");
         }
     }
 
@@ -1521,7 +1531,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.DropEveryNth", "List.DropEveryNth@var[],int,int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.DropEveryNth", 
+                "List.DropEveryNth@var[],int,int");
         }
     }
 
@@ -1552,7 +1563,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.TakeEveryNth", "List.TakeEveryNth@var[],int,int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.TakeEveryNth", 
+                "List.TakeEveryNth@var[],int,int");
         }
     }
 
@@ -1593,7 +1605,7 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Empty", "List.Empty");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Empty", "List.Empty");
         }
     }
 
@@ -1614,7 +1626,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.IsEmpty", "List.IsEmpty@var[]");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.IsEmpty", 
+                "List.IsEmpty@var[]");
         }
     }
 
@@ -1636,7 +1649,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Length", "List.Length@var[]");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Length", 
+                "List.Length@var[]");
         }
     }
 
@@ -1659,7 +1673,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Join", "List.Join@var[][]");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Join", 
+                "List.Join@var[][]");
         }
     }
 
@@ -1681,7 +1696,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.First", "List.First@var[]");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.First", 
+                "List.First@var[]");
         }
     }
 
@@ -1719,7 +1735,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Rest", "List.Rest@var[]");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Rest", 
+                "List.Rest@var[]");
         }
     }
 
@@ -1784,7 +1801,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Partition", "List.Partition@var[],int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Partition", 
+                "List.Partition@var[],int");
         }
     }
 
@@ -1965,7 +1983,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Transpose", "List.Transpose@var[]");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Transpose", 
+                "List.Transpose@var[]");
         }
     }
 
@@ -2209,7 +2228,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "List.Repeat", "List.Repeat@var,int");
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Repeat", 
+                "List.Repeat@var,int");
         }
     }
 
