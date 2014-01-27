@@ -790,6 +790,8 @@ namespace Dynamo.Nodes
             {
                 throw e; //TODO: Better error message
             }
+        }
+        
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
             return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.SortByKey", "List.SortByKey@var[],var");
