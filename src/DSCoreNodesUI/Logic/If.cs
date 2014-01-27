@@ -39,8 +39,7 @@ namespace DSCoreNodesUI.Logic
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
             System.Xml.XmlElement xmlNode = data.MigratedNodes.ElementAt(0);
-            var element = MigrationManager.CreateFunctionNodeFrom(xmlNode);
-            element.SetAttribute("type", "DSCoreNodesUI.Logic.If");
+            var element = MigrationManager.CloneAndChangeType(xmlNode, "DSCoreNodesUI.Logic.If");
 
             NodeMigrationData migrationData = new NodeMigrationData(data.Document);
             migrationData.AppendNode(element);
