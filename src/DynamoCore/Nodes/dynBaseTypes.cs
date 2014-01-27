@@ -643,6 +643,12 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Reverse", "List.Reverse@var[]");
+        }
     }
 
     [NodeName("List")]
@@ -1181,6 +1187,12 @@ namespace Dynamo.Nodes
             outPuts[OutPortData[0]] = list.Item.Head;
             outPuts[OutPortData[1]] = Value.NewList(list.Item.Tail);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.SplitList", "List.SplitList@var[]");
+        }
     }
 
     [NodeName("Add to List")]
@@ -1198,6 +1210,12 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.AddToFront", "List.AddToFront@var[],var");
+        }
     }
 
     [NodeName("Take from List")]
@@ -1214,6 +1232,12 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Take", "List.Take@var[],int");
+        }
     }
 
     [NodeName("Drop from List")]
@@ -1229,6 +1253,12 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("elements", "List of remaining elements", typeof(Value.List)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Drop", "List.Drop@var[],int");
         }
     }
 
@@ -1266,6 +1296,12 @@ namespace Dynamo.Nodes
             return Value.NewList(
                 Utils.SequenceToFSharpList(
                     list.Skip(len - amt).Concat(list.Take(len - amt))));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.ShiftIndices", "List.ShiftIndices@var[],int");
         }
     }
 
@@ -1307,6 +1343,12 @@ namespace Dynamo.Nodes
                 throw new Exception("\"index\" argument not a number or a list of numbers.");
             }
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.GetFromList", "List.GetFromList@var[],int");
+        }
     }
 
     [NodeName("Shuffle List")]
@@ -1328,6 +1370,12 @@ namespace Dynamo.Nodes
             var rng = new System.Random();
 
             return Value.NewList(Utils.SequenceToFSharpList(list.OrderBy(_ => rng.Next())));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Shuffle", "List.Shuffle@var[]");
         }
     }
 
@@ -1438,6 +1486,12 @@ namespace Dynamo.Nodes
                 throw new Exception("\"index\" argument not a number or a list of numbers.");
             }
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.RemoveAtIndex", "List.RemoveAtIndex@var[],int");
+        }
     }
 
     [NodeName("Drop Every Nth")]
@@ -1463,6 +1517,12 @@ namespace Dynamo.Nodes
 
             return Value.NewList(Utils.SequenceToFSharpList(lst.Skip(offset).Where((_, i) => (i + 1) % n != 0)));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.DropEveryNth", "List.DropEveryNth@var[],int,int");
+        }
     }
 
     [NodeName("Take Every Nth")]
@@ -1487,6 +1547,12 @@ namespace Dynamo.Nodes
             var offset = (int)((Value.Number)args[2]).Item;
 
             return Value.NewList(Utils.SequenceToFSharpList(lst.Skip(offset).Where((_, i) => (i + 1) % n == 0)));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.TakeEveryNth", "List.TakeEveryNth@var[],int,int");
         }
     }
 
@@ -1566,6 +1632,12 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Length", "List.Length@var[]");
+        }
     }
 
     [NodeName("Join Lists")]
@@ -1643,6 +1715,12 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Rest", "List.Rest@var[]");
+        }
     }
 
     [NodeName("Partition List")]
@@ -1701,6 +1779,12 @@ namespace Dynamo.Nodes
             }
 
             return Value.NewList(Utils.SequenceToFSharpList(finalList));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Partition", "List.Partition@var[],int");
         }
     }
 
