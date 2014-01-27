@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Windows.Input;
 using System.Xml;
+using Dynamo.FSchemeInterop;
 using Dynamo.FSchemeInterop.Node;
 using Dynamo.Units;
 using Dynamo.Models;
@@ -708,16 +711,55 @@ namespace Dynamo.Nodes
     [NodeName("Sort by Key")]
     [NodeCategory(BuiltinNodeCategories.CORE_LISTS_MODIFY)]
     [NodeDescription("Returns a sorted list, using the given key mapper. The key mapper must return either all numbers or all strings.")]
-    public class SortBy : BuiltinFunction
+    public class SortBy : NodeWithOneOutput
     {
         public SortBy()
-            : base(FScheme.SortBy)
         {
             InPortData.Add(new PortData("f(x)", "Key Mapper", typeof(object), Value.NewFunction(Utils.ConvertToFSchemeFunc(FScheme.Identity))));
             InPortData.Add(new PortData("list", "List to sort", typeof(Value.List)));
             OutPortData.Add(new PortData("sorted", "Sorted list", typeof(Value.List)));
 
             RegisterAllPorts();
+        }
+
+        private static IComparable ToComparable(Value value)
+        {
+            if (value.IsNumber)
+                return (value as Value.Number).Item;
+
+            if (value.IsString)
+                return (value as Value.String).Item;
+
+            if (value.IsContainer)
+            {
+                var unboxed = (value as Value.Container).Item;
+                if (unboxed is IComparable)
+                    return unboxed as IComparable;
+            }
+
+            throw new Exception(
+                string.Format(
+                    "Key mapper result {0} is not Comparable, and thus cannot be sorted.",
+                    (value as dynamic).Item));
+        }
+
+        public override Value Evaluate(FSharpList<Value> args)
+        {
+            var keyMapper = ((Value.Function)args[0]).Item;
+            var unsorted = ((Value.List)args[1]).Item;
+
+            try
+            {
+                return
+                    Value.NewList(
+                        Utils.SequenceToFSharpList(
+                            unsorted.OrderBy(
+                                x => ToComparable(keyMapper.Invoke(Utils.MakeFSharpList(x))))));
+            }
+            catch (ArgumentException e)
+            {
+                throw e; //TODO: Better error message
+            }
         }
     }
 
@@ -2882,6 +2924,12 @@ namespace Dynamo.Nodes
             random = new System.Random((int) ( (Value.Number) args[0] ).Item );
             return Value.NewNumber(random.NextDouble());
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "Math.dll", "Math.RandomSeed", "Math.RandomSeed@int");
+        }
     }
 
     [NodeName("Random Number")]
@@ -2909,6 +2957,13 @@ namespace Dynamo.Nodes
         public override Value Evaluate(FSharpList<Value> args)
         {
             return Value.NewNumber(_random.NextDouble());
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            //Method Math.Random not implemented in DSGeometry/Math.cs
+            return MigrateToDsFunction(data, "Math.dll", "Math.Random", "Math.Random");
         }
     }
 
@@ -2945,6 +3000,12 @@ namespace Dynamo.Nodes
                 result = FSharpList<Value>.Cons(Value.NewNumber(_random.NextDouble()), result);
 
             return Value.NewList(result);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "Math.dll", "Math.RandomList", "Math.RandomList@int");
         }
     }
 
@@ -3069,6 +3130,12 @@ namespace Dynamo.Nodes
                 preBuilt[this] = result;
             }
             return result[outPort];
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "Math.dll", "Math.PiTimes2", "Math.PiTimes2");
         }
     }
 
@@ -3397,27 +3464,21 @@ namespace Dynamo.Nodes
         private INode nestedBegins(Stack<Tuple<int, NodeModel>> inputs, Dictionary<NodeModel, Dictionary<int, INode>> preBuilt)
         {
             var popped = inputs.Pop();
-            var firstVal = popped.Item2.Build(preBuilt, popped.Item1);
+            INode firstVal = popped == null ? new BeginNode() : popped.Item2.Build(preBuilt, popped.Item1);
 
             if (inputs.Any())
             {
-                var newBegin = new BeginNode(new List<string>() { "expr1", "expr2" });
+                var newBegin = new BeginNode(new List<string> { "expr1", "expr2" });
                 newBegin.ConnectInput("expr1", nestedBegins(inputs, preBuilt));
                 newBegin.ConnectInput("expr2", firstVal);
                 return newBegin;
             }
-            else
-                return firstVal;
+            
+            return firstVal;
         }
 
         protected internal override INode Build(Dictionary<NodeModel, Dictionary<int, INode>> preBuilt, int outPort)
         {
-            if (!Enumerable.Range(0, InPortData.Count).All(HasInput))
-            {
-                Error("All inputs must be connected.");
-                throw new Exception("Begin Node requires all inputs to be connected.");
-            }
-            
             Dictionary<int, INode> result;
             if (!preBuilt.TryGetValue(this, out result))
             {
@@ -3425,7 +3486,8 @@ namespace Dynamo.Nodes
                 result[outPort] = 
                     nestedBegins(
                         new Stack<Tuple<int, NodeModel>>(
-                            Enumerable.Range(0, InPortData.Count).Select(x => Inputs[x])),
+                            Enumerable.Range(0, InPortData.Count).Select(
+                                x => HasInput(x) ? Inputs[x] : null)),
                     preBuilt);
                 preBuilt[this] = result;
             }
@@ -4896,6 +4958,12 @@ namespace Dynamo.Nodes
         {
             return Value.NewString(string.Concat(args.Cast<Value.String>().Select(x => x.Item)));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Concat", "String.Concat@string[]");
+        }
     }
 
     [NodeName("String to Number")]
@@ -4949,6 +5017,12 @@ namespace Dynamo.Nodes
         {
             return Value.NewNumber(((Value.String)args[0]).Item.Length);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Length", "String.Length@string");
+        }
     }
 
     [NodeName("To String")]
@@ -4967,6 +5041,12 @@ namespace Dynamo.Nodes
         public override Value Evaluate(FSharpList<Value> args)
         {
             return Value.NewString(NodeModel.PrintValue(args[0],0,10000,0, 25));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.FromObject", "String.FromObject@var");
         }
     }
 
@@ -4995,6 +5075,12 @@ namespace Dynamo.Nodes
                         ? str.ToCharArray().Select(c => Value.NewString(c.ToString()))
                         : str.Split(new[] { del }, StringSplitOptions.None).Select(Value.NewString)));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Split", "String.Split@string,string[]");
+        }
     }
 
     [NodeName("Join Strings")]
@@ -5019,6 +5105,12 @@ namespace Dynamo.Nodes
             return Value.NewString(
                 string.Join(del, strs.Select(x => ((Value.String)x).Item))
             );
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Join", "String.Join@string,string[]");
         }
     }
 
@@ -5045,6 +5137,12 @@ namespace Dynamo.Nodes
                 upper ? s.ToUpper() : s.ToLower()
             );
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.StringCase", "String.StringCase@string,bool");
+        }
     }
 
     [NodeName("Substring")]
@@ -5069,6 +5167,12 @@ namespace Dynamo.Nodes
             double length = ((Value.Number)args[2]).Item;
 
             return Value.NewString(s.Substring((int)start, (int)length));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "String.Substring", "String.Substring@string,int,int");
         }
     }
 
@@ -5109,7 +5213,7 @@ namespace Dynamo.Nodes
     /// </summary>
     public abstract partial class DropDrownBase : NodeWithOneOutput
     {
-        private ObservableCollection<DynamoDropDownItem> items = new ObservableCollection<DynamoDropDownItem>();
+        protected ObservableCollection<DynamoDropDownItem> items = new ObservableCollection<DynamoDropDownItem>();
         public ObservableCollection<DynamoDropDownItem> Items
         {
             get { return items; }
@@ -5143,17 +5247,6 @@ namespace Dynamo.Nodes
             Items.CollectionChanged += Items_CollectionChanged;
         }
 
-        void Items_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            //sort the collection when changed
-            //rehook the collection changed event
-            var sortedItems = from item in Items
-                              orderby item.Name
-                              select item;
-            Items = sortedItems.ToObservableCollection();
-            Items.CollectionChanged += Items_CollectionChanged;
-        }
-
         protected override void SaveNode(XmlDocument xmlDoc, XmlElement nodeElement, SaveContext context)
         {
             nodeElement.SetAttribute("index", SelectedIndex.ToString());
@@ -5178,6 +5271,16 @@ namespace Dynamo.Nodes
         void combo_DropDownOpened(object sender, EventArgs e)
         {
             PopulateItems();
+        }
+
+        /// <summary>
+        /// Executed when the items collection has changed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void Items_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            //SortItems();
         }
 
         /// <summary>
