@@ -1348,6 +1348,12 @@ namespace Dynamo.Nodes
 
             return Value.NewList(Utils.SequenceToFSharpList(lst.Skip(start).Take(count)));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.SliceList", "List.SliceList@var[],int,int,int");
+        }
     }
 
     [NodeName("Remove From List")]
@@ -1475,6 +1481,12 @@ namespace Dynamo.Nodes
             }
             return result[outPort];
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Empty", "List.Empty");
+        }
     }
 
     [NodeName("Is Empty List?")]
@@ -1489,6 +1501,12 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("empty?", "Is the given list empty?", typeof(bool)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.IsEmpty", "List.IsEmpty@var[]");
         }
     }
 
@@ -1523,6 +1541,12 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Join", "List.Join@var[][]");
+        }
     }
 
     [NodeName("First of List")]
@@ -1538,6 +1562,12 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("first", "First element in the list", typeof(object)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.First", "List.First@var[]");
         }
     }
 
@@ -1805,6 +1835,12 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Transpose", "List.Transpose@var[]");
+        }
     }
 
     [NodeName("Build Sublists")]
@@ -2042,6 +2078,12 @@ namespace Dynamo.Nodes
                 throw new Exception("Can't make a repeated list of a negative amount.");
 
             return Value.NewList(Utils.SequenceToFSharpList(Enumerable.Repeat(args[0], n).ToList()));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "List.Repeat", "List.Repeat@var,int");
         }
     }
 
