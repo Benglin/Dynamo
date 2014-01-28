@@ -577,6 +577,12 @@ namespace Dynamo.Nodes
         {
             return args[0];
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "Function.Identity", "Function.Identity@var");
+        }
     }
 
 
@@ -623,6 +629,12 @@ namespace Dynamo.Nodes
 
             return Value.NewFunction(Utils.ConvertToFSchemeFunc(x => g.Invoke(Utils.MakeFSharpList(f.Invoke(x)))));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "Function.Compose", "Function.Compose@var[]");
+        }
     }
 
     #endregion
@@ -642,6 +654,12 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("rev", "Reversed list", typeof(Value.List)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Reverse", "List.Reverse@var[]");
         }
     }
 
@@ -690,6 +708,12 @@ namespace Dynamo.Nodes
             return ((Value.Function)Controller.FSchemeEnvironment.LookupSymbol("list"))
                 .Item.Invoke(args);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.NewList", "List.NewList@var[]");
+        }
     }
 
     [NodeName("Sort with Comparator")]
@@ -705,6 +729,12 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("sorted", "Sorted list", typeof(Value.List)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.SortByComparison", "List.SortByComparison@var[],var");
         }
     }
 
@@ -761,6 +791,11 @@ namespace Dynamo.Nodes
                 throw e; //TODO: Better error message
             }
         }
+        
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.SortByKey", "List.SortByKey@var[],var");
+        }
     }
 
     [NodeName("Sort")]
@@ -776,6 +811,12 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("sorted", "Sorted list", typeof(Value.List)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Sort", "List.Sort@var[]");
         }
     }
 
@@ -793,6 +834,12 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.MinimumValueByKey", "List.MinimumValueByKey@var[],var");
+        }
     }
 
     [NodeName("List Maximum")]
@@ -808,6 +855,12 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("max", "Maximum value.", typeof(object)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.MaximumValueByKey", "List.MaximumValueByKey@var[],var");
         }
     }
 
@@ -843,6 +896,12 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Filter", "List.Filter@var[],var");
+        }
     }
 
     [NodeName("Filter Out")]
@@ -866,6 +925,12 @@ namespace Dynamo.Nodes
 
             return Value.NewList(Utils.SequenceToFSharpList(
                 seq.Where(x => !FScheme.ValueToBool(p.Invoke(Utils.MakeFSharpList(x))))));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.FilterOut", "List.FilterOut@var[],var");
         }
     }
 
@@ -4556,6 +4621,12 @@ namespace Dynamo.Nodes
         }
 
         #endregion
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodesUI.dll", "Dynamo.Nodes.DoubleSlider", "Dynamo.Nodes.DoubleSlider");
+        }
     }
 
     [NodeName("Integer Slider")]
@@ -4694,6 +4765,12 @@ namespace Dynamo.Nodes
         }
 
         #endregion
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodesUI.dll", "Dynamo.Nodes.IntegerSlider", "Dynamo.Nodes.IntegerSlider");
+        }
     }
 
     [NodeName("Boolean")]
@@ -4719,6 +4796,11 @@ namespace Dynamo.Nodes
             }
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodesUI.dll", "DSCoreNodesUI.BoolSelector", "DSCoreNodesUI.BoolSelector");
+        }
     }
 
     [NodeName("String")]
@@ -4806,6 +4888,11 @@ namespace Dynamo.Nodes
             }
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "DSCoreNodes.File.Directory", "DSCoreNodes.File.Directory");
+        }
     }
 
     [NodeName("File Path")]
@@ -4845,6 +4932,12 @@ namespace Dynamo.Nodes
         public override string PrintExpression()
         {
             return "\"" + base.PrintExpression() + "\"";
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "DSCoreNodes.File.Filename", "DSCoreNodes.File.Filename");
         }
     }
 
