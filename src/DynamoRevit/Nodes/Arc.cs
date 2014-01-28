@@ -55,6 +55,13 @@ namespace Dynamo.Nodes
 
             return FScheme.Value.NewContainer(a);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Arc.ByPointsOnCurve",
+                "Arc.ByPointsOnCurve@Point,Point,Point");
+        }
     }
 
     [NodeName("Arc by Center, Radius, Parameters")]
@@ -106,6 +113,13 @@ namespace Dynamo.Nodes
             }
 
             return FScheme.Value.NewContainer(a);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Arc.ByCenterPointRadiusAngle",
+                "Arc.ByCenterPointRadiusAngle@Point,double,double,double,Vector");
         }
     }
 
