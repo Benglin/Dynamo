@@ -1310,6 +1310,13 @@ namespace Dynamo.Nodes
             outPuts[OutPortData[0]] = list.Item.Head;
             outPuts[OutPortData[1]] = Value.NewList(list.Item.Tail);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.SplitList", 
+                "List.SplitList@var[]");
+        }
     }
 
     [NodeName("Add to List")]
@@ -1327,6 +1334,13 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.AddToFront", 
+                "List.AddToFront@var[],var");
+        }
     }
 
     [NodeName("Take from List")]
@@ -1343,6 +1357,13 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Take", 
+                "List.Take@var[],int");
+        }
     }
 
     [NodeName("Drop from List")]
@@ -1358,6 +1379,13 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("elements", "List of remaining elements", typeof(Value.List)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Drop", 
+                "List.Drop@var[],int");
         }
     }
 
@@ -1395,6 +1423,13 @@ namespace Dynamo.Nodes
             return Value.NewList(
                 Utils.SequenceToFSharpList(
                     list.Skip(len - amt).Concat(list.Take(len - amt))));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.ShiftIndices", 
+                "List.ShiftIndices@var[],int");
         }
     }
 
@@ -1436,6 +1471,13 @@ namespace Dynamo.Nodes
                 throw new Exception("\"index\" argument not a number or a list of numbers.");
             }
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.GetFromList", 
+                "List.GetFromList@var[],int");
+        }
     }
 
     [NodeName("Shuffle List")]
@@ -1457,6 +1499,13 @@ namespace Dynamo.Nodes
             var rng = new System.Random();
 
             return Value.NewList(Utils.SequenceToFSharpList(list.OrderBy(_ => rng.Next())));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Shuffle", 
+                "List.Shuffle@var[]");
         }
     }
 
@@ -1519,6 +1568,13 @@ namespace Dynamo.Nodes
 
             return Value.NewList(Utils.SequenceToFSharpList(lst.Skip(start).Take(count)));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.SliceList", 
+                "List.SliceList@var[],int,int,int");
+        }
     }
 
     [NodeName("Remove From List")]
@@ -1561,6 +1617,13 @@ namespace Dynamo.Nodes
                 throw new Exception("\"index\" argument not a number or a list of numbers.");
             }
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.RemoveAtIndex", 
+                "List.RemoveAtIndex@var[],int");
+        }
     }
 
     [NodeName("Drop Every Nth")]
@@ -1586,6 +1649,13 @@ namespace Dynamo.Nodes
 
             return Value.NewList(Utils.SequenceToFSharpList(lst.Skip(offset).Where((_, i) => (i + 1) % n != 0)));
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.DropEveryNth", 
+                "List.DropEveryNth@var[],int,int");
+        }
     }
 
     [NodeName("Take Every Nth")]
@@ -1610,6 +1680,13 @@ namespace Dynamo.Nodes
             var offset = (int)((Value.Number)args[2]).Item;
 
             return Value.NewList(Utils.SequenceToFSharpList(lst.Skip(offset).Where((_, i) => (i + 1) % n == 0)));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.TakeEveryNth", 
+                "List.TakeEveryNth@var[],int,int");
         }
     }
 
@@ -1646,6 +1723,12 @@ namespace Dynamo.Nodes
             }
             return result[outPort];
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Empty", "List.Empty");
+        }
     }
 
     [NodeName("Is Empty List?")]
@@ -1660,6 +1743,13 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("empty?", "Is the given list empty?", typeof(bool)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.IsEmpty", 
+                "List.IsEmpty@var[]");
         }
     }
 
@@ -1676,6 +1766,13 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("length", "Length of the list", typeof(object)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Length", 
+                "List.Length@var[]");
         }
     }
 
@@ -1694,6 +1791,13 @@ namespace Dynamo.Nodes
 
             RegisterAllPorts();
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Join", 
+                "List.Join@var[][]");
+        }
     }
 
     [NodeName("First of List")]
@@ -1709,6 +1813,13 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("first", "First element in the list", typeof(object)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.First", 
+                "List.First@var[]");
         }
     }
 
@@ -1741,6 +1852,13 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("rest", "Tail of the list.", typeof(Value.List)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Rest", 
+                "List.Rest@var[]");
         }
     }
 
@@ -1800,6 +1918,13 @@ namespace Dynamo.Nodes
             }
 
             return Value.NewList(Utils.SequenceToFSharpList(finalList));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Partition", 
+                "List.Partition@var[],int");
         }
     }
 
@@ -1975,6 +2100,13 @@ namespace Dynamo.Nodes
             OutPortData.Add(new PortData("", "Transposed list of lists.", typeof(Value.List)));
 
             RegisterAllPorts();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Transpose", 
+                "List.Transpose@var[]");
         }
     }
 
@@ -2213,6 +2345,13 @@ namespace Dynamo.Nodes
                 throw new Exception("Can't make a repeated list of a negative amount.");
 
             return Value.NewList(Utils.SequenceToFSharpList(Enumerable.Repeat(args[0], n).ToList()));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSCoreNodes.dll", "List.Repeat", 
+                "List.Repeat@var,int");
         }
     }
 
