@@ -233,6 +233,14 @@ namespace Dynamo.Nodes
             return Value.NewContainer(idx);
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", 
+                "DSFaceAnalysisDisplay.ByViewFacePointsAndValues",
+                "DSFaceAnalysisDisplay.ByViewFacePointsAndValues@Elements.AbstractView,References.DSFaceReference,double[][],double[]");
+        }
+
     }
 
     [NodeName("Display Analysis Points")]
@@ -316,6 +324,13 @@ namespace Dynamo.Nodes
             return Value.NewContainer(idx);
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", 
+                "DSPointAnalysisDisplay.ByViewPointsAndValues",
+                "DSPointAnalysisDisplay.ByViewPointsAndValues@Elements.AbstractView,Point[],double[]");
+        }
     }
 
     [NodeName("Display Analysis Vectors")]
@@ -400,6 +415,14 @@ namespace Dynamo.Nodes
             }
 
             PastResultIds.Clear();
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "DSVectorAnalysisDisplay.ByViewPointsAndVectorValues",
+                "DSVectorAnalysisDisplay.ByViewPointsAndVectorValues@Elements.AbstractView,Point[],Vector[]");
         }
     }
 

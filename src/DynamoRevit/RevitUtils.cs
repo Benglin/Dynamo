@@ -868,7 +868,6 @@ namespace Dynamo.Utilities
                     }
                 }
                 #endregion
-
                 #region SketchPlane
                 else if (item.GetType() == typeof(SketchPlane))
                 {

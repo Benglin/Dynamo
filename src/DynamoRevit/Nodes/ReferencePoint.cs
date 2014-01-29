@@ -53,6 +53,12 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(pt);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", "DSReferencePoint.ByCoordinates", "DSReferencePoint.ByCoordinates@double,double,double");
+        }
     }
 
     [NodeName("Reference Point on Edge")]
@@ -106,6 +112,14 @@ namespace Dynamo.Nodes
             }
             
             return Value.NewContainer(p);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "DSReferencePoint.ByParameterOnCurveReference",
+                "DSReferencePoint.ByParameterOnCurveReference@References.DSCurveReference,double");
         }
     }
 
@@ -168,6 +182,14 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(pt);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "DSReferencePoint.ByParametersOnFaceReference",
+                "DSReferencePoint.ByParametersOnFaceReference@References.DSCurveReference,double,double");
+        }
     }
 
     [NodeName("Reference Point by Normal")]
@@ -220,6 +242,14 @@ namespace Dynamo.Nodes
             return Value.NewContainer(p);
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "DSReferencePoint.ByPointVectorDistance",
+                "DSReferencePoint.ByPointVectorDistance@Point,Vector,double");
+        }
+
     }
 
     [NodeName("Plane from Reference Point")]
@@ -238,7 +268,7 @@ namespace Dynamo.Nodes
             RegisterAllPorts();
         }
 
-        public override void SetupCustomUIElements(object ui)
+        public /*overide*/ void SetupCustomUIElements(object ui)
         {
             var nodeUI = ui as dynNodeView;
 
@@ -337,6 +367,13 @@ namespace Dynamo.Nodes
             return Value.NewContainer(r);
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "DSReferencePoint.ByPoint",
+                "DSReferencePoint.ByPoint@Point");
+        }
     }
 
     [NodeName("Reference Point at Length")]
@@ -394,6 +431,14 @@ namespace Dynamo.Nodes
             }
 
             return Value.NewContainer(p);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "DSReferencePoint.ByLengthOnCurveReference",
+                "DSReferencePoint.ByLengthOnCurveReference@References.DSCurveReference,double");
         }
     }
 
