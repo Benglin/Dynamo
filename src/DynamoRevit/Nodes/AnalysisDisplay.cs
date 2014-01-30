@@ -491,9 +491,9 @@ namespace Dynamo.Nodes
                 t.BasisX.CrossProduct(XYZ.BasisY).Normalize() : 
                 t.BasisX.CrossProduct(XYZ.BasisZ).Normalize();
             XYZ z = x.CrossProduct(y);
-            var application = DocumentManager.GetInstance().CurrentUIDocument.Application;
-            Autodesk.Revit.DB.Ellipse arc1 = application.Application.Create.NewEllipse(t.Origin, .1, .1, y, z, -Math.PI, 0);
-            Autodesk.Revit.DB.Ellipse arc2 = application.Application.Create.NewEllipse(t.Origin, .1, .1, y, z, 0, Math.PI);
+            var application = DocumentManager.GetInstance().CurrentUIApplication.Application;
+            Autodesk.Revit.DB.Ellipse arc1 = application.Create.NewEllipse(t.Origin, .1, .1, y, z, -Math.PI, 0);
+            Autodesk.Revit.DB.Ellipse arc2 = application.Create.NewEllipse(t.Origin, .1, .1, y, z, 0, Math.PI);
 
             var pathLoop = new Autodesk.Revit.DB.CurveLoop();
             pathLoop.Append(curve);
