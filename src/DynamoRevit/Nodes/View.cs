@@ -16,6 +16,7 @@ using System.ComponentModel;
 using Nuclex.Game.Packing;
 using Value = Dynamo.FScheme.Value;
 using Dynamo.Revit;
+using RevitServices.Persistence;
 
 namespace Dynamo.Nodes
 {
@@ -43,13 +44,13 @@ namespace Dynamo.Nodes
             {
                 if (!dynUtils.TryGetElement(this.Elements[0], out vd))
                 {
-                    vd = dynRevitSettings.Doc.Document.Create.NewViewDrafting();
+                    vd = DocumentManager.GetInstance().CurrentUIDocument.Document.Create.NewViewDrafting();
                     this.Elements[0] = vd.Id;
                 }
             }
             else
             {
-                vd = dynRevitSettings.Doc.Document.Create.NewViewDrafting();
+                vd = DocumentManager.GetInstance().CurrentUIDocument.Document.Create.NewViewDrafting();
                 this.Elements.Add(vd.Id);
             }
 
@@ -58,6 +59,12 @@ namespace Dynamo.Nodes
                  vd.Name = ViewBase.CreateUniqueViewName(viewName);
 
             return Value.NewContainer(vd);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", "DraftingView.ByName", "DraftingView.ByName@string");
         }
     }
 
@@ -120,8 +127,8 @@ namespace Dynamo.Nodes
                 view = Create3DView(orient, name, isPerspective);
                 Elements.Add(view.Id);
             }
-
-            var fec = dynRevitUtils.SetupFilters(dynRevitSettings.Doc.Document);
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+            var fec = dynRevitUtils.SetupFilters(document);
 
             if (isolate)
             {
@@ -139,7 +146,7 @@ namespace Dynamo.Nodes
                     if (toHide.Count > 0)
                         view.HideElements(toHide);
 
-                    dynRevitSettings.Doc.Document.Regenerate();
+                    DocumentManager.GetInstance().CurrentUIDocument.Document.Regenerate();
 
                     Debug.WriteLine(string.Format("Eye:{0},Origin{1}, BBox_Origin{2}, Element{3}",
                         eye.ToString(), view.Origin.ToString(), view.CropBox.Transform.Origin.ToString(), (element.Location as LocationPoint).Point.ToString()));
@@ -269,17 +276,17 @@ namespace Dynamo.Nodes
         public static View3D Create3DView(ViewOrientation3D orient, string name, bool isPerspective)
         {
             //http://adndevblog.typepad.com/aec/2012/05/viewplancreate-method.html
-
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
             IEnumerable<ViewFamilyType> viewFamilyTypes = from elem in new
-              FilteredElementCollector(dynRevitSettings.Doc.Document).OfClass(typeof(ViewFamilyType))
+              FilteredElementCollector(document).OfClass(typeof(ViewFamilyType))
                                                           let type = elem as ViewFamilyType
                                                           where type.ViewFamily == ViewFamily.ThreeDimensional
                                                           select type;
 
             //create a new view
             View3D view = isPerspective ?
-                              View3D.CreatePerspective(dynRevitSettings.Doc.Document, viewFamilyTypes.First().Id) :
-                              View3D.CreateIsometric(dynRevitSettings.Doc.Document, viewFamilyTypes.First().Id);
+                              View3D.CreatePerspective(document, viewFamilyTypes.First().Id) :
+                              View3D.CreateIsometric(document, viewFamilyTypes.First().Id);
 
             view.SetOrientation(orient);
             view.SaveOrientationAndLock();
@@ -309,7 +316,8 @@ namespace Dynamo.Nodes
             string viewName = name;
             bool found = false;
 
-            var collector = new FilteredElementCollector(dynRevitSettings.Doc.Document);
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+            var collector = new FilteredElementCollector(document);
             collector.OfClass(typeof(View));
 
             if (collector.ToElements().Count(x=>x.Name == name) == 0)
@@ -427,16 +435,23 @@ namespace Dynamo.Nodes
         private static ViewSection CreateSectionView(BoundingBoxXYZ bbox)
         {
             //http://adndevblog.typepad.com/aec/2012/05/viewplancreate-method.html
-
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
             IEnumerable<ViewFamilyType> viewFamilyTypes = from elem in new
-              FilteredElementCollector(dynRevitSettings.Doc.Document).OfClass(typeof(ViewFamilyType))
+              FilteredElementCollector(document).OfClass(typeof(ViewFamilyType))
                                                           let type = elem as ViewFamilyType
                                                           where type.ViewFamily == ViewFamily.Section
                                                           select type;
 
             //create a new view
-            ViewSection view = ViewSection.CreateSection(dynRevitSettings.Doc.Document, viewFamilyTypes.First().Id, bbox);
+            ViewSection view = ViewSection.CreateSection(document, viewFamilyTypes.First().Id, bbox);
             return view;
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "SectionView.ByBoundingBox", "SectionView.ByBoundingBox@BoundingBox");
         }
     }
 
@@ -455,7 +470,7 @@ namespace Dynamo.Nodes
         public override Value Evaluate(FSharpList<Value> args)
         {
 
-            return Value.NewContainer(dynRevitSettings.Doc.Document.ActiveView);
+            return Value.NewContainer(DocumentManager.GetInstance().CurrentUIDocument.Document.ActiveView);
         }
 
     }
@@ -555,7 +570,7 @@ namespace Dynamo.Nodes
             RegisterAllPorts();
         }
 
-        public override void SetupCustomUIElements(object ui)
+        public void SetupCustomUIElements(object ui)
         {
 
             var NodeUI = ui as dynNodeView;
@@ -749,7 +764,8 @@ namespace Dynamo.Nodes
             }
             else
             {
-                sheet = Autodesk.Revit.DB.ViewSheet.Create(dynRevitSettings.Doc.Document, tb.Id);
+                var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+                sheet = Autodesk.Revit.DB.ViewSheet.Create(document, tb.Id);
                 sheet.Name = name;
                 sheet.SheetNumber = number;
                 Elements.Add(sheet.Id);
@@ -776,7 +792,8 @@ namespace Dynamo.Nodes
                     {
                         //move the view
                         //find the corresponding viewport
-                        var collector = new FilteredElementCollector(dynRevitSettings.Doc.Document);
+                        var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+                        var collector = new FilteredElementCollector(document);
                         collector.OfClass(typeof (Viewport));
                         var found =
                             collector.ToElements()
@@ -807,6 +824,14 @@ namespace Dynamo.Nodes
             }
 
             return Value.NewContainer(sheet);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", 
+                "Sheet.ByNameNumberTitleBlockAndViews", 
+                "Sheet.ByNameNumberTitleBlockAndViews@string,string,FamilySymbol,var[]");
         }
     }
 
