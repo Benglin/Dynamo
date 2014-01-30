@@ -137,6 +137,12 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(c);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "NurbsCurve.ByPoints", "NurbsCurve.ByPoints@Point[]");
+        }
     }
 
     [NodeName("Curve by Points by Curve")]
@@ -676,6 +682,12 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(result);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Curve.Offset", "Curve.Offset@double");
+        }
     }
 
     [NodeName("Bound Curve")]
@@ -763,6 +775,12 @@ namespace Dynamo.Nodes
             return Value.NewContainer(t);
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Curve.CoordinateSystemAtParameter",
+                "Curve.CoordinateSystemAtParameter@double");
+        }
     }
 
     [NodeName("Transform on Curve")]
@@ -808,10 +826,14 @@ namespace Dynamo.Nodes
                 :
                 (thisEdge == null ? null : thisEdge.ComputeDerivatives(parameter));
 
-
-
-
             return Value.NewContainer(result);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Curve.CoordinateSystemAtParameter",
+                "Curve.CoordinateSystemAtParameter@double");
         }
     }
 

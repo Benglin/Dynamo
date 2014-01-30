@@ -23,6 +23,13 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(t);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.Identity",
+                "CoordinateSystem.Identity");
+        }
     }
 
     [NodeName("Transform from Origin and Vectors")]
@@ -134,6 +141,13 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(t);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.Scale",
+                "CoordinateSystem.Scale@double");
+        }
     }
 
     [NodeName("Rotate Transform")]
@@ -160,6 +174,13 @@ namespace Dynamo.Nodes
             Transform t = Transform.get_Rotation(origin, axis, angle);
 
             return Value.NewContainer(t);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.Rotate",
+                "CoordinateSystem.Rotate@double,Vector,Point");
         }
     }
 
@@ -283,6 +304,12 @@ namespace Dynamo.Nodes
             return Value.NewContainer(t);
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.PostMultiplyBy",
+                "CoordinateSystem.PostMultiplyBy@CoordinateSystem");
+        }
     }
 
     [NodeName("Transform to Curve Point")]
@@ -347,6 +374,12 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(t);
 
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.Inverse", "CoordinateSystem.Inverse");
         }
     }
 

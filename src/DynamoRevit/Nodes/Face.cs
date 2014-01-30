@@ -222,6 +222,13 @@ namespace Dynamo.Nodes
 
             return FScheme.Value.NewContainer(face_point);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Surface.PointAtParameter@double,double",
+                "Surface.PointAtParameter@double,double");
+        }
     }
 
     [NodeName("Surface Normal")]
@@ -255,6 +262,12 @@ namespace Dynamo.Nodes
             }
 
             return FScheme.Value.NewContainer(norm);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Curve.NormalAtPoint", "Curve.NormalAtPoint@Point");
         }
     }
 
