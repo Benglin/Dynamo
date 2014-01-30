@@ -4,6 +4,7 @@ using Autodesk.Revit.DB;
 using Dynamo.Models;
 using Dynamo.Revit;
 using Dynamo.Utilities;
+using RevitServices.Persistence;
 
 namespace Dynamo.Nodes
 {
@@ -27,7 +28,7 @@ namespace Dynamo.Nodes
         public override FScheme.Value Evaluate(Microsoft.FSharp.Collections.FSharpList<FScheme.Value> args)
         {
             //if we're in a family document, don't even try to add a floor
-            if (dynRevitSettings.Doc.Document.IsFamilyDocument)
+            if (DocumentManager.GetInstance().CurrentUIDocument.Document.IsFamilyDocument)
             {
                 throw new Exception("Walls can not be created in family documents.");
             }
@@ -38,27 +39,34 @@ namespace Dynamo.Nodes
             var height = ((FScheme.Value.Number)args[3]).Item;
 
             Wall wall = null;
-
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
             if (this.Elements.Any())
             {
 
                 if (dynUtils.TryGetElement(this.Elements[0], out wall))
                 {
                     //Delete the existing floor. Revit API does not allow update of floor sketch.
-                    dynRevitSettings.Doc.Document.Delete(wall.Id);
+                    DocumentManager.GetInstance().CurrentUIDocument.Document.Delete(wall.Id);
                 }
 
-                wall = Wall.Create(dynRevitSettings.Doc.Document, curve, wallType.Id, level.Id, height, 0.0, false, false);
+                wall = Wall.Create(document, curve, wallType.Id, level.Id, height, 0.0, false, false);
                 this.Elements[0] = wall.Id;
 
             }
             else
             {
-                wall = Wall.Create(dynRevitSettings.Doc.Document,curve, wallType.Id, level.Id, height, 0.0, false, false);
+                wall = Wall.Create(document, curve, wallType.Id, level.Id, height, 0.0, false, false);
                 Elements.Add(wall.Id);
             }
 
             return FScheme.Value.NewContainer(wall);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "Wall.ByCurveAndHeight", "Wall.ByCurveAndHeight@Curve,double,Level,WallType");
         }
     }
 
@@ -78,7 +86,8 @@ namespace Dynamo.Nodes
 
         public override void PopulateItems()
         {
-            var wallTypesColl = new FilteredElementCollector(dynRevitSettings.Doc.Document);
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+            var wallTypesColl = new FilteredElementCollector(document);
             wallTypesColl.OfClass(typeof(WallType));
 
             Items.Clear();

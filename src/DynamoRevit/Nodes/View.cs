@@ -470,7 +470,7 @@ namespace Dynamo.Nodes
         public override Value Evaluate(FSharpList<Value> args)
         {
 
-            return Value.NewContainer(DocumentManager.GetInstance().CurrentUIDocument.Document.ActiveView);
+            return Value.NewContainer(DocumentManager.GetInstance().CurrentUIDocument.ActiveView);
         }
 
     }
@@ -540,7 +540,7 @@ namespace Dynamo.Nodes
 
             options.SetViewsAndSheets(new List<ElementId> { view.Id });
 
-            dynRevitSettings.Doc.Document.ExportImage(options);
+            DocumentManager.GetInstance().CurrentUIDocument.Document.ExportImage(options);
                 //revit only has a method to save image to disk.
 
             //hack - rename saved file to match specified file name
@@ -756,7 +756,8 @@ namespace Dynamo.Nodes
                 else
                 {
                     //create a new view sheet
-                    sheet = Autodesk.Revit.DB.ViewSheet.Create(dynRevitSettings.Doc.Document, tb.Id);
+                    var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+                    sheet = Autodesk.Revit.DB.ViewSheet.Create(document, tb.Id);
                     sheet.Name = name;
                     sheet.SheetNumber = number;
                     Elements[0] = sheet.Id;
@@ -810,9 +811,10 @@ namespace Dynamo.Nodes
                     else
                     {
                         //place the view on the sheet
-                        if (Viewport.CanAddViewToSheet(dynRevitSettings.Doc.Document, sheet.Id, view.Id))
+                        var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+                        if (Viewport.CanAddViewToSheet(document, sheet.Id, view.Id))
                         {
-                            var viewport = Viewport.Create(dynRevitSettings.Doc.Document, sheet.Id, view.Id,
+                            var viewport = Viewport.Create(document, sheet.Id, view.Id,
                                                            new XYZ(placement.U + viewWidth / 2, placement.V + viewHeight / 2, 0));
                         }
                     }
@@ -856,12 +858,13 @@ namespace Dynamo.Nodes
             var color = (System.Drawing.Color)((Value.Container) args[0]).Item;
             var elem = (Element) ((Value.Container) args[1]).Item;
 
-            var view = dynRevitSettings.Doc.ActiveView;
+            var view = DocumentManager.GetInstance().CurrentUIDocument.ActiveView;
             var ogs = new OverrideGraphicSettings();
 
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
             if (solidFill == null)
             {
-                var patternCollector = new FilteredElementCollector(dynRevitSettings.Doc.Document);
+                var patternCollector = new FilteredElementCollector(document);
                 patternCollector.OfClass(typeof(FillPatternElement));
                 solidFill = patternCollector.ToElements().Cast<FillPatternElement>().First(x => x.GetFillPattern().Name == "Solid fill");
             }

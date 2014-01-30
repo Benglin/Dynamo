@@ -8,6 +8,7 @@ using Dynamo.Utilities;
 using Microsoft.FSharp.Collections;
 using Value = Dynamo.FScheme.Value;
 using Dynamo.Revit;
+using RevitServices.Persistence;
 
 namespace Dynamo.Nodes
 {
@@ -57,7 +58,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "DSRevitNodes.dll", "DSReferencePoint.ByCoordinates", "DSReferencePoint.ByCoordinates@double,double,double");
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "ReferencePoint.ByCoordinates", "ReferencePoint.ByCoordinates@double,double,double");
         }
     }
 
@@ -118,8 +120,8 @@ namespace Dynamo.Nodes
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
             return MigrateToDsFunction(data, "DSRevitNodes.dll",
-                "DSReferencePoint.ByParameterOnCurveReference",
-                "DSReferencePoint.ByParameterOnCurveReference@References.DSCurveReference,double");
+                "ReferencePoint.ByParameterOnCurveReference",
+                "ReferencePoint.ByParameterOnCurveReference@CurveReference,double");
         }
     }
 
@@ -146,9 +148,10 @@ namespace Dynamo.Nodes
             object arg0 = ((Value.Container)args[0]).Item;
 
             Face f;
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
             var r = arg0 as Reference;
             if (r != null)
-                f = (Face)dynRevitSettings.Doc.Document.GetElement(r.ElementId).GetGeometryObjectFromReference(r);
+                f = (Face)document.GetElement(r.ElementId).GetGeometryObjectFromReference(r);
             else
                 f = (Face)arg0;
 
@@ -187,8 +190,8 @@ namespace Dynamo.Nodes
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
             return MigrateToDsFunction(data, "DSRevitNodes.dll",
-                "DSReferencePoint.ByParametersOnFaceReference",
-                "DSReferencePoint.ByParametersOnFaceReference@References.DSCurveReference,double,double");
+                "ReferencePoint.ByParametersOnFaceReference",
+                "ReferencePoint.ByParametersOnFaceReference@FaceReference,double,double");
         }
     }
 
@@ -246,8 +249,8 @@ namespace Dynamo.Nodes
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
             return MigrateToDsFunction(data, "DSRevitNodes.dll",
-                "DSReferencePoint.ByPointVectorDistance",
-                "DSReferencePoint.ByPointVectorDistance@Point,Vector,double");
+                "ReferencePoint.ByPointVectorDistance",
+                "ReferencePoint.ByPointVectorDistance@Point,Vector,double");
         }
 
     }
@@ -268,7 +271,7 @@ namespace Dynamo.Nodes
             RegisterAllPorts();
         }
 
-        public /*overide*/ void SetupCustomUIElements(object ui)
+        public void SetupCustomUIElements(object ui)
         {
             var nodeUI = ui as dynNodeView;
 
@@ -437,8 +440,8 @@ namespace Dynamo.Nodes
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
             return MigrateToDsFunction(data, "DSRevitNodes.dll",
-                "DSReferencePoint.ByLengthOnCurveReference",
-                "DSReferencePoint.ByLengthOnCurveReference@References.DSCurveReference,double");
+                "ReferencePoint.ByLengthOnCurveReference",
+                "ReferencePoint.ByLengthOnCurveReference@CurveReference,double");
         }
     }
 

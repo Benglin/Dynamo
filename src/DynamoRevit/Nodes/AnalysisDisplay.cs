@@ -9,6 +9,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Analysis;
 using Microsoft.FSharp.Collections;
 using Value = Dynamo.FScheme.Value;
+using RevitServices.Persistence;
 
 namespace Dynamo.Nodes
 {
@@ -51,8 +52,8 @@ namespace Dynamo.Nodes
         public override Value Evaluate(FSharpList<Value> args)
         {
             Autodesk.Revit.DB.Analysis.SpatialFieldManager SpatialFieldManager;
-
-            SpatialFieldManager = Autodesk.Revit.DB.Analysis.SpatialFieldManager.GetSpatialFieldManager(dynRevitSettings.Doc.ActiveView);
+            var activeView = DocumentManager.GetInstance().CurrentUIDocument.ActiveView;
+            SpatialFieldManager = Autodesk.Revit.DB.Analysis.SpatialFieldManager.GetSpatialFieldManager(activeView);
             
             if (SpatialFieldManager != null)
             {
@@ -60,7 +61,7 @@ namespace Dynamo.Nodes
             }
             else
             {
-                SpatialFieldManager = Autodesk.Revit.DB.Analysis.SpatialFieldManager.CreateSpatialFieldManager(dynRevitSettings.Doc.ActiveView, (int) ((Value.Number)args[0]).Item );
+                SpatialFieldManager = Autodesk.Revit.DB.Analysis.SpatialFieldManager.CreateSpatialFieldManager(activeView, (int)((Value.Number)args[0]).Item);
             }
 
             return Value.NewContainer(SpatialFieldManager);
@@ -94,7 +95,7 @@ namespace Dynamo.Nodes
         {
             AnalysisDisplayStyle analysisDisplayStyle = null;
 
-            Document doc = dynRevitSettings.Doc.Document;
+            Document doc = DocumentManager.GetInstance().CurrentUIDocument.Document;
 
             // Look for an existing analysis display style with a specific name
             FilteredElementCollector collector1 = new FilteredElementCollector(doc);
@@ -174,9 +175,11 @@ namespace Dynamo.Nodes
             SpatialFieldManager = ((Value.Container)args[2]).Item as Autodesk.Revit.DB.Analysis.SpatialFieldManager;
 
             var reference = (args[3] as Value.Container).Item as Reference;
+
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
             var face = (reference == null) ?
                 ((args[3] as Value.Container).Item as Face) :
-                dynRevitSettings.Doc.Document.GetElement(reference).GetGeometryObjectFromReference(reference) as Face;
+                document.GetElement(reference).GetGeometryObjectFromReference(reference) as Face;
 
            
             //if we received a face instead of a reference
@@ -236,9 +239,9 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "DSRevitNodes.dll", 
-                "DSFaceAnalysisDisplay.ByViewFacePointsAndValues",
-                "DSFaceAnalysisDisplay.ByViewFacePointsAndValues@Elements.AbstractView,References.DSFaceReference,double[][],double[]");
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "FaceAnalysisDisplay.ByViewFacePointsAndValues",
+                "FaceAnalysisDisplay.ByViewFacePointsAndValues@var,FaceReference,double[][],double[]");
         }
 
     }
@@ -327,9 +330,9 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "DSRevitNodes.dll", 
-                "DSPointAnalysisDisplay.ByViewPointsAndValues",
-                "DSPointAnalysisDisplay.ByViewPointsAndValues@Elements.AbstractView,Point[],double[]");
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "PointAnalysisDisplay.ByViewPointsAndValues",
+                "PointAnalysisDisplay.ByViewPointsAndValues@var,Point[],double[]");
         }
     }
 
@@ -421,8 +424,8 @@ namespace Dynamo.Nodes
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
             return MigrateToDsFunction(data, "DSRevitNodes.dll",
-                "DSVectorAnalysisDisplay.ByViewPointsAndVectorValues",
-                "DSVectorAnalysisDisplay.ByViewPointsAndVectorValues@Elements.AbstractView,Point[],Vector[]");
+                "VectorAnalysisDisplay.ByViewPointsAndVectorValues",
+                "VectorAnalysisDisplay.ByViewPointsAndVectorValues@var,Point[],Vector[]");
         }
     }
 
@@ -479,8 +482,7 @@ namespace Dynamo.Nodes
             Transform trf = Transform.Identity;
 
             //http://thebuildingcoder.typepad.com/blog/2012/09/sphere-creation-for-avf-and-filtering.html#3
-
-            var create = dynRevitSettings.Doc.Application.Application.Create;
+            var create = DocumentManager.GetInstance().CurrentUIDocument.Application.Application.Create;
 
             Transform t = curve.ComputeDerivatives(0, true);
 
@@ -489,9 +491,9 @@ namespace Dynamo.Nodes
                 t.BasisX.CrossProduct(XYZ.BasisY).Normalize() : 
                 t.BasisX.CrossProduct(XYZ.BasisZ).Normalize();
             XYZ z = x.CrossProduct(y);
-
-            Autodesk.Revit.DB.Ellipse arc1 = dynRevitSettings.Revit.Application.Create.NewEllipse(t.Origin, .1, .1, y,z,-Math.PI, 0);
-            Autodesk.Revit.DB.Ellipse arc2 = dynRevitSettings.Revit.Application.Create.NewEllipse(t.Origin, .1, .1, y, z, 0, Math.PI);
+            var application = DocumentManager.GetInstance().CurrentUIDocument.Application;
+            Autodesk.Revit.DB.Ellipse arc1 = application.Application.Create.NewEllipse(t.Origin, .1, .1, y, z, -Math.PI, 0);
+            Autodesk.Revit.DB.Ellipse arc2 = application.Application.Create.NewEllipse(t.Origin, .1, .1, y, z, 0, Math.PI);
 
             var pathLoop = new Autodesk.Revit.DB.CurveLoop();
             pathLoop.Append(curve);

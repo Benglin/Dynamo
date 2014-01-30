@@ -303,6 +303,13 @@ namespace Dynamo.Nodes
                 return result;
             }
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", "FamilyInstance.ByPoint", 
+                "FamilyInstance.ByPoint@FamilySymbol,Point");
+        }
     }
 
     [NodeName("Create Family Instance at Level")]
@@ -411,6 +418,13 @@ namespace Dynamo.Nodes
 
                 return result;
             }
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "FamilyInstance.ByPointAndLevel", "FamilyInstance.ByPointAndLevel@FamilySymbol,Point,Level");
         }
     }
 
