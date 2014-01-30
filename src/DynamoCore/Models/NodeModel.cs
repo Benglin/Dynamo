@@ -1644,7 +1644,7 @@ namespace Dynamo.Models
                     expr = OutPortData.Count == 1
                                ? evalDict[OutPortData[0]]
                                : FScheme.Value.NewList(
-                                   Utils.SequenceToFSharpList(
+                                   Utils.ToFSharpList(
                                        evalDict.OrderBy(pair => OutPortData.IndexOf(pair.Key))
                                                .Select(pair => pair.Value)));
 
@@ -1702,7 +1702,7 @@ namespace Dynamo.Models
 
             if (t != typeof(Watch) && !typeof(MathBase).IsAssignableFrom(t))
             {
-                args = Utils.SequenceToFSharpList(args.Select(SIUnit.UnwrapToDoubleWithHostUnitConversion));
+                args = Utils.ToFSharpList(args.Select(SIUnit.UnwrapToDoubleWithHostUnitConversion));
             }
 
             _errorCount = 0;
@@ -1788,7 +1788,7 @@ namespace Dynamo.Models
                     {
                         evalDict.Clear();
 
-                        FSharpList<FScheme.Value> thisArgsAsFSharpList = Utils.SequenceToFSharpList(argList);
+                        FSharpList<FScheme.Value> thisArgsAsFSharpList = Utils.ToFSharpList(argList);
 
                         List<Tuple<Type, Type>> portComparisonLaced =
                             thisArgsAsFSharpList.Zip(
@@ -1816,7 +1816,7 @@ namespace Dynamo.Models
                                 throw new Exception("Too deep recursive list containment by lists, only 21 are allowed");
                             var outPutsLevelPlusOne = new Dictionary<PortData, FScheme.Value>();
 
-                            __eval_internal_recursive(Utils.SequenceToFSharpList(argList), outPutsLevelPlusOne, level + 1);
+                            __eval_internal_recursive(Utils.ToFSharpList(argList), outPutsLevelPlusOne, level + 1);
                             //pack result back
 
                             foreach (var dataLaced in outPutsLevelPlusOne)
@@ -1827,7 +1827,7 @@ namespace Dynamo.Models
                             }
                             continue;
                         }
-                        Evaluate(Utils.SequenceToFSharpList(argList), evalDict);
+                        Evaluate(Utils.ToFSharpList(argList), evalDict);
 
                         OnEvaluate();
 
@@ -1866,12 +1866,12 @@ namespace Dynamo.Models
                                 }
                             }
 
-                            evalResult[data] = Utils.SequenceToFSharpList(listOfLists);
+                            evalResult[data] = Utils.ToFSharpList(listOfLists);
                         }
                         else
                         {
                             //Reverse the evaluation results so they come out right way around
-                            evalResult[data] = Utils.SequenceToFSharpList(evalResult[data].Reverse());
+                            evalResult[data] = Utils.ToFSharpList(evalResult[data].Reverse());
                         }
 
                         outPuts[data] = FScheme.Value.NewList(evalResult[data]);

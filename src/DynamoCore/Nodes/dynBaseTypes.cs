@@ -782,9 +782,8 @@ namespace Dynamo.Nodes
             {
                 return
                     Value.NewList(
-                        Utils.SequenceToFSharpList(
-                            unsorted.OrderBy(
-                                x => ToComparable(keyMapper.Invoke(Utils.MakeFSharpList(x))))));
+                        unsorted.OrderBy(
+                            x => ToComparable(keyMapper.Invoke(Utils.MakeFSharpList(x)))).ToFSharpList());
             }
             catch (ArgumentException e)
             {
@@ -987,8 +986,7 @@ namespace Dynamo.Nodes
             var p = ((Value.Function)args[0]).Item;
             var seq = ((Value.List)args[1]).Item;
 
-            return Value.NewList(Utils.SequenceToFSharpList(
-                seq.Where(x => !FScheme.ValueToBool(p.Invoke(Utils.MakeFSharpList(x))))));
+            return Value.NewList(seq.Where(x => !FScheme.ValueToBool(p.Invoke(Utils.MakeFSharpList(x)))).ToFSharpList());
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
@@ -1043,7 +1041,7 @@ namespace Dynamo.Nodes
             var amount = (int)((Value.Number)args[1]).Item;
             var step = ((Value.Number)args[2]).Item;
 
-            return Value.NewList(Utils.SequenceToFSharpList(MakeSequence(start, amount, step)));
+            return Value.NewList(MakeSequence(start, amount, step).ToFSharpList());
         }
 
         private IEnumerable<Value> MakeSequence(double start, int amount, double step)
@@ -1415,14 +1413,12 @@ namespace Dynamo.Nodes
             if (amt < 0)
             {
                 return Value.NewList(
-                    Utils.SequenceToFSharpList(
-                        list.Skip(-amt).Concat(list.Take(-amt))));
+                    list.Skip(-amt).Concat(list.Take(-amt)).ToFSharpList());
             }
 
             var len = list.Length;
             return Value.NewList(
-                Utils.SequenceToFSharpList(
-                    list.Skip(len - amt).Concat(list.Take(len - amt))));
+                list.Skip(len - amt).Concat(list.Take(len - amt)).ToFSharpList());
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
@@ -1464,7 +1460,7 @@ namespace Dynamo.Nodes
                 var idxs = (indices as Value.List).Item.Select(x => (int)((Value.Number)x).Item);
                 return
                     Value.NewList(
-                        Utils.SequenceToFSharpList(idxs.Select(i => ListModule.Get(lst, i))));
+                        idxs.Select(i => ListModule.Get(lst, i)).ToFSharpList());
             }
             else
             {
@@ -1498,7 +1494,7 @@ namespace Dynamo.Nodes
 
             var rng = new System.Random();
 
-            return Value.NewList(Utils.SequenceToFSharpList(list.OrderBy(_ => rng.Next())));
+            return Value.NewList(list.OrderBy(_ => rng.Next()).ToFSharpList());
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
@@ -1520,28 +1516,30 @@ namespace Dynamo.Nodes
                 new PortData(
                     "f(x)",
                     "Key Mapper: items from the list are passed in, items for which the function produces the same output are grouped together.",
-                    typeof(object)));
-            InPortData.Add(new PortData("list", "List of items to be grouped.", typeof(Value.List)));
-            
+                    typeof (object)));
+            InPortData.Add(new PortData("list", "List of items to be grouped.", typeof (Value.List)));
+
             OutPortData.Add(
                 new PortData(
                     "grouped",
                     "List of lists, where each sub-list contains items for which the Key Mapper produced the same value.",
-                    typeof(Value.List)));
+                    typeof (Value.List)));
 
             RegisterAllPorts();
         }
 
         public override Value Evaluate(FSharpList<Value> args)
         {
-            var mapper = ((Value.Function)args[0]).Item;
-            var list = ((Value.List)args[1]).Item;
+            var mapper = ((Value.Function) args[0]).Item;
+            var list = ((Value.List) args[1]).Item;
+
+            var wrapped = Utils.ConvertToFSharpFunc(
+                (Value x) => mapper.Invoke(Utils.MakeFSharpList(x)));
 
             return
                 Value.NewList(
-                    Utils.SequenceToFSharpList(
-                        list.GroupBy(x => mapper.Invoke(Utils.MakeFSharpList(x)))
-                            .Select(x => Value.NewList(Utils.SequenceToFSharpList(x)))));
+                    SeqModule.GroupBy(wrapped, list)
+                        .Select(x => Value.NewList(x.Item2.ToFSharpList())).ToFSharpList());
         }
     }
 
@@ -1566,7 +1564,7 @@ namespace Dynamo.Nodes
             var count = (int)((Value.Number)args[1]).Item;
             var lst = ((Value.List)args[2]).Item;
 
-            return Value.NewList(Utils.SequenceToFSharpList(lst.Skip(start).Take(count)));
+            return Value.NewList(lst.Skip(start).Take(count).ToFSharpList());
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
@@ -1601,7 +1599,7 @@ namespace Dynamo.Nodes
             if (indices.IsNumber)
             {
                 var idx = (int)(indices as Value.Number).Item;
-                return Value.NewList(Utils.SequenceToFSharpList(lst.Where((_, i) => i != idx)));
+                return Value.NewList(lst.Where((_, i) => i != idx).ToFSharpList());
             }
             else if (indices.IsList)
             {
@@ -1610,7 +1608,7 @@ namespace Dynamo.Nodes
                         (indices as Value.List).Item.Select(x => (int)((Value.Number)x).Item));
                 return
                     Value.NewList(
-                        Utils.SequenceToFSharpList(lst.Where((_, i) => !idxs.Contains(i))));
+                        lst.Where((_, i) => !idxs.Contains(i)).ToFSharpList());
             }
             else
             {
@@ -1647,7 +1645,7 @@ namespace Dynamo.Nodes
             var lst = ((Value.List)args[1]).Item;
             var offset = (int)((Value.Number)args[2]).Item;
 
-            return Value.NewList(Utils.SequenceToFSharpList(lst.Skip(offset).Where((_, i) => (i + 1) % n != 0)));
+            return Value.NewList(lst.Skip(offset).Where((_, i) => (i + 1) % n != 0).ToFSharpList());
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
@@ -1679,7 +1677,7 @@ namespace Dynamo.Nodes
             var lst = ((Value.List)args[1]).Item;
             var offset = (int)((Value.Number)args[2]).Item;
 
-            return Value.NewList(Utils.SequenceToFSharpList(lst.Skip(offset).Where((_, i) => (i + 1) % n == 0)));
+            return Value.NewList(lst.Skip(offset).Where((_, i) => (i + 1) % n == 0).ToFSharpList());
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
@@ -1906,7 +1904,7 @@ namespace Dynamo.Nodes
 
                 if (count == n)
                 {
-                    finalList.Add(Value.NewList(Utils.SequenceToFSharpList(currList)));
+                    finalList.Add(Value.NewList(currList.ToFSharpList()));
                     currList = new List<Value>();
                     count = 0;
                 }
@@ -1914,10 +1912,10 @@ namespace Dynamo.Nodes
 
             if (currList.Any())
             {
-                finalList.Add(Value.NewList(Utils.SequenceToFSharpList(currList)));
+                finalList.Add(Value.NewList(currList.ToFSharpList()));
             }
 
-            return Value.NewList(Utils.SequenceToFSharpList(finalList));
+            return Value.NewList(finalList.ToFSharpList());
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
@@ -1994,16 +1992,16 @@ namespace Dynamo.Nodes
                     if (nextRow > currentRow + 1 || nextRow == currentRow)
                         break;
                 }
-                finalList.Add(Value.NewList(Utils.SequenceToFSharpList(currList)));
+                finalList.Add(Value.NewList(currList.ToFSharpList()));
                 currList = new List<Value>();
             }
 
             if (currList.Any())
             {
-                finalList.Add(Value.NewList(Utils.SequenceToFSharpList(currList)));
+                finalList.Add(Value.NewList(currList.ToFSharpList()));
             }
 
-            return Value.NewList(Utils.SequenceToFSharpList(finalList));
+            return Value.NewList(finalList.ToFSharpList());
 
         }
     }
@@ -2074,16 +2072,16 @@ namespace Dynamo.Nodes
                     if (nextRow > currentRow + 1 || nextRow == currentRow)
                         break;
                 }
-                finalList.Add(Value.NewList(Utils.SequenceToFSharpList(currList)));
+                finalList.Add(Value.NewList(currList.ToFSharpList()));
                 currList = new List<Value>();
             }
 
             if (currList.Any())
             {
-                finalList.Add(Value.NewList(Utils.SequenceToFSharpList(currList)));
+                finalList.Add(Value.NewList(currList.ToFSharpList()));
             }
 
-            return Value.NewList(Utils.SequenceToFSharpList(finalList));
+            return Value.NewList(finalList.ToFSharpList());
 
         }
     }
@@ -2309,10 +2307,10 @@ namespace Dynamo.Nodes
                 }
 
                 if (currList.Any())
-                    finalList.Add(FScheme.Value.NewList(Utils.SequenceToFSharpList(currList)));
+                    finalList.Add(FScheme.Value.NewList(currList.ToFSharpList()));
             }
 
-            return FScheme.Value.NewList(Utils.SequenceToFSharpList(finalList));
+            return FScheme.Value.NewList(finalList.ToFSharpList());
         }
 
         protected override string DeserializeValue(string val)
@@ -2344,7 +2342,7 @@ namespace Dynamo.Nodes
             if(n<0)
                 throw new Exception("Can't make a repeated list of a negative amount.");
 
-            return Value.NewList(Utils.SequenceToFSharpList(Enumerable.Repeat(args[0], n).ToList()));
+            return Value.NewList(Enumerable.Repeat(args[0], n).ToList().ToFSharpList());
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
@@ -2403,7 +2401,7 @@ namespace Dynamo.Nodes
             IEnumerable<Value> list = ((Value.List)args[0]).Item;
 
             int amt = -1;
-            return Value.NewList(Utils.SequenceToFSharpList(Flatten(list, ref amt)));
+            return Value.NewList(Flatten(list, ref amt).ToFSharpList());
         }
     }
 
@@ -2442,7 +2440,7 @@ namespace Dynamo.Nodes
             if (amt > 0)
                 throw new Exception("List not nested enough to flatten by given amount. Nesting Amt = " + (oldAmt - amt) + ", Given Amt = " + oldAmt);
 
-            return Value.NewList(Utils.SequenceToFSharpList(result));
+            return Value.NewList(result.ToFSharpList());
         }
     }
 
@@ -3385,12 +3383,10 @@ namespace Dynamo.Nodes
             if (input.IsList)
             {
                 return Value.NewList(
-                   FSchemeInterop.Utils.SequenceToFSharpList(
-                      ((Value.List)input).Item.Select(
-                         x =>
-                            Value.NewNumber(Math.Sin(((Value.Number)x).Item))
-                      )
-                   )
+                   ((Value.List)input).Item.Select(
+                       x =>
+                           Value.NewNumber(Math.Sin(((Value.Number)x).Item))
+                       ).ToFSharpList()
                 );
             }
             else
@@ -3427,12 +3423,10 @@ namespace Dynamo.Nodes
             if (input.IsList)
             {
                 return Value.NewList(
-                   FSchemeInterop.Utils.SequenceToFSharpList(
-                      ((Value.List)input).Item.Select(
-                         x =>
-                            Value.NewNumber(Math.Cos(((Value.Number)x).Item))
-                      )
-                   )
+                   ((Value.List)input).Item.Select(
+                       x =>
+                           Value.NewNumber(Math.Cos(((Value.Number)x).Item))
+                       ).ToFSharpList()
                 );
             }
             else
@@ -3469,12 +3463,10 @@ namespace Dynamo.Nodes
             if (input.IsList)
             {
                 return Value.NewList(
-                   FSchemeInterop.Utils.SequenceToFSharpList(
-                      ((Value.List)input).Item.Select(
-                         x =>
-                            Value.NewNumber(Math.Tan(((Value.Number)x).Item))
-                      )
-                   )
+                   ((Value.List)input).Item.Select(
+                       x =>
+                           Value.NewNumber(Math.Tan(((Value.Number)x).Item))
+                       ).ToFSharpList()
                 );
             }
             else
@@ -4329,7 +4321,7 @@ namespace Dynamo.Nodes
 
             return _parsed.Count == 1
                 ? _parsed[0].GetFSchemeValue(paramDict)
-                : FScheme.Value.NewList(Utils.SequenceToFSharpList(_parsed.Select(x => x.GetFSchemeValue(paramDict))));
+                : FScheme.Value.NewList(_parsed.Select(x => x.GetFSchemeValue(paramDict)).ToFSharpList());
         }
 
         internal override IEnumerable<AssociativeNode> BuildAst(List<AssociativeNode> inputAstNodes)
@@ -4430,8 +4422,7 @@ namespace Dynamo.Nodes
             public Value GetFSchemeValue(Dictionary<string, double> idLookup)
             {
                 return FScheme.Value.NewList(
-                    Utils.SequenceToFSharpList(
-                        GetValue(idLookup).Select(FScheme.Value.NewNumber)));
+                    GetValue(idLookup).Select(FScheme.Value.NewNumber).ToFSharpList());
             }
 
             public IEnumerable<double> GetValue(Dictionary<string, double> idLookup)
@@ -4505,8 +4496,7 @@ namespace Dynamo.Nodes
             public Value GetFSchemeValue(Dictionary<string, double> idLookup)
             {
                 return FScheme.Value.NewList(
-                    Utils.SequenceToFSharpList(
-                        GetValue(idLookup).Select(FScheme.Value.NewNumber)));
+                    GetValue(idLookup).Select(FScheme.Value.NewNumber).ToFSharpList());
             }
 
             public IEnumerable<double> GetValue(Dictionary<string, double> idLookup)
@@ -5324,10 +5314,9 @@ namespace Dynamo.Nodes
             string del = ((Value.String)args[1]).Item;
 
             return Value.NewList(
-                Utils.SequenceToFSharpList(
-                    del == ""
-                        ? str.ToCharArray().Select(c => Value.NewString(c.ToString()))
-                        : str.Split(new[] { del }, StringSplitOptions.None).Select(Value.NewString)));
+                (del == ""
+                    ? str.ToCharArray().Select(c => Value.NewString(c.ToString()))
+                    : str.Split(new[] { del }, StringSplitOptions.None).Select(Value.NewString)).ToFSharpList());
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]

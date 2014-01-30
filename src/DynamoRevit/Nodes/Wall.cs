@@ -55,7 +55,7 @@ namespace Dynamo.Nodes
             }
             else
             {
-                wall = Wall.Create(document, curve, wallType.Id, level.Id, height, 0.0, false, false);
+                wall = Wall.Create(document, curve, wallType.Id, level.Id, height, 0.0, false, false)
                 Elements.Add(wall.Id);
             }
 

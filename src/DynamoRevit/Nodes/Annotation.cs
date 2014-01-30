@@ -116,15 +116,15 @@ namespace Dynamo.Nodes
             //      4 - depth (double)
             //      5 - text type name (string)
             // 
-            // The new "DSModelText.ByTextSketchPlaneAndPosition" node takes in
+            // The new "ModelText.ByTextSketchPlaneAndPosition" node takes in
             // the following inputs:
             // 
             //      0 - text (string)
-            //      1 - sketchPlane (DSSketchPlane)
+            //      1 - sketchPlane (SketchPlane)
             //      2 - xCoordinateInPlane (double)
             //      3 - yCoordinateInPlane (double)
             //      4 - textDepth (double)
-            //      5 - modelTextType (DSModelTextType)
+            //      5 - modelTextType (ModelTextType)
             // 
             XmlElement oldNode = data.MigratedNodes.ElementAt(0);
             string oldNodeId = MigrationManager.GetGuidFromXmlElement(oldNode);
@@ -133,12 +133,12 @@ namespace Dynamo.Nodes
 
             #region Create New Nodes...
 
-            // Create the "DSModelText.ByTextSketchPlaneAndPosition" node itself.
+            // Create the "ModelText.ByTextSketchPlaneAndPosition" node itself.
             XmlElement dsModelText = MigrationManager.CreateFunctionNode(
                 data.Document, "DSRevitNodes.dll",
-                "DSModelText.ByTextSketchPlaneAndPosition",
-                "DSModelText.ByTextSketchPlaneAndPosition@" +
-                "string,DSSketchPlane,double,double,double,DSModelTextType");
+                "ModelText.ByTextSketchPlaneAndPosition",
+                "ModelText.ByTextSketchPlaneAndPosition@" +
+                "string,SketchPlane,double,double,double,ModelTextType");
 
             migratedData.AppendNode(dsModelText);
             string dsModelTextId = MigrationManager.GetGuidFromXmlElement(dsModelText);
@@ -153,20 +153,20 @@ namespace Dynamo.Nodes
             migratedData.AppendNode(plane);
             string planeId = MigrationManager.GetGuidFromXmlElement(plane);
 
-            // Create a "DSSketchPlane.ByPlane" node which converts a "Plane" 
-            // into a "DSSketchPlane".
+            // Create a "SketchPlane.ByPlane" node which converts a "Plane" 
+            // into a "SketchPlane".
             XmlElement dsSketchPlane = MigrationManager.CreateFunctionNode(
                 data.Document, "DSRevitNodes.dll",
-                "DSSketchPlane.ByPlane", "DSSketchPlane.ByPlane@Plane");
+                "SketchPlane.ByPlane", "SketchPlane.ByPlane@Plane");
 
             migratedData.AppendNode(dsSketchPlane);
             string dsSketchPlaneId = MigrationManager.GetGuidFromXmlElement(dsSketchPlane);
 
-            // Create a "DSModelTextType.ByName" node that converts a "string"
-            // into "DSModelTextType" node.
+            // Create a "ModelTextType.ByName" node that converts a "string"
+            // into "ModelTextType" node.
             XmlElement dsModelTextType = MigrationManager.CreateFunctionNode(
                 data.Document, "DSRevitNodes.dll",
-                "DSModelTextType.ByName", "DSModelTextType.ByName@string");
+                "ModelTextType.ByName", "ModelTextType.ByName@string");
 
             migratedData.AppendNode(dsModelTextType);
             string dsModelTextTypeId = MigrationManager.GetGuidFromXmlElement(dsModelTextType);
@@ -193,10 +193,10 @@ namespace Dynamo.Nodes
             connector = data.FindFirstConnector(oldInPort);
             data.ReconnectToPort(connector, newInPort);
 
-            // Connect from "Plane" to "DSSketchPlane".
+            // Connect from "Plane" to "SketchPlane".
             data.CreateConnector(plane, 0, dsSketchPlane, 0);
 
-            // Connect from "DSSketchPlane" to the new node.
+            // Connect from "SketchPlane" to the new node.
             data.CreateConnector(dsSketchPlane, 0, dsModelText, 1);
 
             // Move connector for "depth" over to the new node.
@@ -205,13 +205,13 @@ namespace Dynamo.Nodes
             connector = data.FindFirstConnector(oldInPort);
             data.ReconnectToPort(connector, newInPort);
 
-            // Move connector for "text type name" over to "DSModelTextType" node.
+            // Move connector for "text type name" over to "ModelTextType" node.
             oldInPort = new PortId(oldNodeId, 5, PortType.INPUT);
             newInPort = new PortId(dsModelTextTypeId, 0, PortType.INPUT);
             connector = data.FindFirstConnector(oldInPort);
             data.ReconnectToPort(connector, newInPort);
 
-            // Connect from "DSModelTextType" to the new node.
+            // Connect from "ModelTextType" to the new node.
             data.CreateConnector(dsModelTextType, 0, dsModelText, 5);
 
             #endregion

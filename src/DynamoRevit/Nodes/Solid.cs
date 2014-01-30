@@ -771,6 +771,12 @@ namespace Dynamo.Nodes
 
             return FScheme.Value.NewContainer(result);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", "Solid.Difference", "Solid.Difference@Solid");
+        }
     }
 
     [NodeName("Boolean Union")]
@@ -799,6 +805,12 @@ namespace Dynamo.Nodes
 
             return FScheme.Value.NewContainer(result);
         }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", "Solid.Union", "Solid.Union@Solid");
+        }
     }
 
     [NodeName("Boolean Intersect")]
@@ -826,6 +838,12 @@ namespace Dynamo.Nodes
             var result = BooleanOperationsUtils.ExecuteBooleanOperation(firstSolid, secondSolid, BooleanOperationsType.Intersect);
 
             return FScheme.Value.NewContainer(result);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", "Solid.Intersect", "Solid.Intersect@Solid");
         }
     }
     /*
@@ -1045,6 +1063,12 @@ namespace Dynamo.Nodes
             var radius = ((FScheme.Value.Number)args[1]).Item;
 
             return FScheme.Value.NewContainer(SphereByCenterRadius(center, radius));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll", "Sphere.ByCenterPointRadius", "Sphere.ByCenterPointRadius@Point,double");
         }
     }
 
