@@ -167,6 +167,7 @@
     <Compile Include="Nodes\Annotation.cs" />
     <Compile Include="Nodes\Facet.cs" />
     <Compile Include="Nodes\Topography.cs" />
+    <Compile Include="Nodes\Wall.cs" />
     <Compile Include="Packing\CygonRectanglePacker.cs" />
     <Compile Include="DynamoController_Revit.cs" />
     <Compile Include="FunctionWithRevit.cs" />

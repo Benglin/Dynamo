@@ -57,7 +57,7 @@ namespace Dynamo.Nodes
 
         public static FSharpList<FScheme.Value> DoubleToFSharpList(double x)
         {
-            return FSchemeInterop.Utils.SequenceToFSharpList(new List<FScheme.Value>() {FScheme.Value.NewNumber(x)});
+            return FSchemeInterop.Utils.ToFSharpList(new List<FScheme.Value>() {FScheme.Value.NewNumber(x)});
         }
 
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
