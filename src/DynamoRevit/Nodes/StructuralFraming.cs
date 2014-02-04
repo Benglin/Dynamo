@@ -187,6 +187,5 @@ namespace Dynamo.Nodes
 
             return Value.NewList(results);
         }
-
     }
 }
