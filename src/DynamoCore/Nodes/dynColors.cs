@@ -103,7 +103,7 @@ namespace Dynamo.Nodes
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
             return MigrateToDsFunction(data, "DSCoreNodes.dll", "DSColor.ByARGB",
-"DSColor.ByARGB@int,int,int,int");
+                "DSColor.ByARGB@int,int,int,int");
         }
     }
 
@@ -152,7 +152,7 @@ namespace Dynamo.Nodes
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
             return MigrateToDsFunction(data, "DSCoreNodes.dll", "DSColor.Components",
-"DSColor.Components@DSColor");
+                "DSColor.Components@DSColor");
         }
     }
 
