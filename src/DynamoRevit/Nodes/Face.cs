@@ -313,18 +313,47 @@ namespace Dynamo.Nodes
             XmlElement thisNode = data.MigratedNodes.ElementAt(0);
             var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
             element.SetAttribute("assembly", "ProtoGeometry.dll");
-            element.SetAttribute("nickname", "Curve.NormalAtPoint");
-            element.SetAttribute("function", "Curve.NormalAtPoint@Point");
+            element.SetAttribute("nickname", "Surface.NormalAtPoint");
+            element.SetAttribute("function", "Surface.NormalAtPoint@Point");
             migrationData.AppendNode(element);
             string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
 
-            // Swap input connectors 0 and 1
-            PortId inPortA = new PortId(thisNodeId, 0, PortType.INPUT);
-            PortId inPortB = new PortId(thisNodeId, 1, PortType.INPUT);
-            XmlElement connectorA = data.FindFirstConnector(inPortA);
-            XmlElement connectorB = data.FindFirstConnector(inPortB);
-            data.ReconnectToPort(connectorA, inPortB);
-            data.ReconnectToPort(connectorB, inPortA);
+            // Create new nodes
+            XmlElement nodeU = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll", "UV.U", "UV.U");
+            migrationData.AppendNode(nodeU);
+            string nodeUId = MigrationManager.GetGuidFromXmlElement(nodeU);
+
+            XmlElement nodeV = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll", "UV.V", "UV.V");
+            migrationData.AppendNode(nodeV);
+            string nodeVId = MigrationManager.GetGuidFromXmlElement(nodeV);
+
+            XmlElement pointAtParameter = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll", "Surface.PointAtParameter", "Surface.PointAtParameter@double,double");
+            migrationData.AppendNode(pointAtParameter);
+            string pointAtParameterId = MigrationManager.GetGuidFromXmlElement(pointAtParameter);
+
+            // Move input connector from 0 to nodeU and nodeV
+            PortId oldInPort = new PortId(thisNodeId, 0, PortType.INPUT);
+            PortId newInPort = new PortId(nodeUId, 0, PortType.INPUT);
+            XmlElement connector = data.FindFirstConnector(oldInPort);
+            data.ReconnectToPort(connector, newInPort);
+            string nodeUVId = connector.GetAttribute("start").ToString();
+
+            // Move input connector from 1 to 0
+            oldInPort = new PortId(thisNodeId, 1, PortType.INPUT);
+            newInPort = new PortId(thisNodeId, 0, PortType.INPUT);
+            connector = data.FindFirstConnector(oldInPort);
+            data.ReconnectToPort(connector, newInPort);
+            string nodeSurfaceId = connector.GetAttribute("start").ToString();
+
+            // Create new connectors
+            data.CreateConnectorFromId(nodeUVId, 0, nodeVId, 0);
+            data.CreateConnectorFromId(nodeSurfaceId, 0, pointAtParameterId, 0);
+            data.CreateConnectorFromId(nodeUId, 0, pointAtParameterId, 1);
+            data.CreateConnectorFromId(nodeVId, 0, pointAtParameterId, 2);
+            data.CreateConnectorFromId(pointAtParameterId, 0, thisNodeId, 1);
 
             return migrationData;
         }
@@ -364,6 +393,12 @@ namespace Dynamo.Nodes
 
             //Fin
             return FScheme.Value.NewContainer(Units.Area.FromSquareFeet(area));
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Surface.Area", "Surface.Area");
         }
     }
 
