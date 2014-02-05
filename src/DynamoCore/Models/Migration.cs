@@ -510,6 +510,11 @@ namespace Dynamo.Models
             connectorRoot.AppendChild(connector);
         }
 
+        public void CreateConnector(XmlElement connector)
+        {
+            connectorRoot.AppendChild(connector);
+        }
+
         #endregion
 
         #region Node Management Methods

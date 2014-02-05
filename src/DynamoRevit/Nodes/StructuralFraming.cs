@@ -9,6 +9,7 @@ using Dynamo.Revit;
 using Dynamo.Utilities;
 using Microsoft.FSharp.Collections;
 using Value = Dynamo.FScheme.Value;
+using RevitServices.Persistence;
 
 namespace Dynamo.Nodes
 {
@@ -31,7 +32,7 @@ namespace Dynamo.Nodes
             Items.Clear();
 
             //find all the structural framing family types in the project
-            var collector = new FilteredElementCollector(dynRevitSettings.Doc.Document);
+            var collector = new FilteredElementCollector(DocumentManager.GetInstance().CurrentUIDocument.Document);
 
             var catFilter = new ElementCategoryFilter(BuiltInCategory.OST_StructuralFraming);
             collector.OfClass(typeof(FamilySymbol)).WherePasses(catFilter);
@@ -174,7 +175,7 @@ namespace Dynamo.Nodes
 
             if (instData.Any())
             {
-                var ids = dynRevitSettings.Doc.Document.Create.NewFamilyInstances2(instData);
+                var ids = DocumentManager.GetInstance().CurrentUIDocument.Document.Create.NewFamilyInstances2(instData);
 
                 //add our batch-created instances ids'
                 //to the elements collection
@@ -182,10 +183,19 @@ namespace Dynamo.Nodes
             }
 
             //add all of the instances
-            results = Elements.Aggregate(results, (current, id) => FSharpList<Value>.Cons(Value.NewContainer(dynRevitSettings.Doc.Document.GetElement(id)), current));
+            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
+            results = Elements.Aggregate(results, (current, id) => FSharpList<Value>.Cons(Value.NewContainer(document.GetElement(id)), current));
             results.Reverse();
 
             return Value.NewList(results);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "StructuralFraming.ByCurveLevelUpVectorAndType",
+                "StructuralFraming.ByCurveLevelUpVectorAndType@Curve,Level,Vector,StructuralType,FamilySymbol");
         }
     }
 }
