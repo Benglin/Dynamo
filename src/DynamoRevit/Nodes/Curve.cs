@@ -12,6 +12,7 @@ using Dynamo.Revit;
 using System.Reflection;
 using MathNet.Numerics.LinearAlgebra.Generic;
 using MathNet.Numerics.LinearAlgebra.Double;
+using System.Xml;
 
 namespace Dynamo.Nodes
 {
@@ -832,8 +833,26 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Curve.CoordinateSystemAtParameter",
-                "Curve.CoordinateSystemAtParameter@double");
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+
+            // Create DSFunction node
+            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
+            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
+            element.SetAttribute("assembly", "ProtoGeometry.dll");
+            element.SetAttribute("nickname", "Curve.CoordinateSystemAtParameter");
+            element.SetAttribute("function", "Curve.CoordinateSystemAtParameter@double");
+            migrationData.AppendNode(element);
+            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+
+            // Swap input connectors 0 and 1
+            PortId inPortA = new PortId(thisNodeId, 0, PortType.INPUT);
+            PortId inPortB = new PortId(thisNodeId, 1, PortType.INPUT);
+            XmlElement connectorA = data.FindFirstConnector(inPortA);
+            XmlElement connectorB = data.FindFirstConnector(inPortB);
+            data.ReconnectToPort(connectorA, inPortB);
+            data.ReconnectToPort(connectorB, inPortA);
+
+            return migrationData;
         }
     }
 

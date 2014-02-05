@@ -8,6 +8,7 @@ using Dynamo.Revit;
 using Dynamo.Utilities;
 using Microsoft.FSharp.Collections;
 using RevitServices.Persistence;
+using System.Xml;
 
 namespace Dynamo.Nodes
 {
@@ -35,6 +36,31 @@ namespace Dynamo.Nodes
             );
 
             return FScheme.Value.NewContainer(plane);
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+
+            // Create DSFunction node
+            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
+            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
+            element.SetAttribute("assembly", "ProtoGeometry.dll");
+            element.SetAttribute("nickname", "Plane.ByOriginNormal");
+            element.SetAttribute("function", "Plane.ByOriginNormal@Point,Vector");
+            migrationData.AppendNode(element);
+            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+
+            // Swap input connectors 0 and 1
+            PortId inPortA = new PortId(thisNodeId, 0, PortType.INPUT);
+            PortId inPortB = new PortId(thisNodeId, 1, PortType.INPUT);
+            XmlElement connectorA = data.FindFirstConnector(inPortA);
+            XmlElement connectorB = data.FindFirstConnector(inPortB);
+            data.ReconnectToPort(connectorA, inPortB);
+            data.ReconnectToPort(connectorB, inPortA);
+
+            return migrationData;
         }
     }
 

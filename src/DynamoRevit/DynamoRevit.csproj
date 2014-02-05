@@ -165,7 +165,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Nodes\Annotation.cs" />
+    <Compile Include="Nodes\Circle.cs" />
     <Compile Include="Nodes\Facet.cs" />
+    <Compile Include="Nodes\Solid.cs" />
     <Compile Include="Nodes\Topography.cs" />
     <Compile Include="Nodes\Wall.cs" />
     <Compile Include="Packing\CygonRectanglePacker.cs" />

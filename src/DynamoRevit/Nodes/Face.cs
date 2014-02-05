@@ -10,6 +10,7 @@ using Microsoft.FSharp.Collections;
 using RevitServices.Persistence;
 using Line = Autodesk.Revit.DB.Line;
 using Solid = Autodesk.Revit.DB.Solid;
+using System.Xml;
 
 namespace Dynamo.Nodes
 {
@@ -226,8 +227,47 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Surface.PointAtParameter@double,double",
-                "Surface.PointAtParameter@double,double");
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+
+            // Create DSFunction node
+            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
+            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
+            element.SetAttribute("assembly", "ProtoGeometry.dll");
+            element.SetAttribute("nickname", "Surface.PointAtParameter");
+            element.SetAttribute("function", "Surface.PointAtParameter@double,double");
+            migrationData.AppendNode(element);
+            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+
+            // Create new nodes
+            XmlElement nodeU = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll", "UV.U", "UV.U");
+            migrationData.AppendNode(nodeU);
+            string nodeUId = MigrationManager.GetGuidFromXmlElement(nodeU);
+            
+            XmlElement nodeV = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll", "UV.V", "UV.V");
+            migrationData.AppendNode(nodeV);
+            string nodeVId = MigrationManager.GetGuidFromXmlElement(nodeV);
+
+            // Move input connector from 0 to nodeU and nodeV
+            PortId oldInPort = new PortId(thisNodeId, 0, PortType.INPUT);
+            PortId newInPort = new PortId(nodeUId, 0, PortType.INPUT);
+            XmlElement connector = data.FindFirstConnector(oldInPort);
+            data.ReconnectToPort(connector, newInPort);
+            string nodeUVId = connector.GetAttribute("start").ToString();
+            
+            // Move input connector from 1 to 0
+            oldInPort = new PortId(thisNodeId, 1, PortType.INPUT);
+            newInPort = new PortId(thisNodeId, 0, PortType.INPUT);
+            connector = data.FindFirstConnector(oldInPort);
+            data.ReconnectToPort(connector, newInPort);
+
+            // Create new connectors
+            data.CreateConnectorFromId(nodeUVId, 0, nodeVId, 0);
+            data.CreateConnector(nodeU, 0, thisNode, 1);
+            data.CreateConnector(nodeV, 0, thisNode, 2);
+
+            return migrationData;
         }
     }
 
@@ -267,7 +307,26 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Curve.NormalAtPoint", "Curve.NormalAtPoint@Point");
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+
+            // Create DSFunction node
+            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
+            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
+            element.SetAttribute("assembly", "ProtoGeometry.dll");
+            element.SetAttribute("nickname", "Curve.NormalAtPoint");
+            element.SetAttribute("function", "Curve.NormalAtPoint@Point");
+            migrationData.AppendNode(element);
+            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+
+            // Swap input connectors 0 and 1
+            PortId inPortA = new PortId(thisNodeId, 0, PortType.INPUT);
+            PortId inPortB = new PortId(thisNodeId, 1, PortType.INPUT);
+            XmlElement connectorA = data.FindFirstConnector(inPortA);
+            XmlElement connectorB = data.FindFirstConnector(inPortB);
+            data.ReconnectToPort(connectorA, inPortB);
+            data.ReconnectToPort(connectorB, inPortA);
+
+            return migrationData;
         }
     }
 

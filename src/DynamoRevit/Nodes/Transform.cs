@@ -2,6 +2,8 @@
 using Dynamo.Models;
 using Microsoft.FSharp.Collections;
 using Value = Dynamo.FScheme.Value;
+using System.Xml;
+using System.Linq;
 
 namespace Dynamo.Nodes
 {
@@ -179,8 +181,43 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.Rotate",
-                "CoordinateSystem.Rotate@double,Vector,Point");
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+
+            // Create DSFunction node
+            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
+            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
+            element.SetAttribute("assembly", "ProtoGeometry.dll");
+            element.SetAttribute("nickname", "CoordinateSystem.Rotate");
+            element.SetAttribute("function", "CoordinateSystem.Rotate@double,Vector,Point");
+            migrationData.AppendNode(element);
+            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+
+            // Create new node
+            XmlElement identityCoordinateSystem = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll",
+                "CoordinateSystem.Identity",
+                "CoordinateSystem.Identity");
+            migrationData.AppendNode(identityCoordinateSystem);
+            string dsCoordinateSystemId = MigrationManager.GetGuidFromXmlElement(identityCoordinateSystem);
+
+            // Move input connector from 0 to 3
+            PortId oldInPort = new PortId(thisNodeId, 0, PortType.INPUT);
+            PortId newInPort = new PortId(thisNodeId, 3, PortType.INPUT);
+            XmlElement connector = data.FindFirstConnector(oldInPort);
+            data.ReconnectToPort(connector, newInPort);
+
+            // Swap input connectors 1 and 2
+            PortId inPortA = new PortId(thisNodeId, 1, PortType.INPUT);
+            PortId inPortB = new PortId(thisNodeId, 2, PortType.INPUT);
+            XmlElement connectorA = data.FindFirstConnector(inPortA);
+            XmlElement connectorB = data.FindFirstConnector(inPortB);
+            data.ReconnectToPort(connectorA, inPortB);
+            data.ReconnectToPort(connectorB, inPortA);
+
+            // Connect from "identityCoordinateSystem" to the new node.
+            data.CreateConnector(identityCoordinateSystem, 0, thisNode, 0);
+
+            return migrationData;
         }
     }
 
