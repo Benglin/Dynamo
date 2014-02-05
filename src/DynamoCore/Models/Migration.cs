@@ -510,6 +510,22 @@ namespace Dynamo.Models
             connectorRoot.AppendChild(connector);
         }
 
+        public void CreateConnectorFromId(string startNodeId,
+            int startIndex, string endNodeId, int endIndex)
+        {
+            XmlElement connector = this.Document.CreateElement(
+                "Dynamo.Models.ConnectorModel");
+
+            connector.SetAttribute("start", startNodeId);
+            connector.SetAttribute("start_index", startIndex.ToString());
+            connector.SetAttribute("end", endNodeId);
+            connector.SetAttribute("end_index", endIndex.ToString());
+            connector.SetAttribute("portType", "0"); // Always zero, probably legacy issue.
+
+            // Add new connector to document.
+            connectorRoot.AppendChild(connector);
+        }
+
         #endregion
 
         #region Node Management Methods
