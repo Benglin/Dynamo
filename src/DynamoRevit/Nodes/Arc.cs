@@ -8,6 +8,7 @@ using Dynamo.Revit;
 using Dynamo.Utilities;
 using Microsoft.FSharp.Collections;
 using RevitServices.Persistence;
+using System.Xml;
 
 namespace Dynamo.Nodes
 {
@@ -118,8 +119,53 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "ProtoGeometry.dll", "Arc.ByCenterPointRadiusAngle",
-                "Arc.ByCenterPointRadiusAngle@Point,double,double,double,Vector");
+            // This migration assumes that the first input of the old node is
+            // always an XYZ and never a Transform.
+
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+
+            // Create DSFunction node
+            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
+            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
+            element.SetAttribute("assembly", "ProtoGeometry.dll");
+            element.SetAttribute("nickname", "Arc.ByCenterPointRadiusAngle");
+            element.SetAttribute("function", "Arc.ByCenterPointRadiusAngle@Point,double,double,double,Vector");
+            migrationData.AppendNode(element);
+            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+
+            // Create new nodes
+            XmlElement identityCoordinateSystem = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll", "CoordinateSystem.Identity", "CoordinateSystem.Identity");
+            migrationData.AppendNode(identityCoordinateSystem);
+            string identityCoordinateSystemId = MigrationManager.GetGuidFromXmlElement(identityCoordinateSystem);
+
+            XmlElement zAxisNode = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll", "CoordinateSystem.ZAxis", "CoordinateSystem.ZAxis");
+            migrationData.AppendNode(zAxisNode);
+            string zAxisNodeId = MigrationManager.GetGuidFromXmlElement(zAxisNode);
+
+            XmlElement subtractionNode = MigrationManager.CreateFunctionNode(data.Document, "", "-", "-@,");
+            migrationData.AppendNode(subtractionNode);
+            string subtractionNodeId = MigrationManager.GetGuidFromXmlElement(subtractionNode);
+
+            // Move input connector from thisNode to subtractionNode
+            PortId oldInPort = new PortId(thisNodeId, 3, PortType.INPUT);
+            PortId newInPort = new PortId(subtractionNodeId, 0, PortType.INPUT);
+            XmlElement connector = data.FindFirstConnector(oldInPort);
+            data.ReconnectToPort(connector, newInPort);
+
+            // Find GUID of "startAngle" input
+            PortId startAnglePort = new PortId(thisNodeId, 2, PortType.INPUT);
+            connector = data.FindFirstConnector(startAnglePort);
+            string startAngleNodeId = connector.GetAttribute("start").ToString();
+
+            // Create new connectors
+            data.CreateConnectorFromId(startAngleNodeId, 0, subtractionNodeId, 1);
+            data.CreateConnector(subtractionNode, 0, thisNode, 3);
+            data.CreateConnector(zAxisNode, 0, thisNode, 4);
+            data.CreateConnector(identityCoordinateSystem, 0, zAxisNode, 0);
+
+            return migrationData;
         }
     }
 
