@@ -59,62 +59,8 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            NodeMigrationData migratedData = new NodeMigrationData(data.Document);
-            XmlElement oldNode = data.MigratedNodes.ElementAt(0);
-            string oldNodeId = MigrationManager.GetGuidFromXmlElement(oldNode);
-
-            //create the node itself
-            XmlElement dsReferencePoint = MigrationManager.CreateFunctionNode(
-                data.Document, "DSRevitNodes.dll",
-                "ReferencePoint.ByCoordinates",
-                "ReferencePoint.ByCoordinates@double,double,double");
-
-            migratedData.AppendNode(dsReferencePoint);
-            string dsReferencePointId = MigrationManager.GetGuidFromXmlElement(dsReferencePoint);
-
-            //create and recoonect the connecters
-            PortId oldInPort = new PortId(oldNodeId, 0, PortType.INPUT);           
-            XmlElement connectorX = data.FindFirstConnector(oldInPort);
-            if (connectorX!=null)
-            {
-
-                //create number x
-                XmlElement pointX = MigrationManager.CreateFunctionNode(
-                    data.Document, "ProtoGeometry.dll", "Point.X", "Point.X");
-
-                migratedData.AppendNode(pointX);
-                string pointXId = MigrationManager.GetGuidFromXmlElement(pointX);
-
-                //create number y
-                XmlElement pointY = MigrationManager.CreateFunctionNode(
-                    data.Document, "ProtoGeometry.dll", "Point.Y", "Point.Y");
-
-                migratedData.AppendNode(pointY);
-                string pointYId = MigrationManager.GetGuidFromXmlElement(pointY);
-
-                //create number z
-                XmlElement pointZ = MigrationManager.CreateFunctionNode(
-                    data.Document, "ProtoGeometry.dll", "Point.Z", "Point.Z");
-
-                migratedData.AppendNode(pointZ);
-                string pointZId = MigrationManager.GetGuidFromXmlElement(pointZ);
-               
-                XmlElement connectorY = MigrationManager.CreateFunctionNodeFrom(connectorX);
-                data.CreateConnector(connectorY);
-                XmlElement connectorZ = MigrationManager.CreateFunctionNodeFrom(connectorX);
-                data.CreateConnector(connectorZ);
-
-                PortId newInPort = new PortId(pointXId, 0, PortType.INPUT);
-                data.ReconnectToPort(connectorX, newInPort);
-                newInPort = new PortId(pointYId, 0, PortType.INPUT);
-                data.ReconnectToPort(connectorY, newInPort);
-                newInPort = new PortId(pointZId, 0, PortType.INPUT);
-                data.ReconnectToPort(connectorZ, newInPort);
-                data.CreateConnector(pointX, 0, dsReferencePoint, 0);
-                data.CreateConnector(pointY, 0, dsReferencePoint, 1);
-                data.CreateConnector(pointZ, 0, dsReferencePoint, 2);
-            }
-            return migratedData;
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "ReferencePoint.ByPoint", "ReferencePoint.ByPoint@Point");
         }
     }
 
