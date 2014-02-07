@@ -205,7 +205,6 @@ namespace Dynamo.Nodes
             Transform t = Transform.get_Translation(vector);
 
             return Value.NewContainer(t);
-
         }
 
         [NodeName("Reflect Transform")]
