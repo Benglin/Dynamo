@@ -882,13 +882,13 @@ namespace Dynamo.Nodes
             migrationData.AppendNode(newNode);
             string newNodeId = MigrationManager.GetGuidFromXmlElement(newNode);
 
-            // Swap input connectors 0 and 1
-            PortId inPortA = new PortId(newNodeId, 0, PortType.INPUT);
-            PortId inPortB = new PortId(newNodeId, 1, PortType.INPUT);
-            XmlElement connectorA = data.FindFirstConnector(inPortA);
-            XmlElement connectorB = data.FindFirstConnector(inPortB);
-            data.ReconnectToPort(connectorA, inPortB);
-            data.ReconnectToPort(connectorB, inPortA);
+            // Update connectors
+            PortId oldInPort0 = new PortId(newNodeId, 0, PortType.INPUT);
+            PortId oldInPort1 = new PortId(newNodeId, 1, PortType.INPUT);
+            XmlElement connector0 = data.FindFirstConnector(oldInPort0);
+            XmlElement connector1 = data.FindFirstConnector(oldInPort1);
+            data.ReconnectToPort(connector0, oldInPort1);
+            data.ReconnectToPort(connector1, oldInPort0);
 
             return migrationData;
         }
