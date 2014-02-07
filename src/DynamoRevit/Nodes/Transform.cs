@@ -23,13 +23,6 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(t);
         }
-
-        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
-        {
-            return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.Identity",
-                "CoordinateSystem.Identity");
-        }
     }
 
     [NodeName("Transform from Origin and Vectors")]
@@ -141,13 +134,6 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(t);
         }
-
-        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
-        {
-            return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.Scale",
-                "CoordinateSystem.Scale@double");
-        }
     }
 
     [NodeName("Rotate Transform")]
@@ -175,13 +161,6 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(t);
         }
-
-        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
-        {
-            return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.Rotate",
-                "CoordinateSystem.Rotate@double,Vector,Point");
-        }
     }
 
     [NodeName("Translate Transform")]
@@ -206,260 +185,248 @@ namespace Dynamo.Nodes
 
             return Value.NewContainer(t);
         }
+    }
 
-        [NodeName("Reflect Transform")]
-        [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_CREATE)]
-        [NodeDescription("Returns the transformation that reflects about the specified plane.")]
-        [NodeSearchTags("mirror", "symmetric")]
-        public class TransformReflection : GeometryBase
+    [NodeName("Reflect Transform")]
+    [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_CREATE)]
+    [NodeDescription("Returns the transformation that reflects about the specified plane.")]
+    [NodeSearchTags("mirror", "symmetric")]
+    public class TransformReflection : GeometryBase
+    {
+        public TransformReflection()
         {
-            public TransformReflection()
-            {
-                InPortData.Add(new PortData("pl", "Plane(Plane)", typeof(Value.Container)));
-                OutPortData.Add(new PortData("t", "Transform", typeof(Value.Container)));
+            InPortData.Add(new PortData("pl", "Plane(Plane)", typeof(Value.Container)));
+            OutPortData.Add(new PortData("t", "Transform", typeof(Value.Container)));
 
-                RegisterAllPorts();
-            }
-
-            public override Value Evaluate(FSharpList<Value> args)
-            {
-                var plane = (Autodesk.Revit.DB.Plane)((Value.Container)args[0]).Item;
-
-                Transform t = Transform.get_Reflection(plane);
-
-                return Value.NewContainer(t);
-            }
+            RegisterAllPorts();
         }
 
-        [NodeName("Transform XYZ")]
-        [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_APPLY)]
-        [NodeDescription("Transform a point with a transform.")]
-        [NodeSearchTags("move", "copy")]
-        public class TransformPoint : GeometryBase
+        public override Value Evaluate(FSharpList<Value> args)
         {
-            public TransformPoint()
-            {
-                InPortData.Add(new PortData("t", "Transform(Plane)", typeof(Value.Container)));
-                InPortData.Add(new PortData("p1", "The point(XYZ)", typeof(Value.Container)));
-                OutPortData.Add(new PortData("p2", "The transformed point.(XYZ)", typeof(Value.Container)));
+            var plane = (Autodesk.Revit.DB.Plane)((Value.Container)args[0]).Item;
 
-                RegisterAllPorts();
-            }
+            Transform t = Transform.get_Reflection(plane);
 
-            public override Value Evaluate(FSharpList<Value> args)
-            {
-                var t = (Transform)((Value.Container)args[0]).Item;
-                var pt = (XYZ)((Value.Container)args[1]).Item;
+            return Value.NewContainer(t);
+        }
+    }
 
-                XYZ tpt = GetPointTransformed(pt, t);
+    [NodeName("Transform XYZ")]
+    [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_APPLY)]
+    [NodeDescription("Transform a point with a transform.")]
+    [NodeSearchTags("move", "copy")]
+    public class TransformPoint : GeometryBase
+    {
+        public TransformPoint()
+        {
+            InPortData.Add(new PortData("t", "Transform(Plane)", typeof(Value.Container)));
+            InPortData.Add(new PortData("p1", "The point(XYZ)", typeof(Value.Container)));
+            OutPortData.Add(new PortData("p2", "The transformed point.(XYZ)", typeof(Value.Container)));
 
-                return Value.NewContainer(tpt);
-            }
-
-            public static XYZ GetPointTransformed(XYZ point, Transform transform)
-            {
-                double x = point.X;
-                double y = point.Y;
-                double z = point.Z;
-
-                //transform basis of the old coordinate system in the new coordinate // system
-                XYZ b0 = transform.get_Basis(0);
-                XYZ b1 = transform.get_Basis(1);
-                XYZ b2 = transform.get_Basis(2);
-                XYZ origin = transform.Origin;
-
-                //transform the origin of the old coordinate system in the new 
-                //coordinate system
-                double xTemp = x * b0.X + y * b1.X + z * b2.X + origin.X;
-                double yTemp = x * b0.Y + y * b1.Y + z * b2.Y + origin.Y;
-                double zTemp = x * b0.Z + y * b1.Z + z * b2.Z + origin.Z;
-
-                return new XYZ(xTemp, yTemp, zTemp);
-            }
-
+            RegisterAllPorts();
         }
 
-        [NodeName("Multiply Transform")]
-        [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
-        [NodeDescription("Multiply two transforms.")]
-        public class Multiplytransform : GeometryBase
+        public override Value Evaluate(FSharpList<Value> args)
         {
-            public Multiplytransform()
-            {
-                InPortData.Add(new PortData("t1", "The first transform", typeof(Value.Container)));
-                InPortData.Add(new PortData("t2", "The second transform", typeof(Value.Container)));
-                OutPortData.Add(new PortData("transform", "The transform which is the result of multiplication.", typeof(Value.Container)));
+            var t = (Transform)((Value.Container)args[0]).Item;
+            var pt = (XYZ)((Value.Container)args[1]).Item;
 
-                RegisterAllPorts();
-            }
+            XYZ tpt = GetPointTransformed(pt, t);
 
-            public override Value Evaluate(FSharpList<Value> args)
-            {
-                var t1 = (Transform)((Value.Container)args[0]).Item;
-                var t2 = (Transform)((Value.Container)args[1]).Item;
-
-                Transform t = t1.Multiply(t2);
-
-                return Value.NewContainer(t);
-            }
-
-            [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-            public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
-            {
-                return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.PostMultiplyBy",
-                    "CoordinateSystem.PostMultiplyBy@CoordinateSystem");
-            }
+            return Value.NewContainer(tpt);
         }
 
-        [NodeName("Transform to Curve Point")]
-        [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
-        [NodeDescription("Returns a transformation of XY plane to plane at point on curve perpendicular to curve tangent direction.")]
-        [NodeSearchTags("move", "copy")]
-        public class TransToCurve : GeometryBase
+        public static XYZ GetPointTransformed(XYZ point, Transform transform)
         {
-            public TransToCurve()
-            {
-                InPortData.Add(new PortData("c", "Curve(Curve)", typeof(Value.Container)));
-                InPortData.Add(new PortData("p", "Raw Parameter(Number)", typeof(Value.Container)));
-                OutPortData.Add(new PortData("t", "Transform to point on Curve", typeof(Value.Container)));
+            double x = point.X;
+            double y = point.Y;
+            double z = point.Z;
 
-                RegisterAllPorts();
-            }
+            //transform basis of the old coordinate system in the new coordinate // system
+            XYZ b0 = transform.get_Basis(0);
+            XYZ b1 = transform.get_Basis(1);
+            XYZ b2 = transform.get_Basis(2);
+            XYZ origin = transform.Origin;
 
-            public override Value Evaluate(FSharpList<Value> args)
-            {
+            //transform the origin of the old coordinate system in the new 
+            //coordinate system
+            double xTemp = x * b0.X + y * b1.X + z * b2.X + origin.X;
+            double yTemp = x * b0.Y + y * b1.Y + z * b2.Y + origin.Y;
+            double zTemp = x * b0.Z + y * b1.Z + z * b2.Z + origin.Z;
 
-                Curve crv = (Curve)((Value.Container)args[0]).Item;
-                double parameter = ((Value.Number)args[1]).Item;
-
-
-                Transform tCurve = crv.ComputeDerivatives(parameter, false);
-
-
-                Transform tF = Transform.Identity;
-                tF.Origin = tCurve.Origin;
-                tF.BasisZ = tCurve.BasisX.Normalize();
-
-                tF.BasisX = XYZ.BasisZ.CrossProduct(tF.BasisZ);
-                if (tF.BasisX.IsZeroLength())
-                    tF.BasisX = XYZ.BasisX;
-                tF.BasisY = tF.BasisZ.CrossProduct(tF.BasisX);
-
-                return Value.NewContainer(
-                   tF
-                );
-            }
+            return new XYZ(xTemp, yTemp, zTemp);
         }
 
-        [NodeName("Inverse Transform")]
-        [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
-        [NodeDescription("Returns the inverse transformation.")]
-        public class InverseTransform : GeometryBase
+    }
+
+    [NodeName("Multiply Transform")]
+    [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
+    [NodeDescription("Multiply two transforms.")]
+    public class Multiplytransform : GeometryBase
+    {
+        public Multiplytransform()
         {
-            public InverseTransform()
-            {
-                InPortData.Add(new PortData("t", "TransformToInverse(Transform)", typeof(Value.Container)));
-                OutPortData.Add(new PortData("ts", "Inversed Transform. (Transform)", typeof(Value.Container)));
+            InPortData.Add(new PortData("t1", "The first transform", typeof(Value.Container)));
+            InPortData.Add(new PortData("t2", "The second transform", typeof(Value.Container)));
+            OutPortData.Add(new PortData("transform", "The transform which is the result of multiplication.", typeof(Value.Container)));
 
-                RegisterAllPorts();
-            }
-
-            public override Value Evaluate(FSharpList<Value> args)
-            {
-
-                var transform = (Transform)((Value.Container)args[0]).Item;
-
-                Transform t = transform.Inverse;
-
-                return Value.NewContainer(t);
-
-            }
-
-            [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
-            public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
-            {
-                return MigrateToDsFunction(data, "ProtoGeometry.dll", "CoordinateSystem.Inverse", "CoordinateSystem.Inverse");
-            }
+            RegisterAllPorts();
         }
 
-        [NodeName("Transform Basis X")]
-        [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
-        [NodeDescription("Returns the x basis vector of the transform.")]
-        public class BasisX : GeometryBase
+        public override Value Evaluate(FSharpList<Value> args)
         {
-            public BasisX()
-            {
-                InPortData.Add(new PortData("transform", "Transform.", typeof(Value.Container)));
-                OutPortData.Add(new PortData("xyz", "Basis X.", typeof(Value.Container)));
+            var t1 = (Transform)((Value.Container)args[0]).Item;
+            var t2 = (Transform)((Value.Container)args[1]).Item;
 
-                RegisterAllPorts();
-            }
+            Transform t = t1.Multiply(t2);
 
-            public override Value Evaluate(FSharpList<Value> args)
-            {
-                var transform = (Transform)((Value.Container)args[0]).Item;
-                return Value.NewContainer(transform.BasisX);
-            }
+            return Value.NewContainer(t);
         }
 
-        [NodeName("Transform Basis Y")]
-        [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
-        [NodeDescription("Returns the y basis vector of the transform.")]
-        public class BasisY : GeometryBase
+    }
+
+    [NodeName("Transform to Curve Point")]
+    [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
+    [NodeDescription("Returns a transformation of XY plane to plane at point on curve perpendicular to curve tangent direction.")]
+    [NodeSearchTags("move", "copy")]
+    public class TransToCurve : GeometryBase
+    {
+        public TransToCurve()
         {
-            public BasisY()
-            {
-                InPortData.Add(new PortData("transform", "Transform.", typeof(Value.Container)));
-                OutPortData.Add(new PortData("xyz", "Basis Y.", typeof(Value.Container)));
+            InPortData.Add(new PortData("c", "Curve(Curve)", typeof(Value.Container)));
+            InPortData.Add(new PortData("p", "Raw Parameter(Number)", typeof(Value.Container)));
+            OutPortData.Add(new PortData("t", "Transform to point on Curve", typeof(Value.Container)));
 
-                RegisterAllPorts();
-            }
-
-            public override Value Evaluate(FSharpList<Value> args)
-            {
-                var transform = (Transform)((Value.Container)args[0]).Item;
-                return Value.NewContainer(transform.BasisY);
-            }
+            RegisterAllPorts();
         }
 
-        [NodeName("Transform Basis Z")]
-        [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
-        [NodeDescription("Returns the z basis vector of the transform.")]
-        public class BasisZ : GeometryBase
+        public override Value Evaluate(FSharpList<Value> args)
         {
-            public BasisZ()
-            {
-                InPortData.Add(new PortData("transform", "Transform.", typeof(Value.Container)));
-                OutPortData.Add(new PortData("xyz", "Basis Z.", typeof(Value.Container)));
 
-                RegisterAllPorts();
-            }
+            Curve crv = (Curve)((Value.Container)args[0]).Item;
+            double parameter = ((Value.Number)args[1]).Item;
 
-            public override Value Evaluate(FSharpList<Value> args)
-            {
-                var transform = (Transform)((Value.Container)args[0]).Item;
-                return Value.NewContainer(transform.BasisZ);
-            }
+
+            Transform tCurve = crv.ComputeDerivatives(parameter, false);
+
+
+            Transform tF = Transform.Identity;
+            tF.Origin = tCurve.Origin;
+            tF.BasisZ = tCurve.BasisX.Normalize();
+
+            tF.BasisX = XYZ.BasisZ.CrossProduct(tF.BasisZ);
+            if (tF.BasisX.IsZeroLength())
+                tF.BasisX = XYZ.BasisX;
+            tF.BasisY = tF.BasisZ.CrossProduct(tF.BasisX);
+
+            return Value.NewContainer(
+               tF
+            );
+        }
+    }
+
+    [NodeName("Inverse Transform")]
+    [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
+    [NodeDescription("Returns the inverse transformation.")]
+    public class InverseTransform : GeometryBase
+    {
+        public InverseTransform()
+        {
+            InPortData.Add(new PortData("t", "TransformToInverse(Transform)", typeof(Value.Container)));
+            OutPortData.Add(new PortData("ts", "Inversed Transform. (Transform)", typeof(Value.Container)));
+
+            RegisterAllPorts();
         }
 
-        [NodeName("Transform Origin")]
-        [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
-        [NodeDescription("Returns the z basis vector of the transform.")]
-        public class Origin : GeometryBase
+        public override Value Evaluate(FSharpList<Value> args)
         {
-            public Origin()
-            {
-                InPortData.Add(new PortData("transform", "Transform.", typeof(Value.Container)));
-                OutPortData.Add(new PortData("xyz", "Origin.", typeof(Value.Container)));
 
-                RegisterAllPorts();
-            }
+            var transform = (Transform)((Value.Container)args[0]).Item;
 
-            public override Value Evaluate(FSharpList<Value> args)
-            {
-                var transform = (Transform)((Value.Container)args[0]).Item;
-                return Value.NewContainer(transform.Origin);
-            }
+            Transform t = transform.Inverse;
+
+            return Value.NewContainer(t);
+
+        }
+    }
+
+    [NodeName("Transform Basis X")]
+    [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
+    [NodeDescription("Returns the x basis vector of the transform.")]
+    public class BasisX : GeometryBase
+    {
+        public BasisX()
+        {
+            InPortData.Add(new PortData("transform", "Transform.", typeof(Value.Container)));
+            OutPortData.Add(new PortData("xyz", "Basis X.", typeof(Value.Container)));
+
+            RegisterAllPorts();
+        }
+
+        public override Value Evaluate(FSharpList<Value> args)
+        {
+            var transform = (Transform)((Value.Container)args[0]).Item;
+            return Value.NewContainer(transform.BasisX);
+        }
+    }
+
+    [NodeName("Transform Basis Y")]
+    [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
+    [NodeDescription("Returns the y basis vector of the transform.")]
+    public class BasisY : GeometryBase
+    {
+        public BasisY()
+        {
+            InPortData.Add(new PortData("transform", "Transform.", typeof(Value.Container)));
+            OutPortData.Add(new PortData("xyz", "Basis Y.", typeof(Value.Container)));
+
+            RegisterAllPorts();
+        }
+
+        public override Value Evaluate(FSharpList<Value> args)
+        {
+            var transform = (Transform)((Value.Container)args[0]).Item;
+            return Value.NewContainer(transform.BasisY);
+        }
+    }
+
+    [NodeName("Transform Basis Z")]
+    [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
+    [NodeDescription("Returns the z basis vector of the transform.")]
+    public class BasisZ : GeometryBase
+    {
+        public BasisZ()
+        {
+            InPortData.Add(new PortData("transform", "Transform.", typeof(Value.Container)));
+            OutPortData.Add(new PortData("xyz", "Basis Z.", typeof(Value.Container)));
+
+            RegisterAllPorts();
+        }
+
+        public override Value Evaluate(FSharpList<Value> args)
+        {
+            var transform = (Transform)((Value.Container)args[0]).Item;
+            return Value.NewContainer(transform.BasisZ);
+        }
+    }
+
+    [NodeName("Transform Origin")]
+    [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_MODIFY)]
+    [NodeDescription("Returns the z basis vector of the transform.")]
+    public class Origin : GeometryBase
+    {
+        public Origin()
+        {
+            InPortData.Add(new PortData("transform", "Transform.", typeof(Value.Container)));
+            OutPortData.Add(new PortData("xyz", "Origin.", typeof(Value.Container)));
+
+            RegisterAllPorts();
+        }
+
+        public override Value Evaluate(FSharpList<Value> args)
+        {
+            var transform = (Transform)((Value.Container)args[0]).Item;
+            return Value.NewContainer(transform.Origin);
         }
     }
 }

@@ -149,10 +149,12 @@ namespace Dynamo.Nodes
             object arg0 = ((Value.Container)args[0]).Item;
 
             Face f;
-            var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
             var r = arg0 as Reference;
             if (r != null)
+            {
+                var document = DocumentManager.GetInstance().CurrentUIDocument.Document;
                 f = (Face)document.GetElement(r.ElementId).GetGeometryObjectFromReference(r);
+            }
             else
                 f = (Face)arg0;
 
