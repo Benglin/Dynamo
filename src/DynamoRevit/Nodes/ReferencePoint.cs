@@ -190,9 +190,49 @@ namespace Dynamo.Nodes
         [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
         public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
         {
-            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+            NodeMigrationData migratedData = new NodeMigrationData(data.Document);
+            XmlElement oldNode = data.MigratedNodes.ElementAt(0);
+            string oldNodeId = MigrationManager.GetGuidFromXmlElement(oldNode);
+
+            //create the node itself
+            XmlElement dsReferencePoint = MigrationManager.CreateFunctionNode(
+                data.Document, "DSRevitNodes.dll",
                 "ReferencePoint.ByParametersOnFaceReference",
                 "ReferencePoint.ByParametersOnFaceReference@FaceReference,double,double");
+
+            migratedData.AppendNode(dsReferencePoint);
+            string dsReferencePointId = MigrationManager.GetGuidFromXmlElement(dsReferencePoint);
+
+            XmlElement UVU = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll", "UV.U", "UV.U");
+            migratedData.AppendNode(UVU);
+            string UVUId = MigrationManager.GetGuidFromXmlElement(UVU);
+
+            XmlElement UVV = MigrationManager.CreateFunctionNode(
+                data.Document, "ProtoGeometry.dll", "UV.V", "UV.V");
+            migratedData.AppendNode(UVV);
+            string UVVId = MigrationManager.GetGuidFromXmlElement(UVV);
+
+            PortId oldInPort0 = new PortId(oldNodeId, 0, PortType.INPUT);
+            XmlElement connector0 = data.FindFirstConnector(oldInPort0);
+
+            PortId oldInPort1 = new PortId(oldNodeId, 1, PortType.INPUT);
+            XmlElement connector1 = data.FindFirstConnector(oldInPort1);
+
+            XmlElement connector2 = MigrationManager.CreateFunctionNodeFrom(connector1);
+            data.CreateConnector(connector1);
+
+            PortId newInPort = new PortId(dsReferencePointId, 0, PortType.INPUT);
+            data.ReconnectToPort(connector0, newInPort);
+            newInPort = new PortId(UVUId, 0, PortType.INPUT);
+            data.ReconnectToPort(connector1, newInPort);
+            newInPort = new PortId(UVVId, 0, PortType.INPUT);
+            data.ReconnectToPort(connector2, newInPort);
+
+            data.CreateConnector(UVU, 0, dsReferencePoint, 1);
+            data.CreateConnector(UVV, 0, dsReferencePoint, 2);
+
+            return migratedData;           
         }
     }
 
