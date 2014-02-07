@@ -333,9 +333,7 @@ namespace Dynamo.Nodes
             Curve crv = (Curve)((Value.Container)args[0]).Item;
             double parameter = ((Value.Number)args[1]).Item;
 
-
-            Transform tCurve = crv.ComputeDerivatives(parameter, false);
-            
+            Transform tCurve = crv.ComputeDerivatives(parameter, false);           
 
             Transform tF = Transform.Identity;
             tF.Origin = tCurve.Origin;
