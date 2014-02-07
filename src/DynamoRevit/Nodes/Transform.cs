@@ -198,7 +198,6 @@ namespace Dynamo.Nodes
                 "CoordinateSystem.Identity",
                 "CoordinateSystem.Identity");
             migrationData.AppendNode(identityCoordinateSystem);
-            string dsCoordinateSystemId = MigrationManager.GetGuidFromXmlElement(identityCoordinateSystem);
 
             // Move input connector from 0 to 3
             PortId oldInPort = new PortId(thisNodeId, 0, PortType.INPUT);
@@ -262,7 +261,6 @@ namespace Dynamo.Nodes
             XmlElement identityCoordinateSystem = MigrationManager.CreateFunctionNode(
                 data.Document, "ProtoGeometry.dll", "CoordinateSystem.Identity", "CoordinateSystem.Identity");
             migrationData.AppendNode(identityCoordinateSystem);
-            string identityCoordinateSystemId = MigrationManager.GetGuidFromXmlElement(identityCoordinateSystem);
 
             XmlElement nodeX = MigrationManager.CreateFunctionNode(
                 data.Document, "ProtoGeometry.dll", "Point.X", "Point.X");

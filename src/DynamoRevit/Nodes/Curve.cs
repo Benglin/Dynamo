@@ -62,7 +62,6 @@ namespace Dynamo.Nodes
                 "CoordinateSystem.Identity",
                 "CoordinateSystem.Identity");
             migrationData.AppendNode(identityCoordinateSystem);
-            string dsCoordinateSystemId = MigrationManager.GetGuidFromXmlElement(identityCoordinateSystem);
 
             // Move input connector from 1 to 2
             PortId oldInPort = new PortId(thisNodeId, 1, PortType.INPUT);
