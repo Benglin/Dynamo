@@ -205,15 +205,15 @@ namespace Dynamo.Nodes
             migratedData.AppendNode(dsReferencePoint);
             string dsReferencePointId = MigrationManager.GetGuidFromXmlElement(dsReferencePoint);
 
-            XmlElement UVU = MigrationManager.CreateFunctionNode(
+            XmlElement uvU = MigrationManager.CreateFunctionNode(
                 data.Document, "ProtoGeometry.dll", "UV.U", "UV.U");
-            migratedData.AppendNode(UVU);
-            string UVUId = MigrationManager.GetGuidFromXmlElement(UVU);
+            migratedData.AppendNode(uvU);
+            string uvUId = MigrationManager.GetGuidFromXmlElement(uvU);
 
-            XmlElement UVV = MigrationManager.CreateFunctionNode(
+            XmlElement uvV = MigrationManager.CreateFunctionNode(
                 data.Document, "ProtoGeometry.dll", "UV.V", "UV.V");
-            migratedData.AppendNode(UVV);
-            string UVVId = MigrationManager.GetGuidFromXmlElement(UVV);
+            migratedData.AppendNode(uvV);
+            string uvVId = MigrationManager.GetGuidFromXmlElement(uvV);
 
             PortId oldInPort0 = new PortId(oldNodeId, 0, PortType.INPUT);
             XmlElement connector0 = data.FindFirstConnector(oldInPort0);
@@ -222,17 +222,17 @@ namespace Dynamo.Nodes
             XmlElement connector1 = data.FindFirstConnector(oldInPort1);
 
             XmlElement connector2 = MigrationManager.CreateFunctionNodeFrom(connector1);
-            data.CreateConnector(connector1);
+            data.CreateConnector(connector2);
 
             PortId newInPort = new PortId(dsReferencePointId, 0, PortType.INPUT);
             data.ReconnectToPort(connector0, newInPort);
-            newInPort = new PortId(UVUId, 0, PortType.INPUT);
+            newInPort = new PortId(uvUId, 0, PortType.INPUT);
             data.ReconnectToPort(connector1, newInPort);
-            newInPort = new PortId(UVVId, 0, PortType.INPUT);
+            newInPort = new PortId(uvVId, 0, PortType.INPUT);
             data.ReconnectToPort(connector2, newInPort);
 
-            data.CreateConnector(UVU, 0, dsReferencePoint, 1);
-            data.CreateConnector(UVV, 0, dsReferencePoint, 2);
+            data.CreateConnector(uvU, 0, dsReferencePoint, 1);
+            data.CreateConnector(uvV, 0, dsReferencePoint, 2);
 
             return migratedData;           
         }
