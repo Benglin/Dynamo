@@ -8,7 +8,7 @@ namespace Dynamo.Nodes
     [NodeName("Identity Transform")]
     [NodeCategory(BuiltinNodeCategories.GEOMETRY_TRANSFORM_CREATE)]
     [NodeDescription("Returns the identity transformation.")]
-    public class TransformIdentity : GeometryBase
+    public class TransformIdentity: GeometryBase
     {
         public TransformIdentity()
         {
@@ -343,7 +343,7 @@ namespace Dynamo.Nodes
 
             tF.BasisX = XYZ.BasisZ.CrossProduct(tF.BasisZ);
             if (tF.BasisX.IsZeroLength())
-                tF.BasisX = XYZ.BasisX;
+               tF.BasisX = XYZ.BasisX;
             tF.BasisY = tF.BasisZ.CrossProduct(tF.BasisX);
 
             return Value.NewContainer(
