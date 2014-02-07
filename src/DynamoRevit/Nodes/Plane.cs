@@ -44,17 +44,17 @@ namespace Dynamo.Nodes
             NodeMigrationData migrationData = new NodeMigrationData(data.Document);
 
             // Create DSFunction node
-            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
-            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
-            element.SetAttribute("assembly", "ProtoGeometry.dll");
-            element.SetAttribute("nickname", "Plane.ByOriginNormal");
-            element.SetAttribute("function", "Plane.ByOriginNormal@Point,Vector");
-            migrationData.AppendNode(element);
-            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+            XmlElement oldNode = data.MigratedNodes.ElementAt(0);
+            var newNode = MigrationManager.CreateFunctionNodeFrom(oldNode);
+            newNode.SetAttribute("assembly", "ProtoGeometry.dll");
+            newNode.SetAttribute("nickname", "Plane.ByOriginNormal");
+            newNode.SetAttribute("function", "Plane.ByOriginNormal@Point,Vector");
+            migrationData.AppendNode(newNode);
+            string newNodeId = MigrationManager.GetGuidFromXmlElement(newNode);
 
             // Swap input connectors 0 and 1
-            PortId inPortA = new PortId(thisNodeId, 0, PortType.INPUT);
-            PortId inPortB = new PortId(thisNodeId, 1, PortType.INPUT);
+            PortId inPortA = new PortId(newNodeId, 0, PortType.INPUT);
+            PortId inPortB = new PortId(newNodeId, 1, PortType.INPUT);
             XmlElement connectorA = data.FindFirstConnector(inPortA);
             XmlElement connectorB = data.FindFirstConnector(inPortB);
             data.ReconnectToPort(connectorA, inPortB);
@@ -278,6 +278,13 @@ namespace Dynamo.Nodes
 
                 return FScheme.Value.NewContainer(sp);
             }
+        }
+
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "SketchPlane.ByPlane", "SketchPlane.ByPlane@Plane");
         }
     }
 

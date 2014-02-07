@@ -48,13 +48,13 @@ namespace Dynamo.Nodes
             NodeMigrationData migrationData = new NodeMigrationData(data.Document);
 
             // Create DSFunction node
-            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
-            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
-            element.SetAttribute("assembly", "ProtoGeometry.dll");
-            element.SetAttribute("nickname", "Geometry.Transform");
-            element.SetAttribute("function", "Geometry.Transform@CoordinateSystem,CoordinateSystem");
-            migrationData.AppendNode(element);
-            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+            XmlElement oldNode = data.MigratedNodes.ElementAt(0);
+            var newNode = MigrationManager.CreateFunctionNodeFrom(oldNode);
+            newNode.SetAttribute("assembly", "ProtoGeometry.dll");
+            newNode.SetAttribute("nickname", "Geometry.Transform");
+            newNode.SetAttribute("function", "Geometry.Transform@CoordinateSystem,CoordinateSystem");
+            migrationData.AppendNode(newNode);
+            string newNodeId = MigrationManager.GetGuidFromXmlElement(newNode);
 
             // Create new node
             XmlElement identityCoordinateSystem = MigrationManager.CreateFunctionNode(
@@ -63,14 +63,13 @@ namespace Dynamo.Nodes
                 "CoordinateSystem.Identity");
             migrationData.AppendNode(identityCoordinateSystem);
 
-            // Move input connector from 1 to 2
-            PortId oldInPort = new PortId(thisNodeId, 1, PortType.INPUT);
-            PortId newInPort = new PortId(thisNodeId, 2, PortType.INPUT);
-            XmlElement connector = data.FindFirstConnector(oldInPort);
-            data.ReconnectToPort(connector, newInPort);
-
-            // Connect from "identityCoordinateSystem" to the new node.
-            data.CreateConnector(identityCoordinateSystem, 0, thisNode, 1);
+            // Update connectors
+            PortId oldInPort1 = new PortId(newNodeId, 1, PortType.INPUT);
+            PortId newInPort2 = new PortId(newNodeId, 2, PortType.INPUT);
+            XmlElement connector1 = data.FindFirstConnector(oldInPort1);
+            
+            data.ReconnectToPort(connector1, newInPort2);
+            data.CreateConnector(identityCoordinateSystem, 0, newNode, 1);
 
             return migrationData;
         }
@@ -458,6 +457,12 @@ namespace Dynamo.Nodes
             }
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "ModelCurve.CurveReference", "ModelCurve.CurveReference");
+        }
     }
 
     [NodeName("Geometry Curve From Model Curve")]
@@ -524,6 +529,12 @@ namespace Dynamo.Nodes
             }
         }
 
+        [NodeMigration(from: "0.6.3", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            return MigrateToDsFunction(data, "DSRevitNodes.dll",
+                "ModelCurve.Curve", "ModelCurve.Curve");
+        }
     }
      
     [NodeName("Curve Loop")]
@@ -863,17 +874,17 @@ namespace Dynamo.Nodes
             NodeMigrationData migrationData = new NodeMigrationData(data.Document);
 
             // Create DSFunction node
-            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
-            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
-            element.SetAttribute("assembly", "ProtoGeometry.dll");
-            element.SetAttribute("nickname", "Curve.CoordinateSystemAtParameter");
-            element.SetAttribute("function", "Curve.CoordinateSystemAtParameter@double");
-            migrationData.AppendNode(element);
-            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+            XmlElement oldNode = data.MigratedNodes.ElementAt(0);
+            var newNode = MigrationManager.CreateFunctionNodeFrom(oldNode);
+            newNode.SetAttribute("assembly", "ProtoGeometry.dll");
+            newNode.SetAttribute("nickname", "Curve.CoordinateSystemAtParameter");
+            newNode.SetAttribute("function", "Curve.CoordinateSystemAtParameter@double");
+            migrationData.AppendNode(newNode);
+            string newNodeId = MigrationManager.GetGuidFromXmlElement(newNode);
 
             // Swap input connectors 0 and 1
-            PortId inPortA = new PortId(thisNodeId, 0, PortType.INPUT);
-            PortId inPortB = new PortId(thisNodeId, 1, PortType.INPUT);
+            PortId inPortA = new PortId(newNodeId, 0, PortType.INPUT);
+            PortId inPortB = new PortId(newNodeId, 1, PortType.INPUT);
             XmlElement connectorA = data.FindFirstConnector(inPortA);
             XmlElement connectorB = data.FindFirstConnector(inPortB);
             data.ReconnectToPort(connectorA, inPortB);

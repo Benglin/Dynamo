@@ -230,13 +230,13 @@ namespace Dynamo.Nodes
             NodeMigrationData migrationData = new NodeMigrationData(data.Document);
 
             // Create DSFunction node
-            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
-            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
-            element.SetAttribute("assembly", "ProtoGeometry.dll");
-            element.SetAttribute("nickname", "Surface.PointAtParameter");
-            element.SetAttribute("function", "Surface.PointAtParameter@double,double");
-            migrationData.AppendNode(element);
-            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+            XmlElement oldNode = data.MigratedNodes.ElementAt(0);
+            var newNode = MigrationManager.CreateFunctionNodeFrom(oldNode);
+            newNode.SetAttribute("assembly", "ProtoGeometry.dll");
+            newNode.SetAttribute("nickname", "Surface.PointAtParameter");
+            newNode.SetAttribute("function", "Surface.PointAtParameter@double,double");
+            migrationData.AppendNode(newNode);
+            string newNodeId = MigrationManager.GetGuidFromXmlElement(newNode);
 
             // Create new nodes
             XmlElement nodeU = MigrationManager.CreateFunctionNode(
@@ -249,23 +249,22 @@ namespace Dynamo.Nodes
             migrationData.AppendNode(nodeV);
             string nodeVId = MigrationManager.GetGuidFromXmlElement(nodeV);
 
-            // Move input connector from 0 to nodeU and nodeV
-            PortId oldInPort = new PortId(thisNodeId, 0, PortType.INPUT);
-            PortId newInPort = new PortId(nodeUId, 0, PortType.INPUT);
-            XmlElement connector = data.FindFirstConnector(oldInPort);
-            data.ReconnectToPort(connector, newInPort);
-            string nodeUVId = connector.GetAttribute("start").ToString();
+            // Update connectors
+            PortId oldInPort0 = new PortId(newNodeId, 0, PortType.INPUT);
+            PortId oldInPort1 = new PortId(newNodeId, 1, PortType.INPUT);
             
-            // Move input connector from 1 to 0
-            oldInPort = new PortId(thisNodeId, 1, PortType.INPUT);
-            newInPort = new PortId(thisNodeId, 0, PortType.INPUT);
-            connector = data.FindFirstConnector(oldInPort);
-            data.ReconnectToPort(connector, newInPort);
+            PortId newInPort0 = new PortId(newNodeId, 0, PortType.INPUT);
+            PortId newInPortNodeU = new PortId(nodeUId, 0, PortType.INPUT);
+            
+            XmlElement connector0 = data.FindFirstConnector(oldInPort0);
+            XmlElement connector1 = data.FindFirstConnector(oldInPort1);
 
-            // Create new connectors
+            string nodeUVId = connector0.GetAttribute("start").ToString();
+            data.ReconnectToPort(connector0, newInPortNodeU);
+            data.ReconnectToPort(connector1, newInPort0);
             data.CreateConnectorFromId(nodeUVId, 0, nodeVId, 0);
-            data.CreateConnector(nodeU, 0, thisNode, 1);
-            data.CreateConnector(nodeV, 0, thisNode, 2);
+            data.CreateConnector(nodeU, 0, newNode, 1);
+            data.CreateConnector(nodeV, 0, newNode, 2);
 
             return migrationData;
         }
@@ -310,13 +309,13 @@ namespace Dynamo.Nodes
             NodeMigrationData migrationData = new NodeMigrationData(data.Document);
 
             // Create DSFunction node
-            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
-            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
-            element.SetAttribute("assembly", "ProtoGeometry.dll");
-            element.SetAttribute("nickname", "Surface.NormalAtPoint");
-            element.SetAttribute("function", "Surface.NormalAtPoint@Point");
-            migrationData.AppendNode(element);
-            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+            XmlElement oldNode = data.MigratedNodes.ElementAt(0);
+            var newNode = MigrationManager.CreateFunctionNodeFrom(oldNode);
+            newNode.SetAttribute("assembly", "ProtoGeometry.dll");
+            newNode.SetAttribute("nickname", "Surface.NormalAtPoint");
+            newNode.SetAttribute("function", "Surface.NormalAtPoint@Point");
+            migrationData.AppendNode(newNode);
+            string newNodeId = MigrationManager.GetGuidFromXmlElement(newNode);
 
             // Create new nodes
             XmlElement nodeU = MigrationManager.CreateFunctionNode(
@@ -334,26 +333,27 @@ namespace Dynamo.Nodes
             migrationData.AppendNode(pointAtParameter);
             string pointAtParameterId = MigrationManager.GetGuidFromXmlElement(pointAtParameter);
 
-            // Move input connector from 0 to nodeU and nodeV
-            PortId oldInPort = new PortId(thisNodeId, 0, PortType.INPUT);
-            PortId newInPort = new PortId(nodeUId, 0, PortType.INPUT);
-            XmlElement connector = data.FindFirstConnector(oldInPort);
-            data.ReconnectToPort(connector, newInPort);
-            string nodeUVId = connector.GetAttribute("start").ToString();
+            // Update connectors
+            PortId oldInPort0 = new PortId(newNodeId, 0, PortType.INPUT);
+            PortId oldInPort1 = new PortId(newNodeId, 1, PortType.INPUT);
 
-            // Move input connector from 1 to 0
-            oldInPort = new PortId(thisNodeId, 1, PortType.INPUT);
-            newInPort = new PortId(thisNodeId, 0, PortType.INPUT);
-            connector = data.FindFirstConnector(oldInPort);
-            data.ReconnectToPort(connector, newInPort);
-            string nodeSurfaceId = connector.GetAttribute("start").ToString();
+            PortId newInPort0 = new PortId(newNodeId, 0, PortType.INPUT);
+            PortId newInPortNodeU = new PortId(nodeUId, 0, PortType.INPUT);
 
-            // Create new connectors
+            XmlElement connector0 = data.FindFirstConnector(oldInPort0);
+            XmlElement connector1 = data.FindFirstConnector(oldInPort1);
+            
+            data.ReconnectToPort(connector0, newInPortNodeU);
+            data.ReconnectToPort(connector1, newInPort0);
+            
+            string nodeUVId = connector0.GetAttribute("start").ToString();
+            string nodeSurfaceId = connector1.GetAttribute("start").ToString();
+
             data.CreateConnectorFromId(nodeUVId, 0, nodeVId, 0);
             data.CreateConnectorFromId(nodeSurfaceId, 0, pointAtParameterId, 0);
             data.CreateConnectorFromId(nodeUId, 0, pointAtParameterId, 1);
             data.CreateConnectorFromId(nodeVId, 0, pointAtParameterId, 2);
-            data.CreateConnectorFromId(pointAtParameterId, 0, thisNodeId, 1);
+            data.CreateConnectorFromId(pointAtParameterId, 0, newNodeId, 1);
 
             return migrationData;
         }

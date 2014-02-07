@@ -125,44 +125,46 @@ namespace Dynamo.Nodes
             NodeMigrationData migrationData = new NodeMigrationData(data.Document);
 
             // Create DSFunction node
-            XmlElement thisNode = data.MigratedNodes.ElementAt(0);
-            var element = MigrationManager.CreateFunctionNodeFrom(thisNode);
-            element.SetAttribute("assembly", "ProtoGeometry.dll");
-            element.SetAttribute("nickname", "Arc.ByCenterPointRadiusAngle");
-            element.SetAttribute("function", "Arc.ByCenterPointRadiusAngle@Point,double,double,double,Vector");
-            migrationData.AppendNode(element);
-            string thisNodeId = MigrationManager.GetGuidFromXmlElement(thisNode);
+            XmlElement oldNode = data.MigratedNodes.ElementAt(0);
+            var newNode = MigrationManager.CreateFunctionNodeFrom(oldNode);
+            newNode.SetAttribute("assembly", "ProtoGeometry.dll");
+            newNode.SetAttribute("nickname", "Arc.ByCenterPointRadiusAngle");
+            newNode.SetAttribute("function", "Arc.ByCenterPointRadiusAngle@Point,double,double,double,Vector");
+            migrationData.AppendNode(newNode);
+            string newNodeId = MigrationManager.GetGuidFromXmlElement(newNode);
 
             // Create new nodes
             XmlElement identityCoordinateSystem = MigrationManager.CreateFunctionNode(
-                data.Document, "ProtoGeometry.dll", "CoordinateSystem.Identity", "CoordinateSystem.Identity");
+                data.Document, "ProtoGeometry.dll",
+                "CoordinateSystem.Identity",
+                "CoordinateSystem.Identity");
             migrationData.AppendNode(identityCoordinateSystem);
             string identityCoordinateSystemId = MigrationManager.GetGuidFromXmlElement(identityCoordinateSystem);
 
             XmlElement zAxisNode = MigrationManager.CreateFunctionNode(
-                data.Document, "ProtoGeometry.dll", "CoordinateSystem.ZAxis", "CoordinateSystem.ZAxis");
+                data.Document, "ProtoGeometry.dll", "CoordinateSystem.ZAxis",
+                "CoordinateSystem.ZAxis");
             migrationData.AppendNode(zAxisNode);
             string zAxisNodeId = MigrationManager.GetGuidFromXmlElement(zAxisNode);
 
-            XmlElement subtractionNode = MigrationManager.CreateFunctionNode(data.Document, "", "-", "-@,");
+            XmlElement subtractionNode = MigrationManager.CreateFunctionNode(
+                data.Document, "", "-", "-@,");
             migrationData.AppendNode(subtractionNode);
             string subtractionNodeId = MigrationManager.GetGuidFromXmlElement(subtractionNode);
 
-            // Move input connector from thisNode to subtractionNode
-            PortId oldInPort = new PortId(thisNodeId, 3, PortType.INPUT);
-            PortId newInPort = new PortId(subtractionNodeId, 0, PortType.INPUT);
-            XmlElement connector = data.FindFirstConnector(oldInPort);
-            data.ReconnectToPort(connector, newInPort);
+            // Update connectors
+            PortId oldInPort2 = new PortId(newNodeId, 2, PortType.INPUT);
+            PortId oldInPort3 = new PortId(newNodeId, 3, PortType.INPUT);
+            PortId newInPort0 = new PortId(subtractionNodeId, 0, PortType.INPUT);
 
-            // Find GUID of "startAngle" input
-            PortId startAnglePort = new PortId(thisNodeId, 2, PortType.INPUT);
-            connector = data.FindFirstConnector(startAnglePort);
-            string startAngleNodeId = connector.GetAttribute("start").ToString();
+            XmlElement connector2 = data.FindFirstConnector(oldInPort2);
+            XmlElement connector3 = data.FindFirstConnector(oldInPort3);
 
-            // Create new connectors
+            string startAngleNodeId = connector2.GetAttribute("start").ToString();
+            data.ReconnectToPort(connector3, newInPort0);
             data.CreateConnectorFromId(startAngleNodeId, 0, subtractionNodeId, 1);
-            data.CreateConnector(subtractionNode, 0, thisNode, 3);
-            data.CreateConnector(zAxisNode, 0, thisNode, 4);
+            data.CreateConnector(subtractionNode, 0, newNode, 3);
+            data.CreateConnector(zAxisNode, 0, newNode, 4);
             data.CreateConnector(identityCoordinateSystem, 0, zAxisNode, 0);
 
             return migrationData;
