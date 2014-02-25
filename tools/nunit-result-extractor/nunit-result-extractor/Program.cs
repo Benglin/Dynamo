@@ -12,16 +12,31 @@ namespace nunit_result_extractor
     {
         static void Main(string[] args)
         {
-            var xmlResultPath = @"C:\Results\nunit-result.xml";
+            var xmlResultPath = @"E:\Autodesk\unit-test-results\20140225\cf";
             Program program = new Program(xmlResultPath);
         }
 
-        internal Program(string xmlResultPath)
+        internal Program(string xmlResultFolder)
         {
-            ProcessXmlResultFile(xmlResultPath);
+            if (Directory.Exists(xmlResultFolder) == false)
+                return;
+
+            string[] xmlFilePaths = Directory.GetFiles(xmlResultFolder, "*.xml");
+            if (xmlFilePaths == null || (xmlFilePaths.Length <= 0))
+                return;
+
+            var timePrefix = DateTime.Now.ToString("yyyyMMddHHmm");
+            var outputFile = string.Format("results-{0}.txt", timePrefix);
+            var outputPath = Path.Combine(xmlResultFolder, outputFile);
+
+            using (StreamWriter streamWriter = new StreamWriter(outputPath, false))
+            {
+                foreach (string xmlFilePath in xmlFilePaths)
+                    ProcessXmlResultFile(xmlFilePath, streamWriter);
+            }
         }
 
-        private void ProcessXmlResultFile(string xmlResultPath)
+        private void ProcessXmlResultFile(string xmlResultPath, StreamWriter streamWriter)
         {
             XPathDocument document = new XPathDocument(xmlResultPath);
             XPathNavigator navigator = document.CreateNavigator();
@@ -32,7 +47,6 @@ namespace nunit_result_extractor
             try
             {
                 StringBuilder builder = new StringBuilder();
-                builder.Append("Test Name\tResult\tMessage\tException Method\n");
 
                 while (iterator.MoveNext())
                 {
@@ -59,11 +73,7 @@ namespace nunit_result_extractor
                     builder.Append("\n");
                 }
 
-                var outputPath = Path.Combine(Path.GetDirectoryName(xmlResultPath), "output.txt");
-                using (StreamWriter writer = new StreamWriter(outputPath, false))
-                {
-                    writer.Write(builder.ToString());
-                }
+                streamWriter.Write(builder.ToString()); // Write to output file.
             }
             catch (Exception ex)
             {
