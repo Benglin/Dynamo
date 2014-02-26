@@ -126,11 +126,15 @@ namespace nunit_result_extractor
 
             StringBuilder builder = new StringBuilder();
 
-            builder.AppendLine(string.Format("\nOnly in {0}", firstFile));
+            builder.AppendLine(string.Format("\nOnly in {0}\tCount: {1}",
+                firstFile, onlyInFirst.Count()));
+
             foreach (var item in onlyInFirst)
                 builder.AppendLine(string.Format("{0}\t{1}", item.Key, item.Value));
 
-            builder.AppendLine(string.Format("\nOnly in {0}", secondFile));
+            builder.AppendLine(string.Format("\nOnly in {0}\tCount: {1}",
+                secondFile, onlyInSecond.Count()));
+
             foreach (var item in onlyInSecond)
                 builder.AppendLine(string.Format("{0}\t{1}", item.Key, item.Value));
 
@@ -140,13 +144,63 @@ namespace nunit_result_extractor
                               let secondRes = secondList[testName]
                               select new { testName, firstRes, secondRes };
 
-            builder.AppendLine(string.Format("\nCommon test cases\t{0}\t{1}",
-                firstFile, secondFile));
+            var testsThatGotBetter = new List<Tuple<string, string, string>>();
+            var testsThatGotWorse = new List<Tuple<string, string, string>>();
+            var testsThatStaySame = new List<Tuple<string, string, string>>();
 
             foreach (var common in commonQuery)
             {
+                bool firstSucceeded = IsTestSucceeded(common.firstRes);
+                bool secondSucceeded = IsTestSucceeded(common.secondRes);
+
+                if (firstSucceeded == secondSucceeded)
+                {
+                    testsThatStaySame.Add(new Tuple<string, string, string>(
+                        common.testName, common.firstRes, common.secondRes));
+                }
+                else
+                {
+                    if (secondSucceeded)
+                    {
+                        testsThatGotBetter.Add(new Tuple<string, string, string>(
+                            common.testName, common.firstRes, common.secondRes));
+                    }
+                    else
+                    {
+                        testsThatGotWorse.Add(new Tuple<string, string, string>(
+                            common.testName, common.firstRes, common.secondRes));
+                    }
+                }
+            }
+
+            builder.AppendLine(string.Format(
+                "\nTests with same results\t{0}\t{1}\tCount: {2}",
+                firstFile, secondFile, testsThatStaySame.Count));
+
+            foreach (var test in testsThatStaySame)
+            {
                 builder.AppendLine(string.Format("{0}\t{1}\t{2}",
-                    common.testName, common.firstRes, common.secondRes));
+                    test.Item1, test.Item2, test.Item3));
+            }
+
+            builder.AppendLine(string.Format(
+                "\nTests that got worse\t{0}\t{1}\tCount: {2}",
+                firstFile, secondFile, testsThatGotWorse.Count));
+
+            foreach (var test in testsThatGotWorse)
+            {
+                builder.AppendLine(string.Format("{0}\t{1}\t{2}",
+                    test.Item1, test.Item2, test.Item3));
+            }
+
+            builder.AppendLine(string.Format(
+                "\nTests that got better\t{0}\t{1}\tCount: {2}",
+                firstFile, secondFile, testsThatGotBetter.Count));
+
+            foreach (var test in testsThatGotBetter)
+            {
+                builder.AppendLine(string.Format("{0}\t{1}\t{2}",
+                    test.Item1, test.Item2, test.Item3));
             }
 
             streamWriter.Write(builder.ToString());
@@ -216,6 +270,24 @@ namespace nunit_result_extractor
             }
 
             return results;
+        }
+
+        private bool IsTestSucceeded(string result)
+        {
+            switch (result)
+            {
+                case "Success":
+                case "Inconclusive":
+                case "Ignored":
+                    return true;
+
+                case "Failure":
+                case "Error":
+                    return false;
+            }
+
+            throw new ArgumentException(
+                string.Format("Invalid result value: {0}", result));
         }
     }
 }
