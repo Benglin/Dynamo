@@ -12,8 +12,28 @@ namespace nunit_result_extractor
     {
         static void Main(string[] args)
         {
-            var xmlResultPath = @"E:\Autodesk\unit-test-results\20140225\cf";
-            Program program = new Program(xmlResultPath);
+            if (args.Length < 2) // Insufficient arguments
+                return;
+
+            var cmdSwitch = args[0].ToLower();
+            switch (cmdSwitch)
+            {
+                case "raw":
+                    if (!Directory.Exists(args[1]))
+                        return;
+
+                    Program program = new Program(args[1]);
+                    break;
+
+                case "compare":
+                    if (args.Length < 3) // Insufficient arguments
+                        return;
+                    if (!File.Exists(args[1]) || (!File.Exists(args[2])))
+                        return; // Source files do not exist.
+
+                    Program program2 = new Program(args[1], args[2]);
+                    break;
+            }
         }
 
         internal Program(string xmlResultFolder)
@@ -34,6 +54,11 @@ namespace nunit_result_extractor
                 foreach (string xmlFilePath in xmlFilePaths)
                     ProcessXmlResultFile(xmlFilePath, streamWriter);
             }
+        }
+
+        internal Program(string firstFile, string secondFile)
+        {
+            CompareResultFiles(firstFile, secondFile);
         }
 
         private void ProcessXmlResultFile(string xmlResultPath, StreamWriter streamWriter)
@@ -81,6 +106,23 @@ namespace nunit_result_extractor
             }
         }
 
+        private void CompareResultFiles(string firstFile, string secondFile)
+        {
+            var firstList = ExtractResultFromFile(firstFile);
+            var secondList = ExtractResultFromFile(secondFile);
+
+            var onlyInFirst = firstList.Where((x) => !secondList.ContainsKey(x.Key));
+            var onlyInSecond = secondList.Where((y) => !firstList.ContainsKey(y.Key));
+
+            Console.WriteLine(string.Format("Only in {0}", firstFile));
+            foreach (var item in onlyInFirst)
+                Console.WriteLine(item.Key);
+
+            Console.WriteLine(string.Format("Only in {0}", secondFile));
+            foreach (var item in onlyInSecond)
+                Console.WriteLine(item.Key);
+        }
+
         private string ExtractStackTrace(XPathNavigator xPathNavigator)
         {
             var messages = GetFirstLineOf(xPathNavigator.Value);
@@ -98,32 +140,53 @@ namespace nunit_result_extractor
         {
             var message = xPathNavigator.Value;
             return GetFirstLineOf(message.Trim()) + "\t";
-/*
-            var segments = message.Split(new char[] { ':' });
+            /*
+                        var segments = message.Split(new char[] { ':' });
 
-            string exception = message;
-            if (segments != null && (segments.Length > 1))
-            {
-                if (segments.Length == 2)
-                    exception = segments[0].Trim();
-                else if (segments.Length == 3)
-                    exception = segments[1].Trim();
-            }
+                        string exception = message;
+                        if (segments != null && (segments.Length > 1))
+                        {
+                            if (segments.Length == 2)
+                                exception = segments[0].Trim();
+                            else if (segments.Length == 3)
+                                exception = segments[1].Trim();
+                        }
 
-            return GetFirstLineOf(exception.Trim()) + "\t";
-*/
+                        return GetFirstLineOf(exception.Trim()) + "\t";
+            */
         }
 
         private string GetFirstLineOf(string lines)
         {
             string[] brokenLines = lines.Split(
-                new string[] { "\r\n" },
+                new string[] { "\r\n", "\n" },
                 StringSplitOptions.RemoveEmptyEntries);
 
             if (brokenLines == null || (brokenLines.Length < 1))
                 return string.Empty;
 
             return brokenLines[0];
+        }
+
+        private Dictionary<string, string> ExtractResultFromFile(string filePath)
+        {
+            var results = new Dictionary<string, string>();
+
+            StreamReader streamReader = new StreamReader(filePath);
+            while (streamReader.EndOfStream == false)
+            {
+                string line = streamReader.ReadLine();
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
+                string[] parts = line.Split(new char[] { '\t' });
+                if (parts == null || (parts.Length < 2))
+                    continue;
+
+                results.Add(parts[0], parts[1]);
+            }
+
+            return results;
         }
     }
 }
