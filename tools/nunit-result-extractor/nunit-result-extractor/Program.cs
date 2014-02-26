@@ -45,10 +45,7 @@ namespace nunit_result_extractor
             if (xmlFilePaths == null || (xmlFilePaths.Length <= 0))
                 return;
 
-            var timePrefix = DateTime.Now.ToString("yyyyMMddHHmm");
-            var outputFile = string.Format("results-{0}.txt", timePrefix);
-            var outputPath = Path.Combine(xmlResultFolder, outputFile);
-
+            var outputPath = GetOutputFilePath(xmlResultFolder);
             using (StreamWriter streamWriter = new StreamWriter(outputPath, false))
             {
                 foreach (string xmlFilePath in xmlFilePaths)
@@ -58,7 +55,19 @@ namespace nunit_result_extractor
 
         internal Program(string firstFile, string secondFile)
         {
-            CompareResultFiles(firstFile, secondFile);
+            var folder = Path.GetDirectoryName(Path.GetFullPath(firstFile));
+            var outputPath = GetOutputFilePath(folder);
+            using (StreamWriter streamWriter = new StreamWriter(outputPath, false))
+            {
+                CompareResultFiles(firstFile, secondFile, streamWriter);
+            }
+        }
+
+        private string GetOutputFilePath(string folder)
+        {
+            var timePrefix = DateTime.Now.ToString("yyyyMMddHHmm");
+            var outputFile = string.Format("results-{0}.txt", timePrefix);
+            return Path.Combine(folder, outputFile);
         }
 
         private void ProcessXmlResultFile(string xmlResultPath, StreamWriter streamWriter)
@@ -106,7 +115,8 @@ namespace nunit_result_extractor
             }
         }
 
-        private void CompareResultFiles(string firstFile, string secondFile)
+        private void CompareResultFiles(string firstFile,
+            string secondFile, StreamWriter streamWriter)
         {
             var firstList = ExtractResultFromFile(firstFile);
             var secondList = ExtractResultFromFile(secondFile);
@@ -114,13 +124,32 @@ namespace nunit_result_extractor
             var onlyInFirst = firstList.Where((x) => !secondList.ContainsKey(x.Key));
             var onlyInSecond = secondList.Where((y) => !firstList.ContainsKey(y.Key));
 
-            Console.WriteLine(string.Format("Only in {0}", firstFile));
-            foreach (var item in onlyInFirst)
-                Console.WriteLine(item.Key);
+            StringBuilder builder = new StringBuilder();
 
-            Console.WriteLine(string.Format("Only in {0}", secondFile));
+            builder.AppendLine(string.Format("\nOnly in {0}", firstFile));
+            foreach (var item in onlyInFirst)
+                builder.AppendLine(string.Format("{0}\t{1}", item.Key, item.Value));
+
+            builder.AppendLine(string.Format("\nOnly in {0}", secondFile));
             foreach (var item in onlyInSecond)
-                Console.WriteLine(item.Key);
+                builder.AppendLine(string.Format("{0}\t{1}", item.Key, item.Value));
+
+            var commonQuery = from testName in firstList.Keys
+                              where secondList.ContainsKey(testName)
+                              let firstRes = firstList[testName]
+                              let secondRes = secondList[testName]
+                              select new { testName, firstRes, secondRes };
+
+            builder.AppendLine(string.Format("\nCommon test cases\t{0}\t{1}",
+                firstFile, secondFile));
+
+            foreach (var common in commonQuery)
+            {
+                builder.AppendLine(string.Format("{0}\t{1}\t{2}",
+                    common.testName, common.firstRes, common.secondRes));
+            }
+
+            streamWriter.Write(builder.ToString());
         }
 
         private string ExtractStackTrace(XPathNavigator xPathNavigator)
