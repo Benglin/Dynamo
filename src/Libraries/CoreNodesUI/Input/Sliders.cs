@@ -47,7 +47,7 @@ namespace Dynamo.Nodes
             set
             {
                 _min = value;
-                if (_min < Value)
+                if (_min > Value)
                     Value = _min;
                 RaisePropertyChanged("Min");
             }
@@ -65,7 +65,8 @@ namespace Dynamo.Nodes
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Center,
                 MinWidth = 150,
-                TickPlacement = TickPlacement.None
+                TickPlacement = TickPlacement.None,
+                Value = Value
             };
 
             tbSlider.PreviewMouseUp += delegate
@@ -81,7 +82,7 @@ namespace Dynamo.Nodes
             };
 
             // input value textbox
-            var valtb = new DynamoTextBox
+            var valtb = new DynamoTextBox(SerializeValue())
             {
                 Width = double.NaN,
                 Margin = new Thickness(0, 0, 10, 0)
@@ -186,7 +187,12 @@ namespace Dynamo.Nodes
 
             foreach (XmlNode subNode in nodeElement.ChildNodes)
             {
-                if (subNode.Name.Equals("Range"))
+                if (subNode.Name.Equals("System.Double"))
+                {
+                    Value = Convert.ToDouble(subNode.InnerText, CultureInfo.InvariantCulture);
+                }
+
+                else if (subNode.Name.Equals("Range"))
                 {
                     double min = Min;
                     double max = Max;
@@ -199,6 +205,8 @@ namespace Dynamo.Nodes
                                 min = Convert.ToDouble(attr.Value, CultureInfo.InvariantCulture);
                             else if (attr.Name.Equals("max"))
                                 max = Convert.ToDouble(attr.Value, CultureInfo.InvariantCulture);
+                            else if (attr.Name.Equals("value"))
+                                Value = Convert.ToDouble(subNode.InnerText, CultureInfo.InvariantCulture);
                         }
                     }
 
@@ -235,6 +243,25 @@ namespace Dynamo.Nodes
         }
 
         #endregion
+
+        protected override bool UpdateValueCore(string name, string value)
+        {
+            var converter = new DoubleDisplay();
+            switch (name)
+            {
+                case "Min":
+                    Min = ((double)converter.ConvertBack(value, typeof(double), null, null));
+                    return true; // UpdateValueCore handled.
+                case "Max":
+                    Max = ((double)converter.ConvertBack(value, typeof(double), null, null));
+                    return true; // UpdateValueCore handled.
+                case "Value":
+                    Value = ((double)converter.ConvertBack(value, typeof(double), null, null));
+                    return true; // UpdateValueCore handled.
+            }
+
+            return base.UpdateValueCore(name, value);
+        }
     }
 
 
@@ -435,7 +462,12 @@ namespace Dynamo.Nodes
         {
             foreach (XmlNode subNode in nodeElement.ChildNodes)
             {
-                if (subNode.Name.Equals("Range"))
+                if (subNode.Name.Equals("System.Int32"))
+                {
+                    Value = Convert.ToInt32(subNode.InnerText, CultureInfo.InvariantCulture);
+                }
+                
+                else if (subNode.Name.Equals("Range"))
                 {
                     int min = Min;
                     int max = Max;
@@ -448,6 +480,8 @@ namespace Dynamo.Nodes
                                 min = Convert.ToInt32(attr.Value, CultureInfo.InvariantCulture);
                             else if (attr.Name.Equals("max"))
                                 max = Convert.ToInt32(attr.Value, CultureInfo.InvariantCulture);
+                            else if (attr.Name.Equals("value"))
+                                Value = Convert.ToInt32(subNode.InnerText, CultureInfo.InvariantCulture);
                         }
                     }
 

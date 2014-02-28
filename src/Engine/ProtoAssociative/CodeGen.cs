@@ -275,7 +275,15 @@ namespace ProtoAssociative
             if (ProtoCore.DSASM.Constants.kGlobalScope == globalProcIndex && globalClassIndex == ProtoCore.DSASM.Constants.kGlobalScope && !isEntrySet)
             {
                 isEntrySet = true;
-                codeBlock.instrStream.entrypoint = pc;
+                if (ProtoCore.DSASM.Constants.kInvalidIndex != core.newEntryPoint && core.newEntryPoint < pc)
+                {
+                    codeBlock.instrStream.entrypoint = core.newEntryPoint;
+                    core.SetNewEntryPoint(ProtoCore.DSASM.Constants.kInvalidIndex);
+                }
+                else
+                {
+                    codeBlock.instrStream.entrypoint = pc;
+                }
             }
         }
 
@@ -933,7 +941,8 @@ namespace ProtoAssociative
             int classIndex = ProtoCore.DSASM.Constants.kInvalidIndex;
             string className = string.Empty;
 
-            ProtoCore.AST.AssociativeAST.FunctionDotCallNode dotCall = node as ProtoCore.AST.AssociativeAST.FunctionDotCallNode;
+            //ProtoCore.AST.AssociativeAST.FunctionDotCallNode dotCall = node as ProtoCore.AST.AssociativeAST.FunctionDotCallNode; 
+            ProtoCore.AST.AssociativeAST.FunctionDotCallNode dotCall = new FunctionDotCallNode(node as ProtoCore.AST.AssociativeAST.FunctionDotCallNode);
             funcCall = dotCall.DotCall;
             procName = dotCall.FunctionCall.Function.Name;
 
@@ -3011,7 +3020,10 @@ namespace ProtoAssociative
                 bnode.LeftNode = identNode;
 
                 // Store the replication guide from the function call to the temp
-                (identNode as IdentifierNode).ReplicationGuides = GetReplicationGuidesFromASTNode(fcNode);
+                if (null != fcNode)
+                {
+                    (identNode as IdentifierNode).ReplicationGuides = GetReplicationGuidesFromASTNode(fcNode);
+                }
 
                 //Right node
                 bnode.RightNode = fcNode;
@@ -6240,7 +6252,7 @@ namespace ProtoAssociative
 
 
             // Handle static calls to reflect the original call
-            if (core.Options.GenerateSSA)
+            //if (core.Options.GenerateSSA)
             {
                 BuildRealDependencyForIdentList(graphNode);
 

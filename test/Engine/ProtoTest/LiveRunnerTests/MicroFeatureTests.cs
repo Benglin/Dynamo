@@ -27,9 +27,9 @@ namespace ProtoTest.LiveRunner
         [SetUp]
         public void Setup()
         {
-            GraphToDSCompiler.GraphUtilities.PreloadAssembly(new List<string> {"ProtoGeometry.dll", "Math.dll"});
+            GraphToDSCompiler.GraphUtilities.PreloadAssembly(new List<string> { "ProtoGeometry.dll"});
             astLiveRunner = new ProtoScript.Runners.LiveRunner();
-            astLiveRunner.ResetVMAndResyncGraph(new List<string> {"ProtoGeometry.dll", "Math.dll"});
+            astLiveRunner.ResetVMAndResyncGraph(new List<string> { "ProtoGeometry.dll"});
         }
 
         [TearDown]
@@ -81,7 +81,7 @@ namespace ProtoTest.LiveRunner
             Assert.IsTrue((Int64)mirror.GetData().Data == 10);
         }
 
-        
+
 
         [Test]
         public void GraphILTest_Assign01a()
@@ -174,7 +174,7 @@ namespace ProtoTest.LiveRunner
                     new ProtoCore.AST.AssociativeAST.IntNode("20"),
                     ProtoCore.DSASM.Operator.add),
                 ProtoCore.DSASM.Operator.assign);
-            
+
             // emit the DS code from the AST tree
             ProtoScript.Runners.ILiveRunner liveRunner = new ProtoScript.Runners.LiveRunner();
             liveRunner.UpdateGraph(assign);
@@ -200,14 +200,14 @@ namespace ProtoTest.LiveRunner
                 ProtoCore.DSASM.Operator.assign);
 
             astList.Add(assign1);
-            
+
             ProtoCore.AST.AssociativeAST.BinaryExpressionNode assign2 = new ProtoCore.AST.AssociativeAST.BinaryExpressionNode(
                 new ProtoCore.AST.AssociativeAST.IdentifierNode("c"),
                 new ProtoCore.AST.AssociativeAST.IntNode("20"),
                 ProtoCore.DSASM.Operator.assign);
 
             astList.Add(assign2);
-            
+
             ProtoCore.AST.AssociativeAST.BinaryExpressionNode assign3 = new ProtoCore.AST.AssociativeAST.BinaryExpressionNode(
                 new ProtoCore.AST.AssociativeAST.IdentifierNode("b"),
                 new ProtoCore.AST.AssociativeAST.BinaryExpressionNode(
@@ -217,7 +217,7 @@ namespace ProtoTest.LiveRunner
                 ProtoCore.DSASM.Operator.assign);
 
             astList.Add(assign3);
-            
+
             // update graph with ast input
             CodeBlockNode cNode = new CodeBlockNode();
             cNode.Body = astList;
@@ -241,7 +241,7 @@ namespace ProtoTest.LiveRunner
             ////////////////////////////////////////////////////////////////////
 
             ProtoScript.Runners.ILiveRunner liveRunner = new ProtoScript.Runners.LiveRunner();
-            
+
             // Build the AST trees
             ProtoCore.AST.AssociativeAST.BinaryExpressionNode assign1 = new ProtoCore.AST.AssociativeAST.BinaryExpressionNode(
                 new ProtoCore.AST.AssociativeAST.IdentifierNode("a"),
@@ -570,7 +570,6 @@ namespace ProtoTest.LiveRunner
 
             ///////////////////////////////////////////////////////////////////////////////
             libs = new List<string>();
-            libs.Add("Math.dll");
             libs.Add("ProtoGeometry.dll");
             liveRunner.ResetVMAndResyncGraph(libs);
 
@@ -629,42 +628,6 @@ namespace ProtoTest.LiveRunner
 
             mirror = liveRunner.InspectNodeValue("xval");
             Assert.IsTrue((double)mirror.GetData().Data == 10.0);
-
-
-            astList = new List<ProtoCore.AST.AssociativeAST.AssociativeNode>();
-
-            constructorCall = new ProtoCore.AST.AssociativeAST.FunctionCallNode();
-            constructorCall.Function = new ProtoCore.AST.AssociativeAST.IdentifierNode("Sin");
-            listArgs = new List<ProtoCore.AST.AssociativeAST.AssociativeNode>();
-            listArgs.Add(new ProtoCore.AST.AssociativeAST.DoubleNode("90.0"));
-
-            constructorCall.FormalArguments = listArgs;
-
-            className = "Math";
-            inode = new ProtoCore.AST.AssociativeAST.IdentifierNode(className);
-
-            dotCall = ProtoCore.Utils.CoreUtils.GenerateCallDotNode(inode, constructorCall, liveRunner.Core);
-            //==============================================
-            // Build the binary expression 
-            // p = Point.ByCoordinates(10,10,10)
-            //==============================================
-            stmt1 = new ProtoCore.AST.AssociativeAST.BinaryExpressionNode(
-                new ProtoCore.AST.AssociativeAST.IdentifierNode("m"),
-                dotCall,
-                ProtoCore.DSASM.Operator.assign);
-            astList.Add(stmt1);
-
-            // Instantiate GraphSyncData
-            addedList = new List<Subtree>();
-            addedList.Add(new Subtree(astList, System.Guid.NewGuid()));
-            syncData = new GraphSyncData(null, addedList, null);
-
-            liveRunner.UpdateGraph(syncData);
-
-
-            mirror = liveRunner.InspectNodeValue("m");
-            var res = (double)mirror.GetData().Data;
-            Assert.IsTrue(res == 1.0);
         }
 
         [Test]
@@ -740,7 +703,6 @@ namespace ProtoTest.LiveRunner
 
             ///////////////////////////////////////////////////////////////////////////////
             libs = new List<string>();
-            libs.Add("Math.dll");
             libs.Add("ProtoGeometry.dll");
             libMirrors = liveRunner.ResetVMAndImportLibrary(libs);
 
@@ -795,37 +757,6 @@ namespace ProtoTest.LiveRunner
 
             mirror = liveRunner.InspectNodeValue("xval");
             Assert.IsTrue((double)mirror.GetData().Data == 10.0);
-
-
-            astList = new List<ProtoCore.AST.AssociativeAST.AssociativeNode>();
-
-            constructorCall = new ProtoCore.AST.AssociativeAST.FunctionCallNode();
-            constructorCall.Function = new ProtoCore.AST.AssociativeAST.IdentifierNode("Sin");
-            listArgs = new List<ProtoCore.AST.AssociativeAST.AssociativeNode>();
-            listArgs.Add(new ProtoCore.AST.AssociativeAST.DoubleNode("90.0"));
-
-            constructorCall.FormalArguments = listArgs;
-
-            className = "Math";
-            inode = new ProtoCore.AST.AssociativeAST.IdentifierNode(className);
-
-            dotCall = ProtoCore.Utils.CoreUtils.GenerateCallDotNode(inode, constructorCall, liveRunner.Core);
-            //==============================================
-            // Build the binary expression 
-            // p = Point.ByCoordinates(10,10,10)
-            //==============================================
-            stmt1 = new ProtoCore.AST.AssociativeAST.BinaryExpressionNode(
-                new ProtoCore.AST.AssociativeAST.IdentifierNode("m"),
-                dotCall,
-                ProtoCore.DSASM.Operator.assign);
-            astList.Add(stmt1);
-
-            cNode.Body = astList;
-            liveRunner.UpdateGraph(cNode);
-
-            mirror = liveRunner.InspectNodeValue("m");
-            var res = (double)mirror.GetData().Data;
-            Assert.IsTrue(res == 1.0);
         }
 
         [Test]
@@ -1016,7 +947,7 @@ namespace ProtoTest.LiveRunner
             // xval = newPoint.X;
             //
             //==============================================
-            
+
             // update graph
             CodeBlockNode cNode = new CodeBlockNode();
             cNode.Body = astList;
@@ -1126,8 +1057,8 @@ namespace ProtoTest.LiveRunner
                 dotCall,
                 ProtoCore.DSASM.Operator.assign);
             astList.Add(stmt1);
-            
-           
+
+
             //==============================================
             // emit the DS code from the AST tree
             //==============================================
@@ -1650,8 +1581,8 @@ z=Point.ByCoordinates(y,a,a);
         private Subtree CreateSubTreeFromCode(Guid guid, string code)
         {
             CodeBlockNode commentCode;
-            var cbn = GraphToDSCompiler.GraphUtilities.Parse(code, out commentCode) as CodeBlockNode; 
-            var subtree = null == cbn? new Subtree(null, guid) : new Subtree(cbn.Body, guid);
+            var cbn = GraphToDSCompiler.GraphUtilities.Parse(code, out commentCode) as CodeBlockNode;
+            var subtree = null == cbn ? new Subtree(null, guid) : new Subtree(cbn.Body, guid);
             return subtree;
         }
 
@@ -1703,7 +1634,7 @@ z=Point.ByCoordinates(y,a,a);
             for (int i = 0; i < shuffleCount; ++i)
             {
                 ILiveRunner liveRunner = new ProtoScript.Runners.LiveRunner();
-                liveRunner.ResetVMAndResyncGraph(new List<string> { "ProtoGeometry.dll", "Math.dll" });
+                liveRunner.ResetVMAndResyncGraph(new List<string> { "ProtoGeometry.dll"});
 
                 index = index.OrderBy(_ => randomGen.Next());
                 var added = index.Select(idx => CreateSubTreeFromCode(guids[idx], codes[idx])).ToList();
@@ -1815,7 +1746,7 @@ z=Point.ByCoordinates(y,a,a);
             List<string> codes = new List<string>() 
             {
                 "a = 1;",
-                "b = a; b = b + 1;",
+                "b = a; c = b + 1;",
             };
             List<Guid> guids = Enumerable.Range(0, codes.Count).Select(_ => System.Guid.NewGuid()).ToList();
 
@@ -1826,7 +1757,7 @@ z=Point.ByCoordinates(y,a,a);
             var syncData = new GraphSyncData(null, added, null);
             astLiveRunner.UpdateGraph(syncData);
 
-            ProtoCore.Mirror.RuntimeMirror mirror = astLiveRunner.InspectNodeValue("b");
+            ProtoCore.Mirror.RuntimeMirror mirror = astLiveRunner.InspectNodeValue("c");
             var value = (Int64)mirror.GetData().Data;
             Assert.AreEqual(value, 2);
 
@@ -1838,12 +1769,12 @@ z=Point.ByCoordinates(y,a,a);
                 syncData = new GraphSyncData(null, null, modified);
                 astLiveRunner.UpdateGraph(syncData);
 
-                Console.WriteLine("b = " + astLiveRunner.InspectNodeValue("b").GetStringData());
-                AssertValue("b", i + 1);
+                Console.WriteLine("c = " + astLiveRunner.InspectNodeValue("c").GetStringData());
+                AssertValue("c", i + 1);
             }
         }
 
-       
+
 
         [Test]
         public void RegressMAGN750_1()
@@ -1851,7 +1782,7 @@ z=Point.ByCoordinates(y,a,a);
             List<string> codes = new List<string>() 
             {
                 "a = 1;",
-                "b = a; b = b + 1;",
+                "b = a; c = b + 1;",
             };
             List<Guid> guids = Enumerable.Range(0, codes.Count).Select(_ => System.Guid.NewGuid()).ToList();
 
@@ -1862,7 +1793,7 @@ z=Point.ByCoordinates(y,a,a);
             var syncData = new GraphSyncData(null, added, null);
             astLiveRunner.UpdateGraph(syncData);
 
-            ProtoCore.Mirror.RuntimeMirror mirror = astLiveRunner.InspectNodeValue("b");
+            ProtoCore.Mirror.RuntimeMirror mirror = astLiveRunner.InspectNodeValue("c");
             var value = (Int64)mirror.GetData().Data;
             Assert.AreEqual(value, 2);
 
@@ -1873,9 +1804,9 @@ z=Point.ByCoordinates(y,a,a);
             syncData = new GraphSyncData(null, null, modified);
             astLiveRunner.UpdateGraph(syncData);
 
-            Console.WriteLine("b = " + astLiveRunner.InspectNodeValue("b").GetStringData());
-            AssertValue("b", newval + 1);
-            
+            Console.WriteLine("c = " + astLiveRunner.InspectNodeValue("c").GetStringData());
+            AssertValue("c", newval + 1);
+
         }
 
         [Test]
@@ -1884,7 +1815,7 @@ z=Point.ByCoordinates(y,a,a);
             List<string> codes = new List<string>() 
             {
                 "t = 1..2;",
-                "x = t; a = Math.Abs(x);",
+                "x = t; a = x;",
                 "z = a; pts = Point.ByCoordinates(z, 10, 2); ptsx = pts.X;"
             };
             List<Guid> guids = Enumerable.Range(0, codes.Count).Select(_ => System.Guid.NewGuid()).ToList();
@@ -1951,8 +1882,7 @@ z=Point.ByCoordinates(y,a,a);
             }
         }
 
-        [Test]
-        public void RegressMAGN773()
+        [Test]public void RegressMAGN773()
         {
             List<string> codes = new List<string>() 
             {
@@ -2067,7 +1997,7 @@ z=Point.ByCoordinates(y,a,a);
                 var syncData = new GraphSyncData(null, null, modified);
                 astLiveRunner.UpdateGraph(syncData);
 
-                AssertValue("x", new int[] {41, 42});
+                AssertValue("x", new int[] { 41, 42 });
             }
 
             {
@@ -2804,5 +2734,217 @@ z=Point.ByCoordinates(y,a,a);
             Assert.IsTrue(mirror.GetData().IsNull);
 
         }
+
+        [Test]
+        public void TestCachingSSA01()
+        {
+            List<string> codes = new List<string>() 
+            {
+                "a = 1;",
+                "a = a + 1;"
+            };
+
+            Guid guid1 = System.Guid.NewGuid();
+            Guid guid2 = System.Guid.NewGuid();
+
+            List<Subtree> added = new List<Subtree>();
+            added.Add(CreateSubTreeFromCode(guid1, codes[0]));
+            added.Add(CreateSubTreeFromCode(guid2, codes[1]));
+
+            var syncData = new GraphSyncData(null, added, null);
+            astLiveRunner.UpdateGraph(syncData);
+
+            AssertValue("a", 2);
+
+        }
+
+        [Test]
+        public void TestCachingSSA02()
+        {
+            List<string> codes = new List<string>() 
+            {
+                "global = 0;",
+                "def f(i:int) { return = i; } def g(j:int) { global = global + 1; return = j; }",
+                "x = 1;",               // Simulate input to function in this CBN
+                "z = 10;",              // Simulate another input to the function
+                "a = f(x) + g(2);",     // CBN with function call 
+                "a = f(z) + g(2);"      // Same CBN with function call where the input to function 'f' was changed
+            };
+
+            Guid guid1 = System.Guid.NewGuid();
+            Guid guid2 = System.Guid.NewGuid();
+            Guid guid3 = System.Guid.NewGuid();
+            Guid guid4 = System.Guid.NewGuid();
+            Guid guid5 = System.Guid.NewGuid();
+
+            List<Subtree> added = new List<Subtree>();
+            added.Add(CreateSubTreeFromCode(guid1, codes[0]));
+            added.Add(CreateSubTreeFromCode(guid2, codes[1]));
+            added.Add(CreateSubTreeFromCode(guid3, codes[2]));
+            added.Add(CreateSubTreeFromCode(guid4, codes[3]));
+            added.Add(CreateSubTreeFromCode(guid5, codes[4]));
+
+            var syncData = new GraphSyncData(null, added, null);
+            astLiveRunner.UpdateGraph(syncData);
+
+            AssertValue("a", 3);
+            AssertValue("global", 1);
+
+
+            // Modify the function call CBN so it connects to the input 'z'
+            List<Subtree> modified = new List<Subtree>();
+            modified.Add(CreateSubTreeFromCode(guid5, codes[5]));
+
+            syncData = new GraphSyncData(null, null, modified);
+            astLiveRunner.UpdateGraph(syncData);
+
+            AssertValue("a", 12);
+
+            // Verify that function 'g' was not re-executed
+            AssertValue("global", 1);
+        }
+
+        [Test]
+        public void TestExecution()
+        {
+            List<string> codes = new List<string>() 
+            {
+                "class JPoint{ X:int; Y:int; Z:int; constructor ByCoord(a:int,b:int,c:int){X = a; Y = b; Z = c;}}",
+                "a=10;b=20;c=30;",
+                "p = JPoint.ByCoord(a,b,c);",
+                "x = p.X; "
+            };
+
+            Guid guid1 = System.Guid.NewGuid();
+            Guid guid2 = System.Guid.NewGuid();
+            Guid guid3 = System.Guid.NewGuid();
+            Guid guid4 = System.Guid.NewGuid();
+
+            List<Subtree> added = new List<Subtree>();
+            added.Add(CreateSubTreeFromCode(guid1, codes[0]));
+            added.Add(CreateSubTreeFromCode(guid2, codes[1]));
+            added.Add(CreateSubTreeFromCode(guid3, codes[2]));
+            added.Add(CreateSubTreeFromCode(guid4, codes[3]));
+
+            var syncData = new GraphSyncData(null, added, null);
+            astLiveRunner.UpdateGraph(syncData);
+
+            AssertValue("x", 10);
+        }
+
+        [Test]
+        public void RegressMAGN747_01()
+        {
+            List<string> codes = new List<string>() 
+            {
+                "a = b = 42;",
+                "b = a = 24;"
+            };
+
+            Guid guid = System.Guid.NewGuid();
+            List<Subtree> added = new List<Subtree>();
+            {
+                added.Add(CreateSubTreeFromCode(guid, codes[0]));
+
+                var syncData = new GraphSyncData(null, added, null);
+                astLiveRunner.UpdateGraph(syncData);
+
+                AssertValue("a", 42);
+                AssertValue("b", 42);
+            }
+
+            List<Subtree> modified = new List<Subtree>();
+            {
+                modified.Add(CreateSubTreeFromCode(guid, codes[1]));
+
+                var syncData = new GraphSyncData(null, null, modified);
+                astLiveRunner.UpdateGraph(syncData);
+
+                AssertValue("a", 24);
+                AssertValue("b", 24);
+            }
+
+            modified = new List<Subtree>();
+            {
+                modified.Add(CreateSubTreeFromCode(guid, codes[0]));
+
+                var syncData = new GraphSyncData(null, null, modified);
+                astLiveRunner.UpdateGraph(syncData);
+
+                AssertValue("a", 42);
+                AssertValue("b", 42);
+            }
+
+            modified = new List<Subtree>();
+            {
+                modified.Add(CreateSubTreeFromCode(guid, codes[1]));
+
+                var syncData = new GraphSyncData(null, null, modified);
+                astLiveRunner.UpdateGraph(syncData);
+
+                AssertValue("a", 24);
+                AssertValue("b", 24);
+            }
+        }
+
+        [Test]
+        public void RegressMAGN747_02()
+        {
+            List<string> codes = new List<string>() 
+            {
+                "a = b = 42;",
+                "b = a = 24;"
+            };
+
+            Guid guid1 = System.Guid.NewGuid();
+            List<Subtree> added = new List<Subtree>();
+            {
+                added.Add(CreateSubTreeFromCode(guid1, codes[0]));
+
+                var syncData = new GraphSyncData(null, added, null);
+                astLiveRunner.UpdateGraph(syncData);
+
+                AssertValue("a", 42);
+                AssertValue("b", 42);
+            }
+
+            added = new List<Subtree>();
+            added.Add(new Subtree(null, guid1));
+
+            Guid guid2 = System.Guid.NewGuid();
+            List<Subtree> added2 = new List<Subtree>();
+            {
+                added2.Add(CreateSubTreeFromCode(guid2, codes[1]));
+
+                var syncData = new GraphSyncData(added, added2, null);
+                astLiveRunner.UpdateGraph(syncData);
+
+                AssertValue("a", 24);
+                AssertValue("b", 24);
+            }
+
+            List<Subtree> modified = new List<Subtree>();
+            {
+                modified.Add(CreateSubTreeFromCode(guid2, codes[0]));
+
+                var syncData = new GraphSyncData(null, null, modified);
+                astLiveRunner.UpdateGraph(syncData);
+
+                AssertValue("a", 42);
+                AssertValue("b", 42);
+            }
+
+            modified = new List<Subtree>();
+            {
+                modified.Add(CreateSubTreeFromCode(guid2, codes[1]));
+
+                var syncData = new GraphSyncData(null, null, modified);
+                astLiveRunner.UpdateGraph(syncData);
+
+                AssertValue("a", 24);
+                AssertValue("b", 24);
+            }
+        }
     }
+
 }
