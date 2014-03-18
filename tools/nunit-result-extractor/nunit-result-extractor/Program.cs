@@ -84,24 +84,39 @@ namespace nunit_result_extractor
 
                 while (iterator.MoveNext())
                 {
-                    builder.Append(iterator.Current.GetAttribute("name", "") + "\t");
-                    builder.Append(iterator.Current.GetAttribute("result", "") + "\t");
+                    var name = iterator.Current.GetAttribute("name", "");
+                    var result = iterator.Current.GetAttribute("result", "");
+                    builder.Append(string.Format("{0}\t{1}\t", name, result));
 
-                    if (iterator.Current.MoveToChild("failure", ""))
+                    if (result.Equals("Failure"))
                     {
-                        if (iterator.Current.MoveToChild("message", ""))
+                        if (iterator.Current.MoveToChild("failure", ""))
                         {
-                            builder.Append(ExtractMessage(iterator.Current));
-                            iterator.Current.MoveToParent(); // Back to "failure"
-                        }
+                            if (iterator.Current.MoveToChild("message", ""))
+                            {
+                                builder.Append(ExtractMessage(iterator.Current));
+                                iterator.Current.MoveToParent(); // Back to "failure"
+                            }
 
-                        if (iterator.Current.MoveToChild("stack-trace", ""))
+                            if (iterator.Current.MoveToChild("stack-trace", ""))
+                            {
+                                builder.Append(ExtractStackTrace(iterator.Current));
+                                iterator.Current.MoveToParent(); // Back to "failure"
+                            }
+
+                            iterator.Current.MoveToParent(); // Back to "test-case".
+                        }
+                    }
+                    else if (result.Equals("Inconclusive"))
+                    {
+                        if (iterator.Current.MoveToChild("reason", ""))
                         {
-                            builder.Append(ExtractStackTrace(iterator.Current));
-                            iterator.Current.MoveToParent(); // Back to "failure"
+                            if (iterator.Current.MoveToChild("message", ""))
+                            {
+                                var message = iterator.Current.Value;
+                                builder.Append(message.Trim() + "\t");
+                            }
                         }
-
-                        iterator.Current.MoveToParent(); // Back to "test-case".
                     }
 
                     builder.Append("\n");
@@ -208,8 +223,11 @@ namespace nunit_result_extractor
 
         private string ExtractStackTrace(XPathNavigator xPathNavigator)
         {
-            var messages = GetFirstLineOf(xPathNavigator.Value);
+            var lines = GetFirstFewLines(xPathNavigator.Value, 1);
+            if (lines == null || (lines.Length <= 0))
+                return "\t";
 
+            var messages = lines[0];
             if (messages.StartsWith("at "))
                 messages = messages.Substring(3);
             int openBracket = messages.IndexOf('(');
@@ -221,8 +239,20 @@ namespace nunit_result_extractor
 
         private string ExtractMessage(XPathNavigator xPathNavigator)
         {
-            var message = xPathNavigator.Value;
-            return GetFirstLineOf(message.Trim()) + "\t";
+            int linesToTake = 1;
+            var message = xPathNavigator.Value.Trim();
+            if (message.StartsWith("Expected"))
+                linesToTake = 2;
+
+            var lines = GetFirstFewLines(message, linesToTake);
+            if (lines == null || (lines.Length <= 0))
+                return "\t";
+
+            if (lines.Length == 1)
+                return lines[0] + "\t";
+
+            return string.Format("{0}, {1}\t", lines[0], lines[1]);
+
             /*
                         var segments = message.Split(new char[] { ':' });
 
@@ -239,16 +269,23 @@ namespace nunit_result_extractor
             */
         }
 
-        private string GetFirstLineOf(string lines)
+        private string[] GetFirstFewLines(string lines, int count)
         {
             string[] brokenLines = lines.Split(
                 new string[] { "\r\n", "\n" },
                 StringSplitOptions.RemoveEmptyEntries);
 
-            if (brokenLines == null || (brokenLines.Length < 1))
-                return string.Empty;
+            if (brokenLines == null || (brokenLines.Length < count))
+                return new string[] { string.Empty };
 
-            return brokenLines[0];
+            if (count == 1)
+                return new string[] { brokenLines[0].Trim() };
+
+            List<string> results = new List<string>();
+            for (int index = 0; index < count; index++)
+                results.Add(brokenLines[index].Trim());
+
+            return results.ToArray();
         }
 
         private Dictionary<string, string> ExtractResultFromFile(string filePath)
