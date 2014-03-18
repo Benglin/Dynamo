@@ -1,25 +1,68 @@
-﻿using System;
-using System.Windows.Controls;
-using System.Xml;
-using System.Collections.Generic;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+﻿using System.Drawing;
 
 namespace DSCore
 {
     public class DSColor // TODO(Ben): Rename after namespace support is done :)
     {
-        private System.Drawing.Color color = System.Drawing.Color.FromArgb(255, 0, 0, 0);
+        private Color color = Color.FromArgb(255, 0, 0, 0);
 
         // Exposed only for unit test purposes.
-        internal System.Drawing.Color InternalColor { get { return this.color; } }
+        internal Color InternalColor { get { return this.color; } }
+
+        /// <summary>
+        ///     Find the red component of a color, 0 to 255.
+        /// </summary>
+        /// <returns name="val">Value of the red component.</returns>
+        /// <search>red</search>
+        public byte Red
+        {
+            get { return color.R; }
+        }
+
+        /// <summary>
+        ///     Find the green component of a color, 0 to 255.
+        /// </summary>
+        /// <returns name="val">Value of the green component.</returns>
+        /// <search>green</search>
+        public byte Green
+        {
+            get { return color.G; }
+        }
+
+        /// <summary>
+        ///     Find the blue component of a color, 0 to 255.
+        /// </summary>
+        /// <returns name="val">Value of the blue component.</returns>
+        /// <search>blue</search>
+        public byte Blue
+        {
+            get { return color.B; }
+        }
+
+        /// <summary>
+        ///     Find the alpha component of a color, 0 to 255.
+        /// </summary>
+        /// <returns name="val">Value of the alpha component.</returns>
+        /// <search>alpha</search>
+        public byte Alpha
+        {
+            get { return color.A; }
+        }
 
         private DSColor(int a, int r, int g, int b)
         {
-            this.color = System.Drawing.Color.FromArgb(a, r, g, b);
+            this.color = Color.FromArgb(a, r, g, b);
         }
 
+        /// <summary>
+        ///     Construct a color by alpha, red, green, and blue components.
+        /// </summary>
+        /// <param name="a">The alpha value.</param>
+        /// <param name="r">The red value.</param>
+        /// <param name="g">The green value.</param>
+        /// <param name="b">The blue value.</param>
+        /// <returns name="color">Color.</returns>
+        /// <search>color</search>
         public static DSColor ByARGB(int a, int r, int g, int b)
         {
             return new DSColor(a, r, g, b);
@@ -35,24 +78,66 @@ namespace DSCore
         }
 #endif
 
+        /// <summary>
+        ///     Gets the birghtness value for this color.
+        /// </summary>
+        /// <returns name="val">Brightness value for the color.</returns>
+        /// <search>brightness</search>
         public static float Brightness(DSColor c)
         {
             return c.color.GetBrightness();
         }
 
+        /// <summary>
+        ///     Gets the saturation value for this color.
+        /// </summary>
+        /// <returns name="val">Saturation value for the color.</returns>
+        /// <search>saturation</search>
         public static float Saturation(DSColor c)
         {
             return c.color.GetSaturation();
         }
 
+        /// <summary>
+        ///     Gets the hue value for this color.
+        /// </summary>
+        /// <returns name="val">Hue value for the color.</returns>
+        /// <search>hue</search>
         public static float Hue(DSColor c)
         {
             return c.color.GetHue();
         }
 
+        /// <summary>
+        ///     Lists the components for the color in the order: alpha, red, green, blue.
+        /// </summary>
+        /// <returns name="val">Saturation value for the color.</returns>
+        /// <search>components,alpha,red,green,blue</search>
         public static byte[] Components(DSColor c)
         {
             return new byte[] { c.color.A, c.color.R, c.color.G, c.color.B };
+        }
+
+        /// <summary>
+        ///     Get a color from a color gradient between a start color and an end color.
+        /// </summary>
+        /// <param name="start">The starting color of the range.</param>
+        /// <param name="end">The end color of the range.</param>
+        /// <param name="value">The value between 0 and 1 along the range for which you would like to sample the color.</param>
+        /// <returns name="color">Color in the given range.</returns>
+        /// <search>color,range,gradient</search>
+        public static DSColor BuildColorFromRange(DSColor start, DSColor end, double value)
+        {
+            var selRed = (int)(start.Red + (end.Red - start.Red) * value);
+            var selGreen = (int)(start.Green + (end.Green - start.Green) * value);
+            var selBlue = (int)(start.Blue + (end.Blue - start.Blue) * value);
+
+            return ByARGB(255, selRed, selGreen, selBlue);
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Color: Red={0}, Green={1}, Blue={2}, Alpha={3}", Red, Green, Blue, Alpha);
         }
     }
 

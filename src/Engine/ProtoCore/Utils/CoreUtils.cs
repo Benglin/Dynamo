@@ -1,5 +1,6 @@
 ﻿using ProtoCore.DSASM;
 using System.Collections.Generic;
+using ProtoCore.AST.AssociativeAST;
 
 namespace ProtoCore.Utils
 {
@@ -26,7 +27,7 @@ namespace ProtoCore.Utils
     {
         var ident = new ProtoCore.AST.AssociativeAST.IdentifierNode();
         ident.Name = ident.Value = name;
-        ident.datatype = TypeSystem.BuildPrimitiveTypeObject(type, false);
+        ident.datatype = TypeSystem.BuildPrimitiveTypeObject(type, 0);
         return ident;
     }
 
@@ -94,14 +95,14 @@ namespace ProtoCore.Utils
             memregion = ProtoCore.DSASM.MemoryRegion.kMemStack,
             access = ProtoCore.DSASM.AccessSpecifier.kPublic,
             NameNode = BuildAssocIdentifier(core, "%rhsDimExprList"),
-            ArgumentType = new ProtoCore.Type { Name = core.TypeSystem.GetType((int)PrimitiveType.kTypeInt), UID = (int)PrimitiveType.kTypeInt, IsIndexable = true, rank = 1 }
+            ArgumentType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeInt, 1) 
         });
         args.AddArgument(new ProtoCore.AST.AssociativeAST.VarDeclNode()
         {
             memregion = ProtoCore.DSASM.MemoryRegion.kMemStack,
             access = ProtoCore.DSASM.AccessSpecifier.kPublic,
             NameNode = BuildAssocIdentifier(core, "%rhsDim"),
-            ArgumentType = new ProtoCore.Type { Name = core.TypeSystem.GetType((int)PrimitiveType.kTypeInt), UID = (int)PrimitiveType.kTypeInt }
+            ArgumentType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeInt, 0) 
         });
         funcDefNode.Signature = args;
 
@@ -120,9 +121,8 @@ namespace ProtoCore.Utils
         funcDefNode.access = ProtoCore.DSASM.AccessSpecifier.kPublic;
         funcDefNode.Name = ProtoCore.DSASM.Constants.kDotArgMethodName;
         funcDefNode.IsBuiltIn = true;
-        funcDefNode.ReturnType = new ProtoCore.Type() { Name = core.TypeSystem.GetType((int)PrimitiveType.kTypeVar), UID = (int)PrimitiveType.kTypeVar,
-        rank = DSASM.Constants.kArbitraryRank, IsIndexable = true};
-
+        funcDefNode.ReturnType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeVar, Constants.kArbitraryRank);
+        
         ProtoCore.AST.AssociativeAST.ArgumentSignatureNode args = new ProtoCore.AST.AssociativeAST.ArgumentSignatureNode();
         args.AddArgument(new ProtoCore.AST.AssociativeAST.VarDeclNode()
         {
@@ -143,7 +143,7 @@ namespace ProtoCore.Utils
             memregion = ProtoCore.DSASM.MemoryRegion.kMemStack,
             access = ProtoCore.DSASM.AccessSpecifier.kPublic,
             NameNode = BuildAssocIdentifier(core, "%rhsDimExprList"),
-            ArgumentType = new ProtoCore.Type { Name = core.TypeSystem.GetType((int)PrimitiveType.kTypeVar), UID = (int)PrimitiveType.kTypeVar, IsIndexable = true, rank = ProtoCore.DSASM.Constants.kArbitraryRank }
+            ArgumentType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeVar, Constants.kArbitraryRank)
         });
         args.AddArgument(new ProtoCore.AST.AssociativeAST.VarDeclNode()
         {
@@ -157,7 +157,7 @@ namespace ProtoCore.Utils
             memregion = ProtoCore.DSASM.MemoryRegion.kMemStack,
             access = ProtoCore.DSASM.AccessSpecifier.kPublic,
             NameNode = BuildAssocIdentifier(core, "%rhsArgList"),
-            ArgumentType = new ProtoCore.Type { Name = core.TypeSystem.GetType((int)PrimitiveType.kTypeVar), UID = (int)PrimitiveType.kTypeVar, IsIndexable = true, rank = ProtoCore.DSASM.Constants.kArbitraryRank }
+            ArgumentType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeVar, Constants.kArbitraryRank)
         });
         args.AddArgument(new ProtoCore.AST.AssociativeAST.VarDeclNode()
         {
@@ -185,21 +185,21 @@ namespace ProtoCore.Utils
         funcDefNode.IsAssocOperator = true;
         funcDefNode.IsBuiltIn = true;
         funcDefNode.Name = Op.GetOpFunction(op);
-        funcDefNode.ReturnType = new ProtoCore.Type() { Name = core.TypeSystem.GetType((int)r), UID = (int)r, rank = retRank, IsIndexable = (retRank > 0)};
+        funcDefNode.ReturnType = new ProtoCore.Type() { Name = core.TypeSystem.GetType((int)r), UID = (int)r, rank = retRank};
         ProtoCore.AST.AssociativeAST.ArgumentSignatureNode args = new ProtoCore.AST.AssociativeAST.ArgumentSignatureNode();
         args.AddArgument(new ProtoCore.AST.AssociativeAST.VarDeclNode()
         {
             memregion = ProtoCore.DSASM.MemoryRegion.kMemStack,
             access = ProtoCore.DSASM.AccessSpecifier.kPublic,
             NameNode = BuildAssocIdentifier(core, ProtoCore.DSASM.Constants.kLHS),
-            ArgumentType = new ProtoCore.Type { Name = core.TypeSystem.GetType((int)op1), UID = (int)op1, rank = op1rank, IsIndexable = (op1rank > 0)}
+            ArgumentType = new ProtoCore.Type { Name = core.TypeSystem.GetType((int)op1), UID = (int)op1, rank = op1rank}
         });
         args.AddArgument(new ProtoCore.AST.AssociativeAST.VarDeclNode()
         {
             memregion = ProtoCore.DSASM.MemoryRegion.kMemStack,
             access = ProtoCore.DSASM.AccessSpecifier.kPublic,
             NameNode = BuildAssocIdentifier(core, ProtoCore.DSASM.Constants.kRHS),
-            ArgumentType = new ProtoCore.Type { Name = core.TypeSystem.GetType((int)op2), UID = (int)op2, rank = op2rank, IsIndexable = (op2rank > 0)}
+            ArgumentType = new ProtoCore.Type { Name = core.TypeSystem.GetType((int)op2), UID = (int)op2, rank = op2rank}
         });
         funcDefNode.Signature = args;
 
@@ -296,10 +296,8 @@ namespace ProtoCore.Utils
             InsertBinaryOperationMethod(core, root, Operator.add, PrimitiveType.kTypeString, PrimitiveType.kTypeString, PrimitiveType.kTypeString);
             InsertBinaryOperationMethod(core, root, Operator.add, PrimitiveType.kTypeVar, PrimitiveType.kTypeString, PrimitiveType.kTypeChar);
             InsertBinaryOperationMethod(core, root, Operator.add, PrimitiveType.kTypeVar, PrimitiveType.kTypeChar, PrimitiveType.kTypeString);
-            //			InsertBinaryOperationMethod(core, root, Operator.add, PrimitiveType.kTypeString, PrimitiveType.kTypeString, PrimitiveType.kTypeVar);
-            //          InsertBinaryOperationMethod(core, root, Operator.add, PrimitiveType.kTypeString, PrimitiveType.kTypeVar, PrimitiveType.kTypeString);
-            InsertBinaryOperationMethod(core, root, Operator.add, PrimitiveType.kTypeString, PrimitiveType.kTypeString, PrimitiveType.kTypeVar, 0, 0, ProtoCore.DSASM.Constants.kArbitraryRank);
-            InsertBinaryOperationMethod(core, root, Operator.add, PrimitiveType.kTypeString, PrimitiveType.kTypeVar, PrimitiveType.kTypeString, 0, ProtoCore.DSASM.Constants.kArbitraryRank, 0);
+            InsertBinaryOperationMethod(core, root, Operator.add, PrimitiveType.kTypeString, PrimitiveType.kTypeString, PrimitiveType.kTypeVar);
+            InsertBinaryOperationMethod(core, root, Operator.add, PrimitiveType.kTypeString, PrimitiveType.kTypeVar, PrimitiveType.kTypeString);
 
             InsertBinaryOperationMethod(core, root, Operator.sub, PrimitiveType.kTypeInt, PrimitiveType.kTypeInt, PrimitiveType.kTypeInt);
             InsertBinaryOperationMethod(core, root, Operator.sub, PrimitiveType.kTypeDouble, PrimitiveType.kTypeDouble, PrimitiveType.kTypeInt);
@@ -650,13 +648,11 @@ namespace ProtoCore.Utils
             }
 
             // The first param to the dot arg (the pointer or the class name)
-            ProtoCore.AST.AssociativeAST.IntNode rhs = new ProtoCore.AST.AssociativeAST.IntNode() { value = rhsIdx.ToString() };
             funCallNode.FormalArguments.Add(lhs);
 
-
             // The second param which is the dynamic table index of the function to call
+            var rhs = new IntNode(rhsIdx);
             funCallNode.FormalArguments.Add(rhs);
-
 
             // The array dimensions
             ProtoCore.AST.AssociativeAST.ExprListNode arrayDimExperList = new ProtoCore.AST.AssociativeAST.ExprListNode();
@@ -684,17 +680,16 @@ namespace ProtoCore.Utils
             funCallNode.FormalArguments.Add(arrayDimExperList);
 
             // Number of dimensions
-            ProtoCore.AST.AssociativeAST.IntNode dimNode = new ProtoCore.AST.AssociativeAST.IntNode() { value = dimCount.ToString() };
+            var dimNode = new IntNode(dimCount);
             funCallNode.FormalArguments.Add(dimNode);
 
             if (argNum >= 0)
             {
                 funCallNode.FormalArguments.Add(argList);
-                funCallNode.FormalArguments.Add(new ProtoCore.AST.AssociativeAST.IntNode() { value = argNum.ToString() });
+                funCallNode.FormalArguments.Add(new IntNode(argNum));
             }
 
-
-            ProtoCore.AST.AssociativeAST.FunctionDotCallNode funDotCallNode = new ProtoCore.AST.AssociativeAST.FunctionDotCallNode(rhsCall);
+            var funDotCallNode = new FunctionDotCallNode(rhsCall);
             funDotCallNode.DotCall = funCallNode;
             funDotCallNode.FunctionCall.Function = rhsCall.Function;
 

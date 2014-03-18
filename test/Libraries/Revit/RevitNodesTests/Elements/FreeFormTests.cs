@@ -2,7 +2,6 @@
 using Autodesk.DesignScript.Geometry;
 using Revit.Elements;
 using NUnit.Framework;
-using Solid = Revit.Elements.Solid;
 
 namespace DSRevitNodesTests.Elements
 {
@@ -29,39 +28,33 @@ namespace DSRevitNodesTests.Elements
             var pts1 = new[]
             {
                 Point.ByCoordinates(0,0,0),
-                Point.ByCoordinates(0.4,0,0),
-                Point.ByCoordinates(0.8,0,0),
                 Point.ByCoordinates(1,0,0),
             };
 
             var pts2 = new[]
             {
                 Point.ByCoordinates(1,0,0),
-                Point.ByCoordinates(1,0.4,0),
-                Point.ByCoordinates(1,0.8,0),
                 Point.ByCoordinates(1,1,0)
             };
 
             var pts3 = new[]
             {
                 Point.ByCoordinates(1,1,0),
-                Point.ByCoordinates(0.8,0.8,0),
-                Point.ByCoordinates(0.4,0.4,0),
                 Point.ByCoordinates(0.0,0,0)
             };
 
             var crvs = new[]
             {
-                NurbsCurve.ByPoints(pts1),
-                NurbsCurve.ByPoints(pts2),
-                NurbsCurve.ByPoints(pts3)
+                Line.ByStartPointEndPoint(pts1[0], pts1[1]),
+                Line.ByStartPointEndPoint(pts2[0], pts2[1]),
+                Line.ByStartPointEndPoint(pts3[0], pts3[1]),
             };
 
             var dir = Vector.ByCoordinates(0, 0, 1);
             var dist = 5;
 
             // construct the extrusion
-            var extrusion = Solid.ByExtrusion(crvs, dir, dist);
+            var extrusion = Revit.GeometryObjects.Solid.ByExtrusion(crvs, dir, dist);
             Assert.NotNull(extrusion);
 
             // construct the freeform element

@@ -10,7 +10,7 @@ using ProtoCore.AST.AssociativeAST;
 
 namespace DSCore
 {
-    [NodeName("Map")]
+    [NodeName("List Map")]
     [NodeCategory(BuiltinNodeCategories.CORE_LISTS_EVALUATE)]
     [NodeDescription(
         "Applies a function over all elements of a list, generating a new list from the results.")]
@@ -35,11 +35,11 @@ namespace DSCore
                 AstFactory.BuildAssignment(
                     GetAstIdentifierForOutputIndex(0),
                     AstFactory.BuildFunctionCall(
-                        "Combine",
+                        "__Combine",
                         new List<AssociativeNode>
                         {
-                            inputAstNodes[0],
-                            AstFactory.BuildExprList(new List<AssociativeNode> { inputAstNodes[1] })
+                            inputAstNodes[1],
+                            AstFactory.BuildExprList(new List<AssociativeNode> { inputAstNodes[0] })
                         }))
             };
         }
@@ -88,7 +88,7 @@ namespace DSCore
                 AstFactory.BuildAssignment(
                     GetAstIdentifierForOutputIndex(0),
                     AstFactory.BuildFunctionCall(
-                        "Combine",
+                        "__Combine",
                         new List<AssociativeNode>
                         {
                             inputAstNodes[0],
@@ -111,7 +111,7 @@ namespace DSCore
                 AstFactory.BuildAssignment(
                     GetAstIdentifierForOutputIndex(0),
                     AstFactory.BuildFunctionCall(
-                        "ForEach",
+                        "__ForEach",
                         new List<AssociativeNode>
                         {
                             inputAstNodes[0],
@@ -134,7 +134,7 @@ namespace DSCore
                 AstFactory.BuildAssignment(
                     GetAstIdentifierForOutputIndex(0),
                     AstFactory.BuildFunctionCall(
-                        "LaceShortest",
+                        "__LaceShortest",
                         new List<AssociativeNode>
                         {
                             inputAstNodes[0],
@@ -157,7 +157,7 @@ namespace DSCore
                 AstFactory.BuildAssignment(
                     GetAstIdentifierForOutputIndex(0),
                     AstFactory.BuildFunctionCall(
-                        "LaceLongest",
+                        "__LaceLongest",
                         new List<AssociativeNode>
                         {
                             inputAstNodes[0],
@@ -181,7 +181,7 @@ namespace DSCore
                 AstFactory.BuildAssignment(
                     GetAstIdentifierForOutputIndex(0),
                     AstFactory.BuildFunctionCall(
-                        "CartesianProduct",
+                        "__CartesianProduct",
                         new List<AssociativeNode>
                         {
                             inputAstNodes[0],
@@ -191,6 +191,7 @@ namespace DSCore
         }
     }
 
+    /*
     [NodeName("True For Any")]
     [NodeCategory(BuiltinNodeCategories.CORE_LISTS_QUERY)]
     [NodeDescription("Tests to see if any elements in a sequence satisfy the given predicate.")]
@@ -250,6 +251,7 @@ namespace DSCore
             };
         }
     }
+    */
 
     [NodeName("Reduce")]
     [NodeCategory(BuiltinNodeCategories.CORE_LISTS_EVALUATE)]
@@ -259,10 +261,10 @@ namespace DSCore
     {
         public Reduce()
         {
-            InPortData.Add(new PortData("list1", "List #1"));
-            InPortData.Add(new PortData("a", "Starting accumulated value, to be passed into the first call to the Reductor function."));
             InPortData.Add(new PortData("f(x, a)", "Reductor Function: first argument is an arbitrary item in the list being reduced, second is the current accumulated value, result is the new accumulated value."));
-            
+            InPortData.Add(new PortData("a", "Starting accumulated value, to be passed into the first call to the Reductor function."));
+            InPortData.Add(new PortData("list1", "List #1"));
+
             OutPortData.Add(new PortData("", "Result"));
 
             RegisterAllPorts();
@@ -296,7 +298,7 @@ namespace DSCore
                 AstFactory.BuildAssignment(
                     GetAstIdentifierForOutputIndex(0),
                     AstFactory.BuildFunctionCall(
-                        "TrueForAny",
+                        "__Reduce",
                         new List<AssociativeNode>
                         {
                             inputAstNodes[0],
@@ -334,7 +336,7 @@ namespace DSCore
             {
                 AstFactory.BuildAssignment(
                     AstFactory.BuildIdentifier(packedId),
-                    AstFactory.BuildFunctionCall("Filter", inputAstNodes)),
+                    AstFactory.BuildFunctionCall("__Filter", inputAstNodes)),
                 AstFactory.BuildAssignment(
                     GetAstIdentifierForOutputIndex(0),
                     new IdentifierNode(packedId)
@@ -349,25 +351,5 @@ namespace DSCore
                     })
             };
         }
-    }
-
-    public class MinByKey : NodeModel
-    {
-        
-    }
-
-    public class MaxByKey : NodeModel
-    {
-        
-    }
-
-    public class SortByKey : NodeModel
-    {
-        
-    }
-
-    public class SortByCompare : NodeModel
-    {
-        
     }
 }

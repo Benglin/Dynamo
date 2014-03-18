@@ -60,3 +60,7 @@ Dynamo.sln.DotSettings
 *.opensdf
 *.sdf
 *.backup
+
+#ASM
+extern/DynamoASM/
+

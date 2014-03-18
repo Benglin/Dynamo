@@ -129,7 +129,7 @@ namespace Dynamo.Tests
             else if (value is int)
                 Assert.AreEqual((int)value, Convert.ToInt32(data.Data));
             else if (value is double)
-                Assert.IsTrue(Math.Abs((double)value - Convert.ToDouble(data.Data)) < 0.00001);
+                Assert.AreEqual((double)value, Convert.ToDouble(data.Data), 0.00001);
             else
                 Assert.AreEqual(value, data.Data);
         }
@@ -145,9 +145,9 @@ namespace Dynamo.Tests
             }
         }
 
-        [TearDown]
         public override void Cleanup()
         {
+            Dynamo.DSEngine.LibraryServices.DestroyInstance();
             GraphToDSCompiler.GraphUtilities.Reset();
             base.Cleanup();
         }
@@ -171,7 +171,7 @@ namespace Dynamo.Tests
             // 2; ----> y Point.ByCoordinates(x, y, z);
             // 3; ----> z
             RunModel(@"core\dsevaluation\regress561.dyn");
-            AssertClassName("8774296c-5269-450b-959d-ce4020ddbf80", "Point");
+            AssertClassName("8774296c-5269-450b-959d-ce4020ddbf80", "Autodesk.DesignScript.Geometry.Point");
         }
 
         [Test]
@@ -620,7 +620,7 @@ namespace Dynamo.Tests
             // Multiline CBN ==> a={1,2,3};
             //               ==> a[0]= 3;
             RunModel(@"core\dsevaluation\Defect_MAGN_610.dyn");
-            AssertPreviewValue("aa78716b-f3f6-4676-bb72-2cb1c34181f8", 3);
+            AssertPreviewValue("aa78716b-f3f6-4676-bb72-2cb1c34181f8", new int[] { 3, 2, 3 });
             AssertValue("a", new int[] { 3, 2, 3 });
         }
 

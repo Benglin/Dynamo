@@ -10,13 +10,15 @@ using System.Xml;
 using Dynamo.Controls;
 using Dynamo.Models;
 using Dynamo.Utilities;
+using Dynamo.UI;
+using Autodesk.DesignScript.Runtime;
 
 namespace Dynamo.Nodes
 {
     [NodeName("Double Slider")]
     [NodeCategory(BuiltinNodeCategories.CORE_INPUT)]
     [NodeDescription("A slider that produces double values.")]
-    [Browsable(false)]
+    [SupressImportIntoVM]
     [IsDesignScriptCompatible]
     public class DoubleSlider : DSCoreNodesUI.Double
     {
@@ -76,23 +78,24 @@ namespace Dynamo.Nodes
 
             var mintb = new DynamoTextBox
             {
-                Width = double.NaN,
-                Background =
-                    new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
+                Width = Configurations.DoubleSliderTextBoxWidth,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Background = new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
             };
 
             // input value textbox
             var valtb = new DynamoTextBox(SerializeValue())
             {
-                Width = double.NaN,
+                Width = Configurations.DoubleSliderTextBoxWidth,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 0, 10, 0)
             };
 
             var maxtb = new DynamoTextBox
             {
-                Width = double.NaN,
-                Background =
-                    new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
+                Width = Configurations.DoubleSliderTextBoxWidth,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Background = new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
             };
 
             var sliderGrid = new Grid();
@@ -222,23 +225,46 @@ namespace Dynamo.Nodes
 
         protected override void SerializeCore(XmlElement element, SaveContext context)
         {
-            base.SerializeCore(element, context); //Base implementation must be called.
+            base.SerializeCore(element, context); // Base implementation must be called.
+
             if (context == SaveContext.Undo)
             {
-                var helper = new XmlElementHelper(element);
-                helper.SetAttribute("min", Min);
-                helper.SetAttribute("max", Max);
+                var xmlDocument = element.OwnerDocument;
+                XmlElement subNode = xmlDocument.CreateElement("Range");
+                subNode.SetAttribute("min", Min.ToString(CultureInfo.InvariantCulture));
+                subNode.SetAttribute("max", Max.ToString(CultureInfo.InvariantCulture));
+                element.AppendChild(subNode);
             }
         }
 
         protected override void DeserializeCore(XmlElement element, SaveContext context)
         {
             base.DeserializeCore(element, context); //Base implementation must be called.
+
             if (context == SaveContext.Undo)
             {
-                var helper = new XmlElementHelper(element);
-                Min = helper.ReadDouble("min");
-                Max = helper.ReadDouble("max");
+                foreach (XmlNode subNode in element.ChildNodes)
+                {
+                    if (!subNode.Name.Equals("Range"))
+                        continue;
+                    if (subNode.Attributes == null || (subNode.Attributes.Count <= 0))
+                        continue;
+
+                    double min = this.Min;
+                    double max = this.Max;
+
+                    foreach (XmlAttribute attr in subNode.Attributes)
+                    {
+                        if (attr.Name.Equals("min"))
+                            min = Convert.ToDouble(attr.Value, CultureInfo.InvariantCulture);
+                        else if (attr.Name.Equals("max"))
+                            max = Convert.ToDouble(attr.Value, CultureInfo.InvariantCulture);
+                    }
+
+                    this.Min = min;
+                    this.Max = max;
+                    break;
+                }
             }
         }
 
@@ -268,7 +294,7 @@ namespace Dynamo.Nodes
     [NodeName("Integer Slider")]
     [NodeCategory(BuiltinNodeCategories.CORE_INPUT)]
     [NodeDescription("A slider that produces integer values.")]
-    [Browsable(false)]
+    [SupressImportIntoVM]
     [IsDesignScriptCompatible]
     public class IntegerSlider : DSCoreNodesUI.Integer
     {
@@ -333,23 +359,24 @@ namespace Dynamo.Nodes
 
             var mintb = new DynamoTextBox
             {
-                Width = double.NaN,
-                Background =
-                    new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
+                Width = Configurations.IntegerSliderTextBoxWidth,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Background = new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
             };
 
             // input value textbox
             var valtb = new DynamoTextBox
             {
-                Width = double.NaN,
+                Width = Configurations.IntegerSliderTextBoxWidth,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 0, 10, 0)
             };
 
             var maxtb = new DynamoTextBox
             {
-                Width = double.NaN,
-                Background =
-                    new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
+                Width = Configurations.IntegerSliderTextBoxWidth,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Background = new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
             };
 
             var sliderGrid = new Grid();
@@ -497,23 +524,45 @@ namespace Dynamo.Nodes
 
         protected override void SerializeCore(XmlElement element, SaveContext context)
         {
-            base.SerializeCore(element, context); //Base implementation must be called.
+            base.SerializeCore(element, context); // Base implementation must be called.
+
             if (context == SaveContext.Undo)
             {
-                var helper = new XmlElementHelper(element);
-                helper.SetAttribute("min", Min);
-                helper.SetAttribute("max", Max);
+                var xmlDocument = element.OwnerDocument;
+                XmlElement subNode = xmlDocument.CreateElement("Range");
+                subNode.SetAttribute("min", Min.ToString(CultureInfo.InvariantCulture));
+                subNode.SetAttribute("max", Max.ToString(CultureInfo.InvariantCulture));
+                element.AppendChild(subNode);
             }
         }
 
         protected override void DeserializeCore(XmlElement element, SaveContext context)
         {
-            base.DeserializeCore(element, context); //Base implementation must be called.
+            base.DeserializeCore(element, context); // Base implementation must be called.
+
             if (context == SaveContext.Undo)
             {
-                var helper = new XmlElementHelper(element);
-                Min = helper.ReadInteger("min");
-                Max = helper.ReadInteger("max");
+                foreach (XmlNode subNode in element.ChildNodes)
+                {
+                    if (!subNode.Name.Equals("Range"))
+                        continue;
+                    if (subNode.Attributes == null || (subNode.Attributes.Count <= 0))
+                        continue;
+
+                    int min = Min;
+                    int max = Max;
+
+                    foreach (XmlAttribute attr in subNode.Attributes)
+                    {
+                        if (attr.Name.Equals("min"))
+                            min = Convert.ToInt32(attr.Value, CultureInfo.InvariantCulture);
+                        else if (attr.Name.Equals("max"))
+                            max = Convert.ToInt32(attr.Value, CultureInfo.InvariantCulture);
+                    }
+
+                    Min = min;
+                    Max = max;
+                }
             }
         }
 

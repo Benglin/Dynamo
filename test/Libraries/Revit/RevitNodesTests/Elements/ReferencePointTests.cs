@@ -48,7 +48,7 @@ namespace DSRevitNodesTests
         {
 
             var l = Line.ByStartPointEndPoint(Point.ByCoordinates(0, 0, 0), Point.ByCoordinates(1, 0, 0));
-            var modelCurve = ModelCurve.ByPlanarCurve(l);
+            var modelCurve = ModelCurve.ByCurve(l);
             var pt = ReferencePoint.ByLengthOnCurveReference(modelCurve.CurveReference, 0.5);
 
             Assert.NotNull(pt);
@@ -62,7 +62,7 @@ namespace DSRevitNodesTests
         {
 
             var l = Line.ByStartPointEndPoint(Point.ByCoordinates(0, 0, 0), Point.ByCoordinates(1, 0, 0));
-            var modelCurve = ModelCurve.ByPlanarCurve(l);
+            var modelCurve = ModelCurve.ByCurve(l);
             var pt = ReferencePoint.ByParameterOnCurveReference(modelCurve.CurveReference, 0.5);
 
             Assert.NotNull(pt);
@@ -83,9 +83,7 @@ namespace DSRevitNodesTests
             var pt = ReferencePoint.ByParametersOnFaceReference(faceRef, 0.5, 0.5);
 
             Assert.NotNull(pt);
-            Assert.AreEqual(0.5, pt.X);
-            Assert.AreEqual(0, pt.Y);
-            Assert.AreEqual(0, pt.Z);
+            pt.X.ShouldBeApproximately(-18.19622727891606);
         }
 
         [Test]

@@ -197,6 +197,11 @@ namespace ProtoFFI
             } 
         }
 
+        public static bool TryGetImportedDSType(Type type, out ProtoCore.Type dsType)
+        {
+            return mTypeMaps.TryGetValue(type, out dsType);
+        }
+
         public static ProtoCore.Type GetProtoCoreType(Type type, CLRDLLModule module)
         {
             ProtoCore.Type protoCoreType;
@@ -245,7 +250,7 @@ namespace ProtoFFI
         private Type GetBaseType(Type type)
         {
             Type b = type.BaseType;
-            if (null != b && !IsBrowsable(b))
+            if (null != b && SupressesImport(b))
                 return GetBaseType(b);
 
             return b;
@@ -289,7 +294,7 @@ namespace ProtoFFI
 
         private ClassDeclNode ParseSystemType(Type type, string alias)
         {
-            Validity.Assert(IsBrowsable(type), "Non browsable type is being imported!!");
+            Validity.Assert(!SupressesImport(type), "Supressed type is being imported!!");
 
             string classname = alias;
             if (classname == null | classname == string.Empty)
@@ -310,25 +315,18 @@ namespace ProtoFFI
                 CLRModuleType.GetInstance(baseType, Module, string.Empty);
             }
 
-            // There is no static class at CLR, so we have to check if all 
-            // public methods defined in this class are static or not.
-            // 
-            // For static class, it is abstract and sealed. But here we just
-            // check all methods are static. 
-            bool isStatic = type.GetMethods(BindingFlags.DeclaredOnly |
-                                            BindingFlags.Instance |
-                                            BindingFlags.Public |
-                                            BindingFlags.Static)
-                                .All(m => m.IsStatic);
+            // There is no static class in runtime. static class is simply 
+            // marked as sealed and abstract. 
+            bool isStaticClass = type.IsSealed && type.IsAbstract;
 
-            if (!isStatic)
+            if (!isStaticClass)
             {
                 // If all methods are static, it doesn't make sense to expose
                 // constructor. 
                 ConstructorInfo[] ctors = type.GetConstructors();
                 foreach (var c in ctors)
                 {
-                    if (c.IsPublic && !c.IsGenericMethod && IsBrowsable(c))
+                    if (c.IsPublic && !c.IsGenericMethod && !SupressesImport(c))
                     {
                         ConstructorDefinitionNode node = ParseConstructor(c, type);
                         classnode.funclist.Add(node);
@@ -350,10 +348,10 @@ namespace ProtoFFI
 
             foreach (var m in methods)
             {
-                if (!IsBrowsable(m))
+                if (SupressesImport(m))
                     continue;
 
-                if (isStatic && m.GetBaseDefinition().DeclaringType == baseType && baseType == typeof(object))
+                if (isStaticClass && m.GetBaseDefinition().DeclaringType == baseType && baseType == typeof(object))
                     continue;
 
                 //Don't include overriden methods or generic methods
@@ -377,7 +375,7 @@ namespace ProtoFFI
             FieldInfo[] fields = type.GetFields();
             foreach (var f in fields)
             {
-                if (!IsBrowsable(f))
+                if (SupressesImport(f))
                     continue;
 
                 VarDeclNode variable = ParseFieldDeclaration(f);
@@ -505,7 +503,7 @@ namespace ProtoFFI
 
         private ProtoCore.AST.AssociativeAST.AssociativeNode ParseProperty(PropertyInfo p)
         {
-            if (null == p || !IsBrowsable(p))
+            if (null == p || SupressesImport(p))
                 return null;
             
             //Index properties are not parsed as property at this moment.
@@ -534,20 +532,20 @@ namespace ProtoFFI
             return varDeclNode;
         }
 
-        public static bool IsBrowsable(MemberInfo member)
+        public static bool SupressesImport(MemberInfo member)
         {
             if (null == member)
-                return false;
+                return true;
 
             object[] atts = member.GetCustomAttributes(false);
             foreach (var item in atts)
             {
-                BrowsableAttribute browsable = item as BrowsableAttribute;
-                if (null != browsable)
-                    return browsable.Browsable;
+                SupressImportIntoVMAttribute supressImport = item as SupressImportIntoVMAttribute;
+                if (null != supressImport)
+                    return true;
             }
 
-            return true;
+            return false;
         }
 
         private bool AllowsRankReduction(MethodInfo method)
@@ -564,7 +562,7 @@ namespace ProtoFFI
 
         private ProtoCore.AST.AssociativeAST.VarDeclNode ParseFieldDeclaration(FieldInfo f)
         {
-            if (null == f || !IsBrowsable(f))
+            if (null == f || SupressesImport(f))
                 return null;
 
             ProtoCore.AST.AssociativeAST.VarDeclNode varDeclNode = ParseArgumentDeclaration(f.Name, f.FieldType);
@@ -578,7 +576,7 @@ namespace ProtoFFI
 
         private ProtoCore.AST.AssociativeAST.FunctionDefinitionNode ParseFieldAccessor(FieldInfo f)
         {
-            if (null == f || !IsBrowsable(f))
+            if (null == f || SupressesImport(f))
                 return null;
 
             ProtoCore.AST.AssociativeAST.FunctionDefinitionNode func = new ProtoCore.AST.AssociativeAST.FunctionDefinitionNode();
@@ -620,7 +618,7 @@ namespace ProtoFFI
             FFIMethodAttributes mattrs = new FFIMethodAttributes(method);
 
             string prefix = (isOperator || propaccessor) ? "%" : "";
-            ProtoCore.AST.AssociativeAST.FunctionDefinitionNode func = new ProtoCore.AST.AssociativeAST.FunctionDefinitionNode();
+            var func = new ProtoCore.AST.AssociativeAST.FunctionDefinitionNode();
 
             if (isOperator)
             {
@@ -633,8 +631,11 @@ namespace ProtoFFI
             func.Pattern = null;
             func.Signature = ParseArgumentSignature(method);
 
-            if (retype.IsIndexable && mattrs.AllowRankReduction)
-                retype.rank = -1;
+            if ((retype.IsIndexable && mattrs.AllowRankReduction) 
+                || (typeof(object).Equals(method.ReturnType)))
+            {
+                retype.rank = Constants.kArbitraryRank;
+            }
             func.ReturnType = retype;
             func.FunctionBody = null;
             func.access = ProtoCore.DSASM.AccessSpecifier.kPublic;
@@ -736,7 +737,6 @@ namespace ProtoFFI
                 if (parameter.IsDefined(typeof(Autodesk.DesignScript.Runtime.ArbitraryDimensionArrayImportAttribute), false))
                 {
                     var argType = paramNode.ArgumentType;
-                    argType.IsIndexable = true;
                     argType.rank = ProtoCore.DSASM.Constants.kArbitraryRank;
                     paramNode.ArgumentType = argType;
                 }
@@ -791,13 +791,7 @@ namespace ProtoFFI
                                                                              {
                 Value = parameterName,
                 Name = parameterName,
-                datatype = new ProtoCore.Type()
-                {
-                    Name = "var",
-                    IsIndexable = false,
-                    rank = 0,
-                    UID = (int)ProtoCore.PrimitiveType.kTypeVar
-                }
+                datatype = ProtoCore.TypeSystem.BuildPrimitiveTypeObject(ProtoCore.PrimitiveType.kTypeVar, 0)
             };
             //Lets emit native DS type object
             ProtoCore.Type argtype = CLRModuleType.GetProtoCoreType(parameterType, Module);
@@ -931,7 +925,7 @@ namespace ProtoFFI
             System.Threading.Tasks.Parallel.ForEach(types, type =>
             {
                 //For now there is no support for generic type.
-                if (!type.IsGenericType && type.IsPublic && !exttype.IsAssignableFrom(type) && CLRModuleType.IsBrowsable(type))
+                if (!type.IsGenericType && type.IsPublic && !exttype.IsAssignableFrom(type) && !CLRModuleType.SupressesImport(type))
                 {
                     CLRModuleType importedType = CLRModuleType.GetInstance(type, this, alias);
                 }
@@ -940,7 +934,7 @@ namespace ProtoFFI
             foreach (var type in types)
             {
                 //For now there is no support for generic type.
-                if (!type.IsGenericType && type.IsPublic && !exttype.IsAssignableFrom(type) && CLRModuleType.IsBrowsable(type))
+                if (!type.IsGenericType && type.IsPublic && !exttype.IsAssignableFrom(type) && !CLRModuleType.SupressesImport(type))
                 {
                     CLRModuleType importedType = CLRModuleType.GetInstance(type, this, alias);
                     Type[] nestedTypes = type.GetNestedTypes();

@@ -57,6 +57,10 @@
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="ProtoInterface, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\extern\ProtoGeometry\ProtoInterface.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xaml" />
@@ -72,6 +76,7 @@
     <Compile Include="DSFunctionNodeTest.cs" />
     <Compile Include="DSLibraryTest.cs" />
     <Compile Include="DynamoDefects.cs" />
+    <Compile Include="LibraryCustomizationTests.cs" />
     <Compile Include="MigrationManagerTests.cs" />
     <Compile Include="NodeMigrationTests.cs" />
     <Compile Include="SearchSideEffects.cs" />
@@ -98,7 +103,6 @@
     <Compile Include="UndoRedoRecorderTests.cs" />
     <Compile Include="UnitsOfMeasureTests.cs" />
     <Compile Include="UtilityTests.cs" />
-    <Compile Include="VisualizationManagerTests.cs" />
     <Compile Include="XmlHelperTests.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +117,11 @@
     <ProjectReference Include="..\..\src\Engine\ProtoCore\ProtoCore.csproj">
       <Project>{7a9e0314-966f-4584-baa3-7339cbb849d1}</Project>
       <Name>ProtoCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\Libraries\CoreNodesUI\CoreNodesUI.csproj">
+      <Project>{d8262d40-4880-41e4-91e4-af8f480c8637}</Project>
+      <Name>CoreNodesUI</Name>
+      <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\..\src\Libraries\DynamoUnits\Units.csproj">
       <Project>{6e0a079e-85f1-45a1-ad5b-9855e4344809}</Project>

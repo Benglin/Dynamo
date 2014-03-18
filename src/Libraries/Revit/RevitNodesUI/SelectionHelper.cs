@@ -13,7 +13,7 @@ namespace Revit.Interactivity
     {
         public static ReferencePoint RequestReferencePointSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             ReferencePoint rp = null;
 
@@ -35,14 +35,14 @@ namespace Revit.Interactivity
 
             if (pointRef != null)
             {
-                rp = DocumentManager.GetInstance().CurrentDBDocument.GetElement(pointRef) as ReferencePoint;
+                rp = DocumentManager.Instance.CurrentDBDocument.GetElement(pointRef) as ReferencePoint;
             }
             return rp;
         }
 
         public static CurveElement RequestCurveElementSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             CurveElement c = null;
 
@@ -55,14 +55,14 @@ namespace Revit.Interactivity
 
             Reference curveRef = doc.Selection.PickObject(ObjectType.Element);
 
-            c = DocumentManager.GetInstance().CurrentDBDocument.GetElement(curveRef) as CurveElement;
+            c = DocumentManager.Instance.CurrentDBDocument.GetElement(curveRef) as CurveElement;
 
             return c;
         }
 
         public static List<Element> RequestMultipleCurveElementsSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             Autodesk.Revit.UI.Selection.Selection choices = doc.Selection;
             choices.Elements.Clear();
@@ -95,7 +95,7 @@ namespace Revit.Interactivity
 
         public static Face RequestFaceSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             Face f = null;
 
@@ -117,7 +117,7 @@ namespace Revit.Interactivity
 
             if (faceRef != null)
             {
-                GeometryObject geob = DocumentManager.GetInstance().CurrentDBDocument.GetElement(faceRef).GetGeometryObjectFromReference(faceRef);
+                GeometryObject geob = DocumentManager.Instance.CurrentDBDocument.GetElement(faceRef).GetGeometryObjectFromReference(faceRef);
                 f = geob as Face;
             }
             return f;
@@ -126,7 +126,7 @@ namespace Revit.Interactivity
 
         public static Reference RequestFaceReferenceSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             Reference faceRef = null;
 
@@ -141,7 +141,7 @@ namespace Revit.Interactivity
 
         public static Reference RequestEdgeReferenceSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             Autodesk.Revit.UI.Selection.Selection choices = doc.Selection;
             choices.Elements.Clear();
@@ -155,7 +155,7 @@ namespace Revit.Interactivity
 
         public static Form RequestFormSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             Form f = null;
 
@@ -165,29 +165,43 @@ namespace Revit.Interactivity
 
             DynamoLogger.Instance.Log(message);
 
-            //create some geometry options so that we computer references
-            /*
-            var opts = new Options
+            Reference formRef = doc.Selection.PickObject(ObjectType.Element);
+
+            if (formRef != null)
             {
-                ComputeReferences = true,
-                DetailLevel = ViewDetailLevel.Medium,
-                IncludeNonVisibleObjects = false
-            };
-            */
+                //get the element
+                var el = DocumentManager.Instance.CurrentDBDocument.GetElement(formRef);
+                f = el as Form;
+            }
+            return f;
+        }
+
+        public static DividedSurface RequestDividedSurfaceSelection(string message)
+        {
+            var doc = DocumentManager.Instance.CurrentUIDocument;
+
+            DividedSurface f = null;
+
+            Autodesk.Revit.UI.Selection.Selection choices = doc.Selection;
+
+            choices.Elements.Clear();
+
+            DynamoLogger.Instance.Log(message);
 
             Reference formRef = doc.Selection.PickObject(ObjectType.Element);
 
             if (formRef != null)
             {
-                //the suggested new method didn't exist in API?
-                f = DocumentManager.GetInstance().CurrentDBDocument.GetElement(formRef) as Form;
+                //get the element
+                var el = DocumentManager.Instance.CurrentDBDocument.GetElement(formRef);
+                f = el as DividedSurface;
             }
             return f;
         }
 
         public static FamilySymbol RequestFamilySymbolByInstanceSelection(string message, ref FamilyInstance fi)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             try
             {
@@ -223,7 +237,7 @@ namespace Revit.Interactivity
 
         public static FamilyInstance RequestFamilyInstanceSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             try
             {
@@ -252,7 +266,7 @@ namespace Revit.Interactivity
 
         public static Level RequestLevelSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             Level l = null;
 
@@ -275,7 +289,7 @@ namespace Revit.Interactivity
 
         public static Element RequestAnalysisResultInstanceSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             try
             {
@@ -316,7 +330,7 @@ namespace Revit.Interactivity
 
         public static Element RequestModelElementSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             Element selectedElement = null;
 
@@ -342,7 +356,7 @@ namespace Revit.Interactivity
 
         public static Reference RequestReferenceXYZSelection(string message)
         {
-            var doc = DocumentManager.GetInstance().CurrentUIDocument;
+            var doc = DocumentManager.Instance.CurrentUIDocument;
 
             Autodesk.Revit.UI.Selection.Selection choices = doc.Selection;
             choices.Elements.Clear();
@@ -356,44 +370,37 @@ namespace Revit.Interactivity
 
         public static List<Element> RequestDividedSurfaceFamilyInstancesSelection(string message)
         {
-            var form = RequestFormSelection(message);
-
+            var ds = RequestDividedSurfaceSelection(message);
+            
             var result = new List<Element>();
 
-            var dsd = form.GetDividedSurfaceData();
+            var gn = new GridNode();
 
-            if (dsd == null)
-                throw new Exception("The selected form has no divided surface data.");
-
-            foreach (Reference r in dsd.GetReferencesWithDividedSurfaces())
+            int u = 0;
+            while (u < ds.NumberOfUGridlines)
             {
-                var ds = dsd.GetDividedSurfaceForReference(r);
+                gn.UIndex = u;
 
-                var gn = new GridNode();
-
-                int u = 0;
-                while (u < ds.NumberOfUGridlines)
+                int v = 0;
+                while (v < ds.NumberOfVGridlines)
                 {
-                    gn.UIndex = u;
+                    gn.VIndex = v;
 
-                    int v = 0;
-                    while (v < ds.NumberOfVGridlines)
+                    //"Reports whether a grid node is a "seed node," a node that is associated with one or more tiles."
+                    if (ds.IsSeedNode(gn))
                     {
-                        gn.VIndex = v;
+                        var fi = ds.GetTileFamilyInstance(gn, 0);
 
-                        //"Reports whether a grid node is a "seed node," a node that is associated with one or more tiles."
-                        if (ds.IsSeedNode(gn))
+                        if (fi != null)
                         {
-                            var fi = ds.GetTileFamilyInstance(gn, 0);
-
                             //put the family instance into the tree
                             result.Add(fi);
                         }
-                        v = v + 1;
                     }
-
-                    u = u + 1;
+                    v = v + 1;
                 }
+
+                u = u + 1;
             }
 
             return result;

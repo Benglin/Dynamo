@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
 using System.Xml;
@@ -122,15 +123,6 @@ namespace Dynamo.Nodes
             }
         }
 
-        public override bool RequiresRecalc
-        {
-            get
-            {
-                return true;
-            }
-            set { }
-        }
-
         // Property added for test case verification purposes
         public string Script { get { return this._script; } }
 
@@ -222,6 +214,26 @@ namespace Dynamo.Nodes
         }
 
         #endregion
+
+        [NodeMigration(from: "0.6.3.0", to: "0.7.0.0")]
+        public static NodeMigrationData Migrate_0630_to_0700(NodeMigrationData data)
+        {
+            System.Xml.XmlElement xmlNode = data.MigratedNodes.ElementAt(0);
+            var element = MigrationManager.CloneAndChangeType(xmlNode, "DSIronPythonNode.PythonNode");
+            element.SetAttribute("nickname", "Python Script");
+            element.SetAttribute("inputcount", "1");
+            element.RemoveAttribute("inputs");
+
+            foreach (XmlElement subNode in xmlNode.ChildNodes)
+            {
+                element.AppendChild(subNode);
+                subNode.InnerText = Regex.Replace(element.InnerText, @"\bIN\b", "IN[0]");
+            }
+
+            NodeMigrationData migrationData = new NodeMigrationData(data.Document);
+            migrationData.AppendNode(element);
+            return migrationData;
+        }
     }
 
     [NodeName("LEGACY Python Script With Variable Number of Inputs")]
@@ -370,23 +382,14 @@ namespace Dynamo.Nodes
             
         }
 
-        public override bool RequiresRecalc
-        {
-            get
-            {
-                return true;
-            }
-            set { }
-        }
-
         // Property added for test case verification purposes
-        public string Script { get { return this._script; } }
+        public string Script { get { return _script; } }
 
         protected override void SaveNode(XmlDocument xmlDoc, XmlElement nodeElement, SaveContext context)
         {
             XmlElement script = xmlDoc.CreateElement("Script");
             //script.InnerText = this.tb.Text;
-            script.InnerText = _script;
+            script.InnerText = this._script;
             nodeElement.AppendChild(script);
 
             // save the number of inputs
@@ -485,6 +488,15 @@ namespace Dynamo.Nodes
             element.SetAttribute("nickname", "Python Script");
             element.SetAttribute("inputcount", xmlNode.GetAttribute("inputs"));
             element.RemoveAttribute("inputs");
+
+            foreach (XmlElement subNode in xmlNode.ChildNodes)
+            {
+                element.AppendChild(subNode);
+                subNode.InnerText = Regex.Replace(element.InnerText, @"\bIN[0-9]+\b", delegate(Match m)
+                {
+                    return "IN[" + m.ToString().Substring(2) + "]";
+                });
+            }
 
             NodeMigrationData migrationData = new NodeMigrationData(data.Document);
             migrationData.AppendNode(element);

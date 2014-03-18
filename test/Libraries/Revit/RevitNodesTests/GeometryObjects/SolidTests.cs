@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -7,11 +6,10 @@ using Autodesk.DesignScript.Geometry;
 using Autodesk.DesignScript.Interfaces;
 using Revit.Elements;
 using Revit.GeometryConversion;
-using Revit.GeometryObjects;
 using NUnit.Framework;
+using Dynamo.DSEngine;
 using Curve = Autodesk.DesignScript.Geometry.Curve;
-using FreeFormElement = Autodesk.Revit.DB.FreeFormElement;
-using Solid = Revit.Elements.Solid;
+using Solid = Revit.GeometryObjects.Solid;
 
 namespace DSRevitNodesTests.GeometryObjects
 {
@@ -56,8 +54,8 @@ namespace DSRevitNodesTests.GeometryObjects
             var extrusion = Solid.ByExtrusion(crvs.ToArray(), dir, dist);
 
             Assert.NotNull(extrusion);
-            Assert.AreEqual(2.5, extrusion.Volume, 0.01);
-            Assert.AreEqual(5 + 5 + 0.5 + 0.5 + Math.Sqrt(2) * 5, extrusion.SurfaceArea, 0.01);
+            Assert.AreEqual(5, extrusion.Volume, 0.01);
+            Assert.AreEqual(22, extrusion.SurfaceArea, 0.01);
         }
 
         [Test]
@@ -76,7 +74,7 @@ namespace DSRevitNodesTests.GeometryObjects
             var planeCs = CoordinateSystem.ByOriginVectors(origin, x, z, y);
             var transCrvs = crvs.Select(crv => crv.Transform(CoordinateSystem.Identity(), planeCs)).Cast<Curve>().ToList();
 
-            var revolve = Solid.ByRevolve(transCrvs, cs, 0, 3.14);
+            var revolve = Solid.ByRevolve(PolyCurve.ByJoinedCurves(transCrvs.ToArray()), cs, 0, 3.14);
             Assert.NotNull(revolve);
 
             var package = new RenderPackage(); 
@@ -106,7 +104,7 @@ namespace DSRevitNodesTests.GeometryObjects
             var planeCs = CoordinateSystem.ByOriginVectors(origin, x, z, y);
             var transCrvs = crvs.Select(crv => crv.Transform(CoordinateSystem.Identity(), planeCs)).Cast<Curve>().ToList();
 
-            var revolve = Solid.ByRevolve(transCrvs, cs, 0, 3.14);
+            var revolve = Solid.ByRevolve(PolyCurve.ByJoinedCurves(transCrvs.ToArray()), cs, 0, 3.14);
             Assert.NotNull(revolve);
 
             var package = new RenderPackage();
@@ -139,7 +137,8 @@ namespace DSRevitNodesTests.GeometryObjects
             var bottCurves = rect1.Select(crv => crv.Transform(CoordinateSystem.Identity(), csBottom)).Cast<Curve>().ToList();
             var topCurves = rect2.Select(crv => crv.Transform(CoordinateSystem.Identity(), csTop)).Cast<Curve>().ToList();
 
-            var blend = Solid.ByBlend(new List<List<Curve>>{bottCurves,topCurves});
+            var blend = Solid.ByBlend(new List<PolyCurve> { PolyCurve.ByJoinedCurves(bottCurves.ToArray()), 
+                PolyCurve.ByJoinedCurves(topCurves.ToArray()) });
             Assert.NotNull(blend);
 
             var package = new RenderPackage();
@@ -160,44 +159,41 @@ namespace DSRevitNodesTests.GeometryObjects
 
             //make the path curve
             var p1 = Point.ByCoordinates(0, 0, 0);
-            var p2 = Point.ByCoordinates(3, .5, .25);
-            var p3 = Point.ByCoordinates(6, -.5, 0);
-            var p4 = Point.ByCoordinates(9, 0, .25);
+            var p5 = Point.ByCoordinates(0, 0, 4);
 
-            var spine = NurbsCurve.ByPoints(new []{p1,p2,p3,p4});
+            var spine = Line.ByStartPointEndPoint(p1, p5);
+            var spineRev = spine.ToRevitType();
 
-            var csA = spine.CoordinateSystemAtParameter(0);
-            var csB = spine.CoordinateSystemAtParameter(.25);
-            var csC = spine.CoordinateSystemAtParameter(.75);
-            var csD = spine.CoordinateSystemAtParameter(1);
 
-            DrawCS(csA, package);
-            DrawCS(csB, package);
-            DrawCS(csC, package);
-            DrawCS(csD, package);
             DrawCurve(spine.ToRevitType(), package);
 
-            var profCSA = CoordinateSystem.ByOriginVectors(spine.PointAtParameter(0), csA.YAxis, csA.ZAxis);
-            var profCSB = CoordinateSystem.ByOriginVectors(spine.PointAtParameter(.25), csB.YAxis, csB.ZAxis);
-            var profCSC = CoordinateSystem.ByOriginVectors(spine.PointAtParameter(.75), csC.YAxis, csC.ZAxis);
-            var profCSD = CoordinateSystem.ByOriginVectors(spine.PointAtParameter(1), csD.YAxis, csD.ZAxis);
-
-            var cs1 = rect1.Select(crv => crv.Transform(CoordinateSystem.Identity(), profCSA)).Cast<Curve>().ToList();
-            var cs2 = rect1.Select(crv => crv.Transform(CoordinateSystem.Identity(), profCSB)).Cast<Curve>().ToList();
-            var cs3 = rect1.Select(crv => crv.Transform(CoordinateSystem.Identity(), profCSC)).Cast<Curve>().ToList();
-            var cs4 = rect1.Select(crv => crv.Transform(CoordinateSystem.Identity(), profCSD)).Cast<Curve>().ToList();
+            var cs1 = rect1.Select(crv => crv.Translate(0,0,0)).Cast<Curve>().ToList();
+            var cs2 = rect1.Select(crv => crv.Translate(0,0,1)).Cast<Curve>().ToList();
+            var cs3 = rect1.Select(crv => crv.Translate(0,0,3)).Cast<Curve>().ToList();
+            var cs4 = rect1.Select(crv => crv.Translate(0, 0, 4)).Cast<Curve>().ToList();
 
             cs1.ForEach(x => DrawCurve(x.ToRevitType(), package));
             cs2.ForEach(x => DrawCurve(x.ToRevitType(), package));
             cs3.ForEach(x => DrawCurve(x.ToRevitType(), package));
             cs4.ForEach(x => DrawCurve(x.ToRevitType(), package));
 
+            cs1[0].StartPoint.ShouldBeApproximately(0, 0, 0);
+            cs2[0].StartPoint.ShouldBeApproximately(0, 0, 1);
+            cs3[0].StartPoint.ShouldBeApproximately(0, 0, 3);
+            cs4[0].StartPoint.ShouldBeApproximately(0, 0, 4);
+
+            spine.EndPoint.ShouldBeApproximately(Point.ByCoordinates(0, 0, 4));
+            spine.StartPoint.ShouldBeApproximately(Point.ByCoordinates(0, 0, 0));
+
             var modelPath = Path.Combine(TestGeometryDirectory, @"BySweptBlend_ValidArgs_Setup.obj");
             if (File.Exists(modelPath))
                 File.Delete(modelPath);
             WriteToOBJ(modelPath, new List<RenderPackage>() { package });
 
-            var blend = Solid.BySweptBlend(new List<List<Curve>> { cs1,cs2,cs3,cs4}, spine, new List<double>{0,.25,.75,1});
+
+            var crvList = new[] {cs1, cs2, cs3, cs4};
+
+            var blend = Solid.BySweptBlend( crvList.Select(x => PolyCurve.ByJoinedCurves(x.ToArray()) ).ToList(), spine, new List<double> {0, 0.25, 0.75, 1});
             Assert.NotNull(blend);
 
             blend.Tessellate(package);
@@ -323,7 +319,7 @@ namespace DSRevitNodesTests.GeometryObjects
             var modelPath = Path.Combine(TestGeometryDirectory, @"ByBooleanIntersect_ValidArgs.obj");
             if (File.Exists(modelPath))
                 File.Delete(modelPath);
-            WriteToOBJ(modelPath, new List<RenderPackage>() { package });
+            WriteToOBJ(modelPath, new List<IRenderPackage>() { package });
         }
 
         [Test]
@@ -340,7 +336,7 @@ namespace DSRevitNodesTests.GeometryObjects
             var modelPath = Path.Combine(TestGeometryDirectory, @"ByBooleanDifference_ValidArgs.obj");
             if (File.Exists(modelPath))
                 File.Delete(modelPath);
-            WriteToOBJ(modelPath, new List<RenderPackage>() { package });
+            WriteToOBJ(modelPath, new List<IRenderPackage>() { package });
         }
 
         [Test]
@@ -361,12 +357,12 @@ namespace DSRevitNodesTests.GeometryObjects
             ExportModel("FromElement_ValidArgs.obj", package);
         }
 
-        private void ExportModel(string fileName, RenderPackage package)
+        private void ExportModel(string fileName, IRenderPackage package)
         {
             var modelPath = Path.Combine(TestGeometryDirectory, fileName);
             if (File.Exists(modelPath))
                 File.Delete(modelPath);
-            WriteToOBJ(modelPath, new List<RenderPackage>() { package });
+            WriteToOBJ(modelPath, new List<IRenderPackage>() { package });
         }
 
         private static List<Curve> UnitRectangle()
@@ -396,7 +392,7 @@ namespace DSRevitNodesTests.GeometryObjects
             return crvs;
         }
 
-        private static void WriteToOBJ(string path, IEnumerable<RenderPackage> packages)
+        private static void WriteToOBJ(string path, IEnumerable<IRenderPackage> packages)
         {
             using (TextWriter tw = new StreamWriter(path))
             {
@@ -416,8 +412,20 @@ namespace DSRevitNodesTests.GeometryObjects
                         var b = Point.ByCoordinates(package.LineStripVertices[i + 3], package.LineStripVertices[i + 4], package.LineStripVertices[i + 5]);
                         var v1 = Vector.ByCoordinates(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
                         var vNorm = v1.Cross(Vector.ByCoordinates(0, 0, 1));
-                        var c =(Point) b.Translate(vNorm, .025);
-                        var d =(Point) a.Translate(vNorm, .025);
+
+                        Point c;
+                        Point d;
+
+                        if (vNorm.Length > 1e-8)
+                        {
+                            c = (Point)b.Translate(vNorm, .025);
+                            d = (Point)a.Translate(vNorm, .025);
+                        }
+                        else
+                        {
+                            c = b;
+                            d = a;
+                        }
 
                         tw.WriteLine(string.Format("v {0} {1} {2}", a.X, a.Y, a.Z));
                         tw.WriteLine(string.Format("v {0} {1} {2}", b.X, b.Y, c.Z));
@@ -438,7 +446,7 @@ namespace DSRevitNodesTests.GeometryObjects
             }
         }
 
-        private static void DrawCurve(Autodesk.Revit.DB.Curve curve, RenderPackage package)
+        private static void DrawCurve(Autodesk.Revit.DB.Curve curve, IRenderPackage package)
         {
             var pts = curve.Tessellate().ToList();
 
@@ -451,7 +459,7 @@ namespace DSRevitNodesTests.GeometryObjects
             }
         }
 
-        private static void DrawCS(CoordinateSystem cs, RenderPackage package)
+        private static void DrawCS(CoordinateSystem cs, IRenderPackage package)
         {
             //ccw unit rect points
             var a = Point.ByCoordinates(-.25, -.25, 0);
@@ -483,88 +491,5 @@ namespace DSRevitNodesTests.GeometryObjects
                 package.PushTriangleVertex(pA.X, pA.Y, pA.Z);
             }
         }
-    }
-
-    public class RenderPackage : IRenderPackage
-    {
-        public List<double> TriangleVertices { get; set; }
-        public List<double> PointVertices { get; set; }
-        public List<double> PointVertexNormals { get; set; }
-        public List<double> TriangleVertexNormals { get; set; }
-        public List<byte> PointVertexColors { get; set; }
-        public List<byte> TriangleVertexColors { get; set; }
-        public List<double> LineStripVertices { get; set; }
-        public int LineStripVertexCount { get; set; }
-        public List<byte> LineStripVertexColors { get; set; }
-
-        public RenderPackage()
-        {
-            TriangleVertices = new List<double>();
-            PointVertices = new List<double>();
-            PointVertexNormals = new List<double>();
-            TriangleVertexNormals = new List<double>();
-            PointVertexColors = new List<byte>();
-            TriangleVertexColors = new List<byte>();
-            LineStripVertices = new List<double>();
-        }
-
-        public void PushPointVertex(double x, double y, double z)
-        {
-            PointVertices.Add(x);
-            PointVertices.Add(y);
-            PointVertices.Add(z);
-        }
-
-        public void PushPointVertexColor(byte red, byte green, byte blue, byte alpha)
-        {
-            PointVertexColors.Add(red);
-            PointVertexColors.Add(green);
-            PointVertexColors.Add(blue);
-            PointVertexColors.Add(alpha);
-        }
-
-        public void PushTriangleVertex(double x, double y, double z)
-        {
-            TriangleVertices.Add(x);
-            TriangleVertices.Add(y);
-            TriangleVertices.Add(z);
-        }
-
-        public void PushTriangleVertexNormal(double x, double y, double z)
-        {
-            TriangleVertexNormals.Add(x);
-            TriangleVertexNormals.Add(y);
-            TriangleVertexNormals.Add(z);
-        }
-
-        public void PushTriangleVertexColor(byte red, byte green, byte blue, byte alpha)
-        {
-            TriangleVertexColors.Add(red);
-            TriangleVertexColors.Add(green);
-            TriangleVertexColors.Add(blue);
-            TriangleVertexColors.Add(alpha);
-        }
-
-        public void PushLineStripVertex(double x, double y, double z)
-        {
-            LineStripVertices.Add(x);
-            LineStripVertices.Add(y);
-            LineStripVertices.Add(z);
-        }
-
-        public void PushLineStripVertexCount(int n)
-        {
-            LineStripVertexCount = n;
-        }
-
-        public void PushLineStripVertexColor(byte red, byte green, byte blue, byte alpha)
-        {
-            LineStripVertexColors.Add(red);
-            LineStripVertexColors.Add(green);
-            LineStripVertexColors.Add(blue);
-            LineStripVertexColors.Add(alpha);
-        }
-
-        public IntPtr NativeRenderPackage { get; private set; }
     }
 }

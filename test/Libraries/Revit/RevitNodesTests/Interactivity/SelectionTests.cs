@@ -16,7 +16,7 @@ namespace Dynamo.Tests
         {
             ReferencePoint refPoint = null;
 
-            using (var trans = new Transaction(DocumentManager.GetInstance().CurrentDBDocument, "CreateAndDeleteAreReferencePoint"))
+            using (var trans = new Transaction(DocumentManager.Instance.CurrentDBDocument, "CreateAndDeleteAreReferencePoint"))
             {
                 trans.Start();
 
@@ -24,7 +24,7 @@ namespace Dynamo.Tests
                 fails.SetClearAfterRollback(true);
                 trans.SetFailureHandlingOptions(fails);
 
-                refPoint = DocumentManager.GetInstance().CurrentDBDocument.FamilyCreate.NewReferencePoint(new XYZ());
+                refPoint = DocumentManager.Instance.CurrentDBDocument.FamilyCreate.NewReferencePoint(new XYZ());
 
                 trans.Commit();
             }
@@ -33,13 +33,19 @@ namespace Dynamo.Tests
 
             var buildOutput = sel.BuildOutputAst(new List<AssociativeNode>());
 
-            var funCall = (FunctionCallNode)((BinaryExpressionNode)buildOutput.First()).RightNode;
+            //function call node builds this
+            /*return new IdentifierListNode
+            {
+                LeftNode = new IdentifierNode(className),
+                RightNode = AstFactory.BuildFunctionCall(functionName, arguments)
+            };*/
 
+            var funCall = (FunctionCallNode)(((IdentifierListNode)((BinaryExpressionNode)buildOutput.First()).RightNode)).RightNode;
             Assert.IsInstanceOf<IdentifierNode>(funCall.Function);
             Assert.AreEqual(1, funCall.FormalArguments.Count);
             Assert.IsInstanceOf<IntNode>(funCall.FormalArguments[0]);
 
-            Assert.AreEqual(refPoint.Id.IntegerValue.ToString(), ((IntNode)funCall.FormalArguments[0]).value);
+            Assert.AreEqual(refPoint.Id.IntegerValue, ((IntNode)funCall.FormalArguments[0]).Value);
         }
 
         [Test]
@@ -47,7 +53,7 @@ namespace Dynamo.Tests
         {
             var refPoints = new List<ReferencePoint>();
 
-            using (var trans = new Transaction(DocumentManager.GetInstance().CurrentDBDocument, "Create some ReferencePoints"))
+            using (var trans = new Transaction(DocumentManager.Instance.CurrentDBDocument, "Create some ReferencePoints"))
             {
                 trans.Start();
 
@@ -55,9 +61,9 @@ namespace Dynamo.Tests
                 fails.SetClearAfterRollback(true);
                 trans.SetFailureHandlingOptions(fails);
 
-                refPoints.Add(DocumentManager.GetInstance().CurrentDBDocument.FamilyCreate.NewReferencePoint(new XYZ(0,0,0)));
-                refPoints.Add(DocumentManager.GetInstance().CurrentDBDocument.FamilyCreate.NewReferencePoint(new XYZ(0,0,1)));
-                refPoints.Add(DocumentManager.GetInstance().CurrentDBDocument.FamilyCreate.NewReferencePoint(new XYZ(0,0,2)));
+                refPoints.Add(DocumentManager.Instance.CurrentDBDocument.FamilyCreate.NewReferencePoint(new XYZ(0,0,0)));
+                refPoints.Add(DocumentManager.Instance.CurrentDBDocument.FamilyCreate.NewReferencePoint(new XYZ(0,0,1)));
+                refPoints.Add(DocumentManager.Instance.CurrentDBDocument.FamilyCreate.NewReferencePoint(new XYZ(0,0,2)));
 
                 trans.Commit();
             }
@@ -76,7 +82,7 @@ namespace Dynamo.Tests
         {
             Form extrude = null;
 
-            using (var trans = new Transaction(DocumentManager.GetInstance().CurrentDBDocument, "Create an extrusion Form"))
+            using (var trans = new Transaction(DocumentManager.Instance.CurrentDBDocument, "Create an extrusion Form"))
             {
                 trans.Start();
 
@@ -86,12 +92,12 @@ namespace Dynamo.Tests
 
                 var p = new Plane(new XYZ(0, 0, 1), new XYZ());
                 var arc = Arc.Create(p, 2, 0, System.Math.PI);
-                var sp = SketchPlane.Create(DocumentManager.GetInstance().CurrentDBDocument, p);
-                var mc = DocumentManager.GetInstance().CurrentDBDocument.FamilyCreate.NewModelCurve(arc, sp);
+                var sp = SketchPlane.Create(DocumentManager.Instance.CurrentDBDocument, p);
+                var mc = DocumentManager.Instance.CurrentDBDocument.FamilyCreate.NewModelCurve(arc, sp);
 
                 var profiles = new ReferenceArray();
                 profiles.Append(mc.GeometryCurve.Reference);
-                extrude = DocumentManager.GetInstance().CurrentDBDocument.FamilyCreate.NewExtrusionForm(false, profiles, new XYZ(0,0,1));
+                extrude = DocumentManager.Instance.CurrentDBDocument.FamilyCreate.NewExtrusionForm(false, profiles, new XYZ(0,0,1));
                 trans.Commit();
             }
 
@@ -110,14 +116,86 @@ namespace Dynamo.Tests
 
             var buildOutput = sel.BuildOutputAst(new List<AssociativeNode>());
 
-            var funCall = (FunctionCallNode)((BinaryExpressionNode)buildOutput.First()).RightNode;
+            var funCall = (FunctionCallNode)((IdentifierListNode)((BinaryExpressionNode)buildOutput.First()).RightNode).RightNode;
 
             Assert.IsInstanceOf<IdentifierNode>(funCall.Function);
             Assert.AreEqual(1, funCall.FormalArguments.Count);
             Assert.IsInstanceOf<StringNode>(funCall.FormalArguments[0]);
 
-            var stableRef = face.Reference.ConvertToStableRepresentation(DocumentManager.GetInstance().CurrentDBDocument);
+            var stableRef = face.Reference.ConvertToStableRepresentation(DocumentManager.Instance.CurrentDBDocument);
             Assert.AreEqual(stableRef, ((StringNode)funCall.FormalArguments[0]).value);
+        }
+
+        [Test]
+        public void CanSelectAnalysisResults()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectModelElement()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectAFamilyInstance()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectALevel()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectCurveElement()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectAReferencePoint()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectAFace()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectAnEdge()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectAPointOnAFace()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectAUVOnAFace()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectDividedSurfaceFamilies()
+        {
+            Assert.Inconclusive("Finish me!");
+        }
+
+        [Test]
+        public void CanSelectMultipleModelElements()
+        {
+            Assert.Inconclusive("Finish me!");
         }
     }
 }

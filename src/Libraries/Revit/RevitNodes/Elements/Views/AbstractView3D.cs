@@ -12,7 +12,7 @@ using RevitServices.Transactions;
 
 namespace Revit.Elements
 {
-    //[Browsable(false)]
+    //[SupressImportIntoVM]
     public abstract class AbstractView3D : AbstractView
     {
 
@@ -218,7 +218,7 @@ namespace Revit.Elements
         protected static View3D Create3DView(ViewOrientation3D orient, string name, bool isPerspective)
         {
             // (sic) From the Dynamo legacy implementation
-            var viewFam = DocumentManager.GetInstance().ElementsOfType<ViewFamilyType>()
+            var viewFam = DocumentManager.Instance.ElementsOfType<ViewFamilyType>()
                 .FirstOrDefault(x => x.ViewFamily == ViewFamily.ThreeDimensional);
 
             if (viewFam == null)

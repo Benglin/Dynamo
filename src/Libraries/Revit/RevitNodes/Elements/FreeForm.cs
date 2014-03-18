@@ -71,14 +71,14 @@ namespace Revit.Elements
             }
 
             // recreate freeform
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             var freeForm = FreeFormElement.Create(Document, mySolid);
             InternalSetFreeFormElement(freeForm);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.SetElementForTrace(this.InternalElementId);
+            ElementBinder.SetElementForTrace(this.InternalElement);
         }
 
         #endregion
@@ -104,11 +104,11 @@ namespace Revit.Elements
 
             if (method != null)
             {
-                TransactionManager.GetInstance().EnsureInTransaction(Document);
+                TransactionManager.Instance.EnsureInTransaction(Document);
 
                 method.Invoke(InternalFreeFormElement, new object[] {solid});
 
-                TransactionManager.GetInstance().TransactionTaskDone();
+                TransactionManager.Instance.TransactionTaskDone();
 
                 return true;
             }
@@ -136,7 +136,7 @@ namespace Revit.Elements
         /// </summary>
         /// <param name="solid"></param>
         /// <returns></returns>
-        public static FreeForm BySolid(Solid solid)
+        public static FreeForm BySolid(Revit.GeometryObjects.Solid solid)
         {
             if (solid == null)
             {
@@ -148,6 +148,7 @@ namespace Revit.Elements
                 throw new Exception("You can only create a FreeForm element in the Family editor.  You can then import" +
                                     "this family into a Project environment as a family.");
             }
+
             return new FreeForm(solid.InternalSolid);
         }
 

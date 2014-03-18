@@ -55,14 +55,14 @@ namespace Revit.Elements
         private Grid(Autodesk.Revit.DB.Line line)
         {
             // Changing the underlying curve requires destroying the Grid
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             Autodesk.Revit.DB.Grid g = Document.Create.NewGrid( line );
             InternalSetGrid(g);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElementId);
+            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElement);
         }
 
         /// <summary>
@@ -72,14 +72,14 @@ namespace Revit.Elements
         private Grid(Autodesk.Revit.DB.Arc arc)
         {
             // Changing the underlying curve requires destroying the Grid
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             Autodesk.Revit.DB.Grid g = Document.Create.NewGrid(arc);
             InternalSetGrid(g);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElementId);
+            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElement);
         }
 
         #endregion

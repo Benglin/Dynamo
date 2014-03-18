@@ -280,7 +280,7 @@ namespace ProtoCore.Lang
                         if (svCondition.optype != AddressType.Boolean)
                         {
                             // Comment Jun: Perhaps we can allow coercion?
-                            Type booleanType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeBool, false, 0);
+                            Type booleanType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeBool, 0);
                             svCondition = TypeSystem.Coerce(svCondition, booleanType, core);
                             GCUtils.GCRetain(svCondition, core);
                         }
@@ -379,7 +379,7 @@ namespace ProtoCore.Lang
 
                         string mangledName = ProtoCore.Utils.CoreUtils.GetMangledFunctionName(className, functionName);
 
-                        ProtoCore.CallSite callsite = core.GetCallSite(core.ExecutingGraphnodeUID, ProtoCore.DSASM.Constants.kGlobalScope, mangledName);
+                        ProtoCore.CallSite callsite = core.GetCallSite(core.ExecutingGraphnode, ProtoCore.DSASM.Constants.kGlobalScope, mangledName);
                         Validity.Assert(null != callsite);
 
                         //
@@ -560,7 +560,7 @@ namespace ProtoCore.Lang
 
                         // Comment Jun: 
                         // Any replication guides pushed in a dotarg->dot call must be retrieved here from the core
-                        var replicationGuides = new List<List<int>>();
+                        var replicationGuides = new List<List<ProtoCore.ReplicationGuide>>();
                         bool doesDotCallFunctionHaveArgs = functionArgs > ProtoCore.DSASM.Constants.kThisFunctionAdditionalArgs;
                         if (doesDotCallFunctionHaveArgs)// || !core.Options.EnableThisPointerFunctionOverload)
                         {
@@ -585,7 +585,7 @@ namespace ProtoCore.Lang
                             }
                         }
 
-                        ProtoCore.CallSite callsite = core.GetCallSite(core.ExecutingGraphnodeUID, thisPtrType, functionName);
+                        ProtoCore.CallSite callsite = core.GetCallSite(core.ExecutingGraphnode, thisPtrType, functionName);
                         Validity.Assert(null != callsite);
 
                         ProtoCore.DSASM.Executive exec = core.CurrentExecutive.CurrentDSASMExec;
@@ -914,8 +914,7 @@ namespace ProtoCore.Lang
                 obj = objects[0];
             else
             {
-                type.IsIndexable = true;
-                type.rank = -1;
+                type.rank = Constants.kArbitraryRank;
             }
 
             StackValue ret = marshaler.Marshal(obj, c, interpreter, type);

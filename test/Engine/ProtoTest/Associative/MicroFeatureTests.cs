@@ -231,6 +231,101 @@ namespace ProtoTest.Associative
         }
 
         [Test]
+        public void TestClassHeirarchy01()
+        {
+            String code =
+@"class A
+{
+	constructor A()
+	{
+	}
+	
+	def foo : int()
+	{
+		return = 1;
+	}
+}
+
+class B extends A
+{
+
+	constructor B()
+	{
+	}
+}
+
+class C extends B
+{
+	constructor C()
+	{
+	}
+}
+
+class D
+{
+	def foo:int(a:A)
+	{
+		return = a.foo();
+	}
+}
+
+c = C.C();
+d = D.D();
+x = d.foo(c);
+";
+            ExecutionMirror mirror = thisTest.RunScriptSource(code);
+            thisTest.Verify("x", 1);
+        }
+
+        [Test]
+        public void TestClassHeirarchy02()
+        {
+            String code =
+@"class A
+{
+	constructor A()
+	{
+	}
+	
+	def foo : int()
+	{
+		return = 1;
+	}
+}
+
+class C extends B
+{
+	constructor C()
+	{
+	}
+}
+
+class B extends A
+{
+
+	constructor B()
+	{
+	}
+}
+
+class D
+{
+	def foo:int(a:A)
+	{
+		return = a.foo();
+	}
+}
+
+c = C.C();
+d = D.D();
+x = d.foo(c);
+";
+            ExecutionMirror mirror = thisTest.RunScriptSource(code);
+            thisTest.Verify("x", 1);
+        }
+
+
+        [Test]
         public void TestClassFunction02()
         {
             String code =
@@ -1228,6 +1323,25 @@ r = a[null];
             ExecutionMirror mirror = thisTest.RunScriptSource(code);
             thisTest.Verify("a", new object[] { 4, 5 });
             thisTest.Verify("b", new object[] { 5, 6 });
+        }
+
+
+
+        [Test]
+        public void TestReplicationGuideWithLongestProperty01()
+        {
+            String code =
+@"
+def f(i:int, j:int)
+{
+    return = i + j;
+}
+
+a = 1..3;
+b = 2..3;
+c = f(a<1L>,b<2>);";
+            ExecutionMirror mirror = thisTest.RunScriptSource(code);
+            thisTest.Verify("c", new Object[] { new object[] { 3, 4 }, new object[] { 4, 5 }, new object[] { 5, 6 } });
         }
 
         [Test]

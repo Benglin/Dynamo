@@ -31,15 +31,15 @@ namespace Revit.Elements.Views
         /// </summary>
         private CeilingPlanView(Autodesk.Revit.DB.Level level)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             var vd = CreatePlanView(level, ViewFamily.CeilingPlan);
 
             InternalSetPlanView(vd);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElementId);
+            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElement);
         }
 
         #endregion

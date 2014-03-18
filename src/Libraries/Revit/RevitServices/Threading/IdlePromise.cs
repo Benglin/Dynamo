@@ -31,20 +31,20 @@ namespace RevitServices.Threading
         internal static Queue<Action> Promises = new Queue<Action>();
         internal static Queue<Action> ShutdownPromises = new Queue<Action>();
 
+        [ThreadStatic] private static bool idle;
+        public static bool InIdleThread { get { return idle; } }
+
         private static void Application_Idling(object sender, IdlingEventArgs e)
         {
+            idle = true;
             Thread.Sleep(1);
             while (HasPendingPromises())
             {
                 Promises.Dequeue()();
             }
+            idle = false;
         }
-
-        internal static void Register(UIControlledApplication uIApplication)
-        {
-            uIApplication.Idling += Application_Idling;
-        }
-
+        
         /// <summary>
         /// Are there currently promises queued for Idle thread invocation?
         /// </summary>
@@ -77,7 +77,7 @@ namespace RevitServices.Threading
         /// <param name="uIApplication">UIControlledApplication to use the Idle event of.</param>
         public static void RegisterIdle(UIControlledApplication uIApplication)
         {
-            Register(uIApplication);
+            uIApplication.Idling += Application_Idling;
         }
 
         /// <summary>
@@ -90,13 +90,24 @@ namespace RevitServices.Threading
         }
 
         /// <summary>
+        /// Dispatches the given IdlePromiseDelegate on the Revit Idle thread asynchronously.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public static IdlePromise<T> ExecuteOnIdleAsync<T>(IdlePromiseDelegate<T> p)
+        {
+            return new IdlePromise<T>(p);
+        }
+
+        /// <summary>
         /// Executes the given Action delegate on the Idle thread and blocks the calling
         /// thread until its invocation is complete.
         /// </summary>
         /// <param name="p">Delefate to be invoked on the Idle thread.</param>
         public static void ExecuteOnIdleSync(Action p)
         {
-            bool redeemed = false;
+            var redeemed = false;
 
             Promises.Enqueue(
                 delegate
@@ -109,6 +120,16 @@ namespace RevitServices.Threading
             {
                 Thread.Sleep(1);
             }
+        }
+
+        /// <summary>
+        /// Dispatches the given IdlePromiseDelegate on the Revit Idle thread synchronously.
+        /// </summary>
+        /// <param name="p">Delegate to be invoked on the Idle thread.</param>
+        /// <returns>Result of the delegate.</returns>
+        public static T ExecuteOnIdleSync<T>(IdlePromiseDelegate<T> p)
+        {
+            return new IdlePromise<T>(p).RedeemPromise();
         }
 
         public static void ExecuteOnShutdown(Action p)
@@ -135,24 +156,37 @@ namespace RevitServices.Threading
     /// <typeparam name="T">Return type of the delegate to be dispatched.</typeparam>
     public class IdlePromise<T>
     {
-        private T _value;
-        private bool _redeemed;
+        private T value;
+        private bool redeemed;
+
+        /*
+        /// <summary>
+        ///     Automatically attempt to redeem the promise when it is used.
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public static implicit operator T(IdlePromise<T> p)
+        {
+            return p.RedeemPromise();
+        }
+        // This is really cool but probably not the most usable. --SJE
+        */
 
         /// <summary>
         /// Creates a new IdlePromise out of the given delegate, immediately queuing its dispatch
         /// on the Idle thread asynchronously.
         /// </summary>
         /// <param name="d">Delegate to be invoked on the Idle thread.</param>
-        public IdlePromise(IdlePromiseDelegate<T> d)
+        internal IdlePromise(IdlePromiseDelegate<T> d)
         {
-            _redeemed = false;
-            _value = default(T);
+            redeemed = false;
+            value = default(T);
 
             IdlePromise.ExecuteOnIdleAsync(
                 delegate
                 {
-                    _value = d();
-                    _redeemed = true;
+                    value = d();
+                    redeemed = true;
                 });
         }
 
@@ -163,22 +197,12 @@ namespace RevitServices.Threading
         /// <returns>The result of the promise delegate.</returns>
         public T RedeemPromise()
         {
-            while (!_redeemed)
+            while (!redeemed)
             {
                 Thread.Sleep(1);
             }
 
-            return _value;
-        }
-
-        /// <summary>
-        /// Dispatches the given IdlePromiseDelegate on the Revit Idle thread synchronously.
-        /// </summary>
-        /// <param name="p">Delegate to be invoked on the Idle thread.</param>
-        /// <returns>Result of the delegate.</returns>
-        public static T ExecuteOnIdle(IdlePromiseDelegate<T> p)
-        {
-            return new IdlePromise<T>(p).RedeemPromise();
+            return value;
         }
     }
 }

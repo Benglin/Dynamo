@@ -16,7 +16,7 @@ namespace DSRevitNodesTests.Elements
         {
             HostFactory.Instance.StartUp();
         }
-
+         
         [TearDown]
         public void TearDown()
         {
@@ -36,7 +36,7 @@ namespace DSRevitNodesTests.Elements
             var loft = Form.ByLoftingCurveReferences(eles.ToArray(), false);
 
             Assert.NotNull(loft);
-            Assert.IsTrue(DocumentManager.GetInstance().ElementExistsInDocument(loft.InternalElement.Id));
+            Assert.IsTrue(DocumentManager.Instance.ElementExistsInDocument(loft.InternalElement.Id));
         }
 
         [Test]
@@ -46,7 +46,7 @@ namespace DSRevitNodesTests.Elements
             Assert.NotNull(ele);
 
             var form = ele as Form;
-            var faces = form.FaceReferences;
+            var faces = form.FaceReferences; 
             Assert.IsTrue(faces.All(x => x != null));
             Assert.AreEqual(6, faces.Length);
         }

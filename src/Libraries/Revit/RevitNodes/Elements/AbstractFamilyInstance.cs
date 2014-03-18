@@ -10,7 +10,7 @@ namespace Revit.Elements
     /// An abstract Revit FamilyInstance - implementors include FamilyInstance, AdaptiveComponent, StructuralFraming
     /// </summary>
     [RegisterForTrace]
-    //[Browsable(false)]
+    //[SupressImportIntoVM]
     public abstract class AbstractFamilyInstance : AbstractElement
     {
 
@@ -46,11 +46,11 @@ namespace Revit.Elements
 
         protected void InternalSetFamilySymbol(Autodesk.Revit.DB.FamilySymbol fs)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             InternalFamilyInstance.Symbol = fs;
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
         }
 
         #endregion
@@ -76,5 +76,9 @@ namespace Revit.Elements
 
         #endregion
 
+        public override string ToString()
+        {
+            return string.Format("Family={0}, Type={1}", InternalFamilyInstance.Symbol.Name, InternalFamilyInstance.Name);
+        }
     }
 }

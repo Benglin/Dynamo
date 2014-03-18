@@ -83,6 +83,11 @@
             parts.
             </summary>
         </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo(Autodesk.DesignScript.Geometry.Geometry)">
+            <summary>
+            Check if the two objects have the same representational geometry or numerical values
+            </summary>
+        </member>
         <member name="P:Autodesk.DesignScript.Geometry.Geometry.ContextCoordinateSystem">
             <summary>
             Get the context/reference coordinate system that was used to create this geometry.
@@ -161,6 +166,11 @@
         <member name="M:Autodesk.DesignScript.Geometry.Curve.ParameterAtDistance(System.Double)">
             <summary>
             Get the parameter at a particular arc length along the curve.
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Curve.ParameterAtChordLength(System.Double,System.Double,System.Boolean)">
+            <summary>
+            Get the parameter at a particular chord length along the curve from given location.
             </summary>
         </member>
         <member name="M:Autodesk.DesignScript.Geometry.Curve.StartParameter">
@@ -1244,22 +1254,22 @@
             Get a string representation of the NurbsCurve
             </summary>
         </member>
-        <member name="M:Autodesk.DesignScript.Geometry.NurbsCurve.ByControlVertices(Autodesk.DesignScript.Geometry.Point[])">
+        <member name="M:Autodesk.DesignScript.Geometry.NurbsCurve.ByControlPoints(Autodesk.DesignScript.Geometry.Point[])">
             <summary>
             Create a BSplineCurve by using explicit control points. NOTE 1: BSplineCurves with deg=1 have G1 discontinuities, which cause problems for extrusion, sweep, and other operations. They should be avoided. Use  a PolyCurve instead.  NOTE 2: If the curve is periodic (closed), then the first and last points MUST be the same.
             </summary>
         </member>
-        <member name="M:Autodesk.DesignScript.Geometry.NurbsCurve.ByControlVertices(Autodesk.DesignScript.Geometry.Point[],System.Int32)">
+        <member name="M:Autodesk.DesignScript.Geometry.NurbsCurve.ByControlPoints(Autodesk.DesignScript.Geometry.Point[],System.Int32)">
             <summary>
             Create a BSplineCurve by using explicit control points. NOTE 1: BSplineCurves with deg=1 have G1 discontinuities, which cause problems for extrusion, sweep, and other operations. They should be avoided. Use  a PolyCurve instead.  NOTE 2: If the curve is periodic (closed), then the first and last points MUST be the same.
             </summary>
         </member>
-        <member name="M:Autodesk.DesignScript.Geometry.NurbsCurve.ByControlVertices(Autodesk.DesignScript.Geometry.Point[],System.Int32,System.Boolean)">
+        <member name="M:Autodesk.DesignScript.Geometry.NurbsCurve.ByControlPoints(Autodesk.DesignScript.Geometry.Point[],System.Int32,System.Boolean)">
             <summary>
             Create a BSplineCurve by using explicit control points. NOTE 1: BSplineCurves with deg=1 have G1 discontinuities, which cause problems for extrusion, sweep, and other operations. They should be avoided. Use  a PolyCurve instead.  NOTE 2: If the curve is periodic (closed), then the first and last points MUST be the same.
             </summary>
         </member>
-        <member name="M:Autodesk.DesignScript.Geometry.NurbsCurve.ByControlVerticesWeightsKnots(Autodesk.DesignScript.Geometry.Point[],System.Double[],System.Double[],System.Int32)">
+        <member name="M:Autodesk.DesignScript.Geometry.NurbsCurve.ByControlPointsWeightsKnots(Autodesk.DesignScript.Geometry.Point[],System.Double[],System.Double[],System.Int32)">
             <summary>
             
             </summary>
@@ -1312,6 +1322,41 @@
         <member name="P:Autodesk.DesignScript.Geometry.NurbsCurve.IsRational">
             <summary>
             Whether the NurbsCurve is rational or not.  This defines whether any of the weights are not 1.0.
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.EllipseArc.ToString">
+            <summary>
+            Get a string representation of the EllipseArc
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.EllipseArc.ByPlaneRadiiStartAngleSweepAngle(Autodesk.DesignScript.Geometry.Plane,System.Double,System.Double,System.Double,System.Double)">
+            <summary>
+            Create an EllipseArc in a plane with the given the radii along the X and Y axes and the angles to sweep through
+            </summary>
+        </member>
+        <member name="P:Autodesk.DesignScript.Geometry.EllipseArc.CenterPoint">
+            <summary>
+            The center of the Ellipse
+            </summary>
+        </member>
+        <member name="P:Autodesk.DesignScript.Geometry.EllipseArc.MajorAxis">
+            <summary>
+            The major axis of the Ellipse.  This is the longer axis.  The length of the Vector is the Major radius.
+            </summary>
+        </member>
+        <member name="P:Autodesk.DesignScript.Geometry.EllipseArc.MinorAxis">
+            <summary>
+            The minor axis of the Ellipse.  This is the shorter axis.  The length of the Vector is the Minor radius.
+            </summary>
+        </member>
+        <member name="P:Autodesk.DesignScript.Geometry.EllipseArc.StartAngle">
+            <summary>
+            The start angle in degrees
+            </summary>
+        </member>
+        <member name="P:Autodesk.DesignScript.Geometry.EllipseArc.SweepAngle">
+            <summary>
+            The total sweep angle in degrees
             </summary>
         </member>
         <member name="T:Autodesk.DesignScript.Geometry.Properties.Resources">
@@ -1480,26 +1525,6 @@
             The underlying Surface making up the Face
             </summary>
         </member>
-        <member name="M:Autodesk.DesignScript.Geometry.Face.Centroid">
-            <summary>
-            Obtain the Centroid of this Face
-            </summary>
-        </member>
-        <member name="M:Autodesk.DesignScript.Geometry.Face.Area">
-            <summary>
-            Obtain the Area of this Face
-            </summary>
-        </member>
-        <member name="M:Autodesk.DesignScript.Geometry.Face.IsPlanar">
-            <summary>
-            Check if the Surface underlying this Face is Planar
-            </summary>
-        </member>
-        <member name="M:Autodesk.DesignScript.Geometry.Face.FaceType">
-            <summary>
-            The FaceType
-            </summary>
-        </member>
         <member name="P:Autodesk.DesignScript.Geometry.Face.Edges">
             <summary>
             All of the Edges around this Face in counterclockwise order
@@ -1534,6 +1559,31 @@
             Construct a Polygon Curve by connecting Points.
             </summary>
         </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Polygon.RegularPolygon(Autodesk.DesignScript.Geometry.Circle,System.Int32)">
+            <summary>
+            Construct a Polygon Curve by connecting Points.
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Polygon.Corners">
+            <summary>
+            Returns corners of polygon
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Polygon.Center">
+            <summary>
+            Returns average point of corners of polygon
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Polygon.SelfIntersections">
+            <summary>
+            Returns self intersections between sides of the polygon.
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Polygon.ContainmentTest(Autodesk.DesignScript.Geometry.Point)">
+            <summary>
+            Checks if point is inside planar polygon without self intersections.
+            </summary>
+        </member>
         <member name="P:Autodesk.DesignScript.Geometry.Polygon.Points">
             <summary>
             Returns all the segment start / end points.
@@ -1547,6 +1597,21 @@
         <member name="M:Autodesk.DesignScript.Geometry.Surface.ToString">
             <summary>
             Get a string representation of the Surface
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Surface.ByLoft(Autodesk.DesignScript.Geometry.Curve[],Autodesk.DesignScript.Geometry.Curve[])">
+            <summary>
+            Loft a Surface through the cross sections with a specified guide curves (aka a rails). Guide curves must intersect all of the cross section  curves.
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Surface.BySweep(Autodesk.DesignScript.Geometry.Curve,Autodesk.DesignScript.Geometry.Curve)">
+            <summary>
+            Create a Surface by sweeping a cross section Curve along a path.
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Surface.ByPerimeterPoints(Autodesk.DesignScript.Geometry.Point[])">
+            <summary>
+            Create a Polygon Surface connecting input Points in a closed Polygon and patching it.
             </summary>
         </member>
         <member name="M:Autodesk.DesignScript.Geometry.Surface.BySweep2Rails(Autodesk.DesignScript.Geometry.Curve,Autodesk.DesignScript.Geometry.Curve,Autodesk.DesignScript.Geometry.Curve)">
@@ -1574,21 +1639,6 @@
             Loft a Surface through the cross sections with a specified guide curve (aka a rail). Guide curve must intersect all of the cross section  curves.
             </summary>
         </member>
-        <member name="M:Autodesk.DesignScript.Geometry.Surface.ByLoft(Autodesk.DesignScript.Geometry.Curve[],Autodesk.DesignScript.Geometry.Curve[])">
-            <summary>
-            Loft a Surface through the cross sections with a specified guide curves (aka a rails). Guide curves must intersect all of the cross section  curves.
-            </summary>
-        </member>
-        <member name="M:Autodesk.DesignScript.Geometry.Surface.BySweep(Autodesk.DesignScript.Geometry.Curve,Autodesk.DesignScript.Geometry.Curve)">
-            <summary>
-            Create a Surface by sweeping a cross section Curve along a path.
-            </summary>
-        </member>
-        <member name="M:Autodesk.DesignScript.Geometry.Surface.ByPerimeterPoints(Autodesk.DesignScript.Geometry.Point[])">
-            <summary>
-            Create a Polygon Surface connecting input Points in a closed Polygon and patching it.
-            </summary>
-        </member>
         <member name="M:Autodesk.DesignScript.Geometry.Surface.SubtractFrom(Autodesk.DesignScript.Geometry.Solid)">
             <summary>
             Subtract the input tools from this Surface.
@@ -1597,6 +1647,11 @@
         <member name="M:Autodesk.DesignScript.Geometry.Surface.UVParameterAtPoint(Autodesk.DesignScript.Geometry.Point)">
             <summary>
             Return the UV parameter pair at the input Point. This is the inverse of Point at parameter.
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Surface.NormalAtPoint(Autodesk.DesignScript.Geometry.Point)">
+            <summary>
+            Return the surface normal at the input Point on the Surface.
             </summary>
         </member>
         <member name="M:Autodesk.DesignScript.Geometry.Surface.ToNurbsSurface">
@@ -1724,12 +1779,12 @@
             Creates a NurbsSurface with specified control vertices, with specified  U and V degrees.
             </summary>
         </member>
-        <member name="M:Autodesk.DesignScript.Geometry.NurbsSurface.ByControlVertices(Autodesk.DesignScript.Geometry.Point[][],System.Int32,System.Int32)">
+        <member name="M:Autodesk.DesignScript.Geometry.NurbsSurface.ByControlPoints(Autodesk.DesignScript.Geometry.Point[][],System.Int32,System.Int32)">
             <summary>
             Create a BSplineCurve by using explicit control Points, with specified U and V degrees.
             </summary>
         </member>
-        <member name="M:Autodesk.DesignScript.Geometry.NurbsSurface.ByControlVerticesWeightsKnots(Autodesk.DesignScript.Geometry.Point[][],System.Double[][],System.Double[],System.Double[],System.Int32,System.Int32)">
+        <member name="M:Autodesk.DesignScript.Geometry.NurbsSurface.ByControlPointsWeightsKnots(Autodesk.DesignScript.Geometry.Point[][],System.Double[][],System.Double[],System.Double[],System.Int32,System.Int32)">
             <summary>
             
             </summary>
@@ -1949,16 +2004,6 @@
             The height of the Rectangle
             </summary>
         </member>
-        <member name="P:Autodesk.DesignScript.Geometry.Rectangle.Center">
-            <summary>
-            The center of the Rectangle
-            </summary>
-        </member>
-        <member name="P:Autodesk.DesignScript.Geometry.Rectangle.Corners">
-            <summary>
-            The four corners of the Rectangle in a counterclockwise fashion
-            </summary>
-        </member>
         <member name="M:Autodesk.DesignScript.Geometry.PolySurface.ToString">
             <summary>
             Get a string representation of the PolySurface
@@ -1989,6 +2034,11 @@
             Make Polysurface by joining surfaces.
             </summary>
         </member>
+        <member name="M:Autodesk.DesignScript.Geometry.PolySurface.BySolid(Autodesk.DesignScript.Geometry.Solid)">
+            <summary>
+            Make Polysurface by surfaces of Solid.
+            </summary>
+        </member>
         <member name="M:Autodesk.DesignScript.Geometry.PolySurface.BySweep(Autodesk.DesignScript.Geometry.Curve,Autodesk.DesignScript.Geometry.PolyCurve)">
             <summary>
             Make Polysurface by sweeping Polycurve along rail.
@@ -2014,6 +2064,16 @@
             Project curve on polysurface
             </summary>
         </member>
+        <member name="M:Autodesk.DesignScript.Geometry.PolySurface.LocateSurfacesByPoint(Autodesk.DesignScript.Geometry.Point,Autodesk.DesignScript.Geometry.Vector)">
+            <summary>
+            Locate Surfaces by point. Takes first intersection in forward direction.  Returns one surface if hit  surface interior, two if hit edge interior, and many if hit vertex
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.PolySurface.LocateSurfacesByLine(Autodesk.DesignScript.Geometry.Line)">
+            <summary>
+            Locate Surfaces by Line. Takes all surfaces hit by line.
+            </summary>
+        </member>
         <member name="M:Autodesk.DesignScript.Geometry.PolySurface.ByCombine(Autodesk.DesignScript.Geometry.PolySurface)">
             <summary>
             Combine polysurface with other without resolving edges and intersections
@@ -2032,6 +2092,11 @@
         <member name="M:Autodesk.DesignScript.Geometry.PolySurface.UnconnectedBoundaries">
             <summary>
             Patch PolySurface by Surface created on the closed Polycurves.
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.PolySurface.ExtractSolids(Autodesk.DesignScript.Geometry.Point[])">
+            <summary>
+            Extract Solids from Polysurface defined by subset of surfaces
             </summary>
         </member>
         <member name="M:Autodesk.DesignScript.Geometry.PolySurface.SurfaceCount">
@@ -2061,11 +2126,20 @@
         </member>
         <member name="M:Autodesk.DesignScript.Geometry.Cylinder.ByRadiusHeight(Autodesk.DesignScript.Geometry.CoordinateSystem,System.Double,System.Double)">
             <summary>
-            Constructs a solid cylinder defined by a line the start and end radii of its base and top respectively.
+            Construct a Solid Cylinder defined by a parent CoordinateSystem, the radius, and the height of the cylinder
             </summary>
-            <param name="contextCoordinateSystem">The parent CoordinateSystem of the cylinder</param>
+            <param name="coordinateSystem">The parent CoordinateSystem of the Cylinder.  The bottom circular Face of the Cylinder is at the Origin of the CoordinateSystem.</param>
             <param name="radius">The radius of the cylinder</param>
             <param name="height">The height of the cylinder</param>
+            <returns></returns>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Cylinder.ByPointsRadius(Autodesk.DesignScript.Geometry.Point,Autodesk.DesignScript.Geometry.Point,System.Double)">
+            <summary>
+            Construct a Solid Cylinder given the bottom and top center point of the Cylinder.
+            </summary>
+            <param name="startPoint">The center of the bottom circular face of the Cylinder</param>
+            <param name="endPoint">The center of the top circular face of the Cylinder</param>
+            <param name="radius">The radius of the Cylinder</param>
             <returns></returns>
         </member>
         <member name="P:Autodesk.DesignScript.Geometry.Cylinder.Radius">
@@ -2101,6 +2175,11 @@
         <member name="M:Autodesk.DesignScript.Geometry.Circle.ByThreePoints(Autodesk.DesignScript.Geometry.Point,Autodesk.DesignScript.Geometry.Point,Autodesk.DesignScript.Geometry.Point)">
             <summary>
             Create a Circle passing through three input Points.
+            </summary>
+        </member>
+        <member name="M:Autodesk.DesignScript.Geometry.Circle.ByBestFitThroughPoints(Autodesk.DesignScript.Geometry.Point[])">
+            <summary>
+            Best fit Circle through Points
             </summary>
         </member>
         <member name="P:Autodesk.DesignScript.Geometry.Circle.CenterPoint">

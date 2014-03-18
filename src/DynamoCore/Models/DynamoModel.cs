@@ -522,7 +522,8 @@ namespace Dynamo.Models
         /// <returns> The newly instantiated dynNode</returns>
         public NodeModel CreateNodeInstance(Type elementType, string nickName, string signature, Guid guid)
         {
-            NodeModel node = null;
+            object createdNode = null;
+
             if (elementType.IsAssignableFrom(typeof(DSVarArgFunction)))
             {
                 // If we are looking at a 'DSVarArgFunction', we'd better had 
@@ -536,13 +537,26 @@ namespace Dynamo.Models
                 // Invoke the constructor that takes in a 'FunctionDescriptor'.
                 var engine = dynSettings.Controller.EngineController;
                 var functionDescriptor = engine.GetFunctionDescriptor(signature);
-                node = (NodeModel)Activator.CreateInstance(
-                    elementType, new object[] { functionDescriptor });
+
+                if (functionDescriptor == null)
+                    throw new UnresolvedFunctionException(signature);
+
+                createdNode = Activator.CreateInstance(elementType,
+                    new object[] { functionDescriptor });
             }
             else
             {
-                node = (NodeModel)Activator.CreateInstance(elementType);
+                createdNode = Activator.CreateInstance(elementType);
             }
+
+            // The attempt to create node instance may fail due to "elementType"
+            // being something else other than "NodeModel" derived object type. 
+            // This is possible since some legacy nodes have been made to derive
+            // from "MigrationNode" object that is not derived from "NodeModel".
+            // 
+            NodeModel node = createdNode as NodeModel;
+            if (node == null)
+                return null;
 
             if (!string.IsNullOrEmpty(nickName))
             {
@@ -614,9 +628,10 @@ namespace Dynamo.Models
             DynamoLogger.Instance.Log("Opening home workspace " + xmlPath + "...");
 
             CleanWorkbench();
+            MigrationManager.ResetIdentifierIndex();
 
             //clear the renderables
-            dynSettings.Controller.VisualizationManager.ClearRenderables();
+            //dynSettings.Controller.VisualizationManager.ClearRenderables();
 
             var sw = new Stopwatch();
 
@@ -669,7 +684,7 @@ namespace Dynamo.Models
                 Version fileVersion = MigrationManager.VersionFromString(version);
 
                 var dynamoModel = dynSettings.Controller.DynamoModel;
-                Version currentVersion = dynamoModel.HomeSpace.WorkspaceVersion;
+                var currentVersion = MigrationManager.VersionFromWorkspace(dynamoModel.HomeSpace);
                 if (fileVersion < currentVersion) // Opening an older file, migrate workspace.
                 {
                     string backupPath = string.Empty;
@@ -762,12 +777,28 @@ namespace Dynamo.Models
                     // Retrieve optional 'function' attribute (only for DSFunction).
                     XmlAttribute signatureAttrib = elNode.Attributes["function"];
                     var signature = signatureAttrib == null ? null : signatureAttrib.Value;
-                    NodeModel el = CreateNodeInstance(type, nickname, signature, guid);
-                    el.WorkSpace = CurrentWorkspace;
+
+                    NodeModel el = null;
+                    XmlElement dummyElement = null;
 
                     try
                     {
-                        el.Load(elNode);
+                        // The attempt to create node instance may fail due to "type" being
+                        // something else other than "NodeModel" derived object type. This 
+                        // is possible since some legacy nodes have been made to derive from
+                        // "MigrationNode" object type that is not derived from "NodeModel".
+                        // 
+                        el = CreateNodeInstance(type, nickname, signature, guid);
+                        if (el != null)
+                        {
+                            el.WorkSpace = CurrentWorkspace;
+                            el.Load(elNode);
+                        }
+                        else
+                        {
+                            var e = elNode as XmlElement;
+                            dummyElement = MigrationManager.CreateDummyNode(e, 1, 1);
+                        }
                     }
                     catch (UnresolvedFunctionException)
                     {
@@ -775,15 +806,18 @@ namespace Dynamo.Models
                         // function node into a dummy node (instead of crashing the workflow).
                         // 
                         var e = elNode as XmlElement;
-                        var elNode2 = MigrationManager.CreateDummyNodeForFunction(e);
+                        dummyElement = MigrationManager.CreateDummyNodeForFunction(e);
+                    }
 
+                    if (dummyElement != null) // If a dummy node placement is desired.
+                    {
                         // The new type representing the dummy node.
-                        typeName = elNode2.GetAttribute("type");
+                        typeName = dummyElement.GetAttribute("type");
                         type = Dynamo.Nodes.Utilities.ResolveType(typeName);
 
                         el = CreateNodeInstance(type, nickname, string.Empty, guid);
                         el.WorkSpace = CurrentWorkspace;
-                        el.Load(elNode2);
+                        el.Load(dummyElement);
                     }
 
                     CurrentWorkspace.Nodes.Add(el);
@@ -792,9 +826,6 @@ namespace Dynamo.Models
 
                     el.X = x;
                     el.Y = y;
-
-                    el.isVisible = isVisible;
-                    el.isUpstreamVisible = isUpstreamVisible;
 
                     if (lacingAttrib != null)
                     {
@@ -807,6 +838,9 @@ namespace Dynamo.Models
                     }
 
                     el.DisableReporting();
+                    
+                    el.IsVisible = isVisible;
+                    el.IsUpstreamVisible = isUpstreamVisible;
 
                     if (CurrentWorkspace == HomeSpace)
                         el.SaveResult = true;
@@ -1450,7 +1484,7 @@ namespace Dynamo.Models
         /// Called when a node is added to a workspace
         /// </summary>
         /// <param name="node"></param>
-        private void OnNodeAdded(NodeModel node)
+        public void OnNodeAdded(NodeModel node)
         {
             if (NodeAdded != null && node != null)
             {

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Threading;
+using DSNodeServices;
 using Dynamo.DSEngine;
 using Dynamo.FSchemeInterop;
 using Dynamo.Interfaces;
@@ -45,7 +46,17 @@ namespace Dynamo
 
     public class DynamoController:NotificationObject
     {
+        private static bool testing = false;
+        
+
         #region properties
+
+        private bool _isCrashing = false;
+        public bool IsCrashing
+        {
+            get { return _isCrashing; }
+            set { _isCrashing = value; }
+        }
 
         private bool uiLocked = true;
         public bool IsUILocked
@@ -64,8 +75,7 @@ namespace Dynamo
         private readonly Dictionary<string, TypeLoadData> builtinTypesByTypeName =
             new Dictionary<string, TypeLoadData>();
 
-        private static bool testing = false;
-
+        
         protected VisualizationManager visualizationManager;
 
         public CustomNodeManager CustomNodeManager { get; internal set; }
@@ -80,7 +90,7 @@ namespace Dynamo
 
         public virtual VisualizationManager VisualizationManager
         {
-            get { return visualizationManager ?? (visualizationManager = new VisualizationManagerASM()); }
+            get { return visualizationManager ?? (visualizationManager = new VisualizationManager(this)); }
         }
 
         /// <summary>
@@ -110,8 +120,6 @@ namespace Dynamo
         {
             get { return builtinTypesByTypeName; }
         }
-
-        //public ExecutionEnvironment FSchemeEnvironment { get; private set; }
 
         private string context;
         public string Context
@@ -150,7 +158,7 @@ namespace Dynamo
         public EngineController EngineController
         {
             get { return _engineController; }
-            private set { _engineController = value; }
+            protected set { _engineController = value; }
         }
 
         #endregion
@@ -262,11 +270,10 @@ namespace Dynamo
             dynSettings.PackageLoader.DoCachedPackageUninstalls();
             dynSettings.PackageLoader.LoadPackages();
             
-            //FSchemeEnvironment = env;
-
             DynamoViewModel.Model.CurrentWorkspace.X = 0;
             DynamoViewModel.Model.CurrentWorkspace.Y = 0;
 
+            DisposeLogic.IsShuttingDown = false;
             EngineController = new EngineController(this, false);
             //This is necessary to avoid a race condition by causing a thread join
             //inside the vm exec
@@ -278,7 +285,7 @@ namespace Dynamo
                 Assembly.GetExecutingAssembly().GetName().Version));
 
             DynamoLoader.ClearCachedAssemblies();
-            DynamoLoader.LoadBuiltinTypes();
+            DynamoLoader.LoadNodeModels();
 
             //run tests
             if (FScheme.RunTests(DynamoLogger.Instance.Log))
@@ -341,13 +348,10 @@ namespace Dynamo
 
             PreferenceSettings.Save();
 
-            VisualizationManager.ClearVisualizations();
-
             dynSettings.Controller.DynamoModel.OnCleanup(null);
             dynSettings.Controller = null;
             
             DynamoSelection.Instance.ClearSelection();
-
             DynamoLogger.Instance.FinishLogging();
         }
 
@@ -377,7 +381,8 @@ namespace Dynamo
 
 
 #if USE_DSENGINE
-            if (!EngineController.GenerateGraphSyncData(DynamoViewModel.Model.HomeSpace.Nodes))
+            EngineController.GenerateGraphSyncData(DynamoViewModel.Model.HomeSpace.Nodes);
+            if (!EngineController.HasPendingGraphSyncData)
             {
                 return;
             }
@@ -650,7 +655,7 @@ namespace Dynamo
 
     #endregion
 
-        public void ResetEngine()
+        public virtual void ResetEngine()
         {
             if (EngineController != null)
                 EngineController.Dispose();
@@ -665,7 +670,7 @@ namespace Dynamo
 
         public void RequestClearDrawables()
         {
-            VisualizationManager.ClearRenderables();
+            //VisualizationManager.ClearRenderables();
         }
 
         public void CancelRunCmd(object parameter)

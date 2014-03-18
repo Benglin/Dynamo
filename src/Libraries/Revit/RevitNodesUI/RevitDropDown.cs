@@ -24,7 +24,7 @@ namespace DSRevitNodesUI
         {
             Items.Clear();
 
-            var fec = new FilteredElementCollector(DocumentManager.GetInstance().CurrentDBDocument);
+            var fec = new FilteredElementCollector(DocumentManager.Instance.CurrentDBDocument);
 
             fec.OfClass(typeof(Family));
             if (fec.ToElements().Count == 0)
@@ -58,11 +58,12 @@ namespace DSRevitNodesUI
                 AstFactory.BuildStringNode(((FamilySymbol) Items[SelectedIndex].Item).Family.Name),
                 AstFactory.BuildStringNode(((FamilySymbol) Items[SelectedIndex].Item).Name)
             };
-            var functionCall = AstFactory.BuildFunctionCall("Revit.Elements.FamilySymbol",
-                                                            "ByFamilyNameAndTypeName",
-                                                            args);
 
-            return new[] { AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), functionCall) };
+            var functionCall = AstFactory.BuildFunctionCall
+                <System.String, System.String, Revit.Elements.FamilySymbol>
+                (Revit.Elements.FamilySymbol.ByFamilyNameAndTypeName, args);
+
+            return new[] {AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), functionCall) };
         }
 
     }
@@ -81,7 +82,7 @@ namespace DSRevitNodesUI
         {
             Items.Clear();
 
-            var fec = new FilteredElementCollector(DocumentManager.GetInstance().CurrentDBDocument);
+            var fec = new FilteredElementCollector(DocumentManager.Instance.CurrentDBDocument);
             fec.OfClass(typeof(Autodesk.Revit.DB.FloorType));
 
             if (fec.ToElements().Count == 0)
@@ -111,9 +112,10 @@ namespace DSRevitNodesUI
             {
                 AstFactory.BuildStringNode(((Autodesk.Revit.DB.FloorType) Items[SelectedIndex].Item).Name)
             };
-            var functionCall = AstFactory.BuildFunctionCall("Revit.Elements.FloorType",
-                                                            "ByName",
-                                                            args);
+
+            var functionCall = AstFactory.BuildFunctionCall
+                <System.String, Revit.Elements.FloorType>
+                (Revit.Elements.FloorType.ByName, args);
 
             return new[] { AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), functionCall) };
         }
@@ -133,7 +135,7 @@ namespace DSRevitNodesUI
         {
             Items.Clear();
 
-            var fec = new FilteredElementCollector(DocumentManager.GetInstance().CurrentDBDocument);
+            var fec = new FilteredElementCollector(DocumentManager.Instance.CurrentDBDocument);
 
             fec.OfClass(typeof(Autodesk.Revit.DB.WallType));
             if (fec.ToElements().Count == 0)
@@ -186,7 +188,7 @@ namespace DSRevitNodesUI
                 AstFactory.BuildStringNode(((BuiltInCategory) Items[SelectedIndex].Item).ToString())
             };
 
-            var functionCall = AstFactory.BuildFunctionCall("DSCategory",
+            var functionCall = AstFactory.BuildFunctionCall("Revit.Elements.Category",
                                                             "ByName",
                                                             args);
 

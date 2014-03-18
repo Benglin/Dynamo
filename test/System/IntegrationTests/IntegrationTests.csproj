@@ -109,8 +109,8 @@
     <Compile Include="CallsiteRegen.cs" />
     <Compile Include="IncrementingTraceTests.cs" />
     <Compile Include="MinimalTraceTests.cs" />
-    <Compile Include="NamespaceConflictTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestWrapperCleanup.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Engine\GraphToDSCompiler\GraphToDSCompiler.csproj">

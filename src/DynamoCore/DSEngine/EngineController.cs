@@ -10,6 +10,7 @@ using ProtoCore.AST.AssociativeAST;
 using ProtoCore.Mirror;
 using ProtoScript.Runners;
 using Dynamo.Nodes;
+using ProtoCore.DSASM.Mirror;
 
 namespace Dynamo.DSEngine
 {
@@ -27,7 +28,7 @@ namespace Dynamo.DSEngine
         private int shortVarCounter = 0;
         private DynamoController controller;
 
-        internal EngineController(DynamoController controller, bool isReset)
+        public EngineController(DynamoController controller, bool isReset)
         {
             libraryServices = LibraryServices.GetInstance();
             libraryServices.LibraryLoading += this.LibraryLoading;
@@ -96,6 +97,10 @@ namespace Dynamo.DSEngine
             try
             {
                 mirror = liveRunnerServices.GetMirror(variableName);
+            }
+            catch (SymbolNotFoundException)
+            {
+                // The variable hasn't been defined yet. Just skip it. 
             }
             catch (Exception ex)
             {
@@ -209,31 +214,49 @@ namespace Dynamo.DSEngine
         {
             var activeNodes = nodes.Where(n =>
                             ElementState.Active == n.State ||
+                            ElementState.Warning == n.State ||
                             (ElementState.Error != n.State && n is DSFunction));
 
             if (activeNodes.Any())
             {
                 astBuilder.CompileToAstNodes(activeNodes, true);
             }
+
             return VerifyGraphSyncData();
+        }
+
+        /// <summary>
+        /// Return true if there are graph sync data in the queue waiting for
+        /// being executed.
+        /// </summary>
+        /// <returns></returns>
+        public bool HasPendingGraphSyncData
+        {
+            get
+            {
+                lock (graphSyncDataQueue)
+                {
+                    return graphSyncDataQueue.Count > 0;
+                }
+            }
         }
 
         /// <summary>
         /// Generate graph sync data based on the input Dynamo custom node information.
         /// Return false if all nodes are clean.
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="def"></param>
         /// <param name="nodes"></param>
         /// <param name="outputs"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
         public bool GenerateGraphSyncDataForCustomNode(
-            Guid id,
+            CustomNodeDefinition def,
             IEnumerable<NodeModel> nodes,
             List<AssociativeNode> outputs,
             IEnumerable<string> parameters)
         {
-            astBuilder.CompileCustomNodeDefinition(id, nodes, outputs, parameters);
+            astBuilder.CompileCustomNodeDefinition(def, nodes, outputs, parameters);
             return VerifyGraphSyncData();
         }
 
@@ -246,7 +269,10 @@ namespace Dynamo.DSEngine
                 (data.ModifiedSubtrees != null && data.ModifiedSubtrees.Count > 0) ||
                 (data.DeletedSubtrees != null && data.DeletedSubtrees.Count > 0))
             {
-                graphSyncDataQueue.Enqueue(data);
+                lock (graphSyncDataQueue)
+                {
+                    graphSyncDataQueue.Enqueue(data);
+                }
                 return true;
             }
 
@@ -258,23 +284,61 @@ namespace Dynamo.DSEngine
         /// </summary>
         public bool UpdateGraph()
         {
-            if (graphSyncDataQueue.Count == 0)
-            {
-                return false;
-            }
-            GraphSyncData data = graphSyncDataQueue.Dequeue();
+            bool updated = false;
 
-            try
+            ClearWarnings();
+
+            lock (graphSyncDataQueue)
             {
-                liveRunnerServices.UpdateGraph(data);
-            }
-            catch (Exception e)
-            {
-                DynamoLogger.Instance.Log("Update graph failed: " + e.Message);
-                return false;
+                while (graphSyncDataQueue.Count > 0)
+                {
+                    try
+                    {
+                        var data = graphSyncDataQueue.Dequeue();
+                        liveRunnerServices.UpdateGraph(data);
+                        updated = true;
+                    }
+                    catch (Exception e)
+                    {
+                        DynamoLogger.Instance.Log("Update graph failed: " + e.Message);
+                    }
+                }
             }
 
-            return true;
+            if (updated)
+            {
+                ShowRuntimeWarnings();
+            }
+
+            return updated;
+        }
+
+        private void ClearWarnings()
+        {
+            var warningNodes = controller.DynamoViewModel.Model.HomeSpace.Nodes.Where(n => n.State == ElementState.Warning);
+
+            foreach (var node in warningNodes)
+            {
+                node.State = ElementState.Active;
+            }
+        }
+
+        private void ShowRuntimeWarnings()
+        {
+            // Clear all previous warnings
+            var warnings = liveRunnerServices.GetRuntimeWarnings();
+            foreach (var item in warnings)
+            {
+                Guid guid = item.Key;
+                var node = controller.DynamoViewModel.Model.HomeSpace.Nodes.FirstOrDefault(n => n.GUID == guid);
+                if (node != null)
+                {
+                    string warningMessage = string.Join("\n", item.Value.Select(w => w.Message));
+                    node.Warning(warningMessage);
+                }
+            }
+
+            liveRunnerServices.ClearRuntimeWarnings();
         }
         
         /// <summary>
@@ -387,5 +451,6 @@ namespace Dynamo.DSEngine
         {
             syncDataManager.DeleteNodes(node.GUID);
         }
+
     }
 }

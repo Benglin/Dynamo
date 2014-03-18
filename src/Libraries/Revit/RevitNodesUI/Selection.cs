@@ -9,7 +9,6 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Xml;
 using Autodesk.Revit.DB;
-using ProtoCore.AST.ImperativeAST;
 using Revit.Interactivity;
 using Dynamo.Controls;
 using Dynamo.Models;
@@ -241,7 +240,7 @@ namespace Dynamo.Nodes
                 selectedElementId = SelectedElement.Id;
 
             var node = AstFactory.BuildFunctionCall(
-                "ElementSelector",
+                "Revit.Elements.ElementSelector",
                 "ByElementId",
                 new List<AssociativeNode>
                 {
@@ -271,7 +270,7 @@ namespace Dynamo.Nodes
                     var id = subNode.Attributes[0].Value;
                     try
                     {
-                        saved = DocumentManager.GetInstance().CurrentUIDocument.Document.GetElement(id); // FamilyInstance;
+                        saved = DocumentManager.Instance.CurrentUIDocument.Document.GetElement(id); // FamilyInstance;
                     }
                     catch
                     {
@@ -286,18 +285,19 @@ namespace Dynamo.Nodes
 
     public abstract class DSReferenceSelection : DSSelectionBase
     {
-        private Reference _selected;
+        protected Reference _selected;
         protected Func<string, Reference> _selectionAction;
 
         /// <summary>
         /// The Element which is selected.
         /// </summary>
-        public Reference SelectedElement
+        public virtual Reference SelectedElement
         {
             get { return _selected; }
             set
             {
                 bool dirty;
+
                 if (_selected != null)
                 {
                     if (value != null && value.ElementId.Equals(_selected.ElementId))
@@ -307,6 +307,8 @@ namespace Dynamo.Nodes
                 }
                 else
                     dirty = value != null;
+
+                dirty = value != null;
 
                 _selected = value;
 
@@ -429,21 +431,22 @@ namespace Dynamo.Nodes
             GeometryObject geob = null;
             string stableRep = string.Empty;
 
+            AssociativeNode node = null;
+
             if (SelectedElement != null)
             {
-                var dbDocument = DocumentManager.GetInstance().CurrentDBDocument;
+                var dbDocument = DocumentManager.Instance.CurrentDBDocument;
                 if (dbDocument != null)
                 {
-                    var geomRef = SelectedElement as Reference;
-                    var element = dbDocument.GetElement(geomRef);
+                    var element = dbDocument.GetElement(SelectedElement);
                     if (element != null)
-                        geob = element.GetGeometryObjectFromReference(geomRef);
+                        geob = element.GetGeometryObjectFromReference(SelectedElement);
                 }
 
                 stableRep = SelectedElement.ConvertToStableRepresentation(dbDocument);
             }
 
-            AssociativeNode node = null;
+            
             var args = new List<AssociativeNode>
             {
                 AstFactory.BuildStringNode(stableRep)
@@ -472,7 +475,7 @@ namespace Dynamo.Nodes
             if (SelectedElement != null)
             {
                 XmlElement outEl = xmlDoc.CreateElement("instance");
-                outEl.SetAttribute("id", SelectedElement.ConvertToStableRepresentation(DocumentManager.GetInstance().CurrentDBDocument));
+                outEl.SetAttribute("id", SelectedElement.ConvertToStableRepresentation(DocumentManager.Instance.CurrentDBDocument));
                 nodeElement.AppendChild(outEl);
             }
         }
@@ -488,7 +491,7 @@ namespace Dynamo.Nodes
                     try
                     {
                         saved = Reference.ParseFromStableRepresentation(
-                            DocumentManager.GetInstance().CurrentDBDocument, id);
+                            DocumentManager.Instance.CurrentDBDocument, id);
                     }
                     catch
                     {
@@ -530,9 +533,18 @@ namespace Dynamo.Nodes
             get
             {
                 var sb = new StringBuilder();
-                _selected.ForEach(x => sb.Append(x.Id.IntegerValue + ","));
+                int count = 0;
+                while (count < Math.Min(_selected.Count, 10))
+                {
+                    sb.Append(_selected[count].Id.IntegerValue + ",");
+                    count++;
+                }
+                if (sb.Length > 0)
+                {
+                    sb.Remove(sb.Length - 1, 1).Append("...");
+                }
 
-                return "Elements:" + sb.ToString();
+                return "Elements:" + sb;
             }
             set
             {
@@ -574,7 +586,9 @@ namespace Dynamo.Nodes
                 Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0, 0, 0, 0)),
                 BorderThickness = new Thickness(0),
                 IsReadOnly = true,
-                IsReadOnlyCaretVisible = false
+                IsReadOnlyCaretVisible = false,
+                MaxWidth = 200,
+                TextWrapping = TextWrapping.Wrap
             };
 
             nodeUI.inputGrid.RowDefinitions.Add(new RowDefinition());
@@ -636,19 +650,28 @@ namespace Dynamo.Nodes
 
         public override IEnumerable<AssociativeNode> BuildOutputAst(List<AssociativeNode> inputAstNodes)
         {
-            var els = SelectedElement;
+            AssociativeNode node;
 
-            var newInputs = els.Select(el => 
-                AstFactory.BuildFunctionCall(
-                "ElementSelector",
-                "ByElementId",
-                new List<AssociativeNode>
+            if (SelectedElement == null)
+            {
+                node = AstFactory.BuildNullNode();
+            }
+            else
+            {
+                var els = SelectedElement;
+
+                var newInputs = els.Select(el =>
+                    AstFactory.BuildFunctionCall(
+                    "ElementSelector",
+                    "ByElementId",
+                    new List<AssociativeNode>
                 {
                     AstFactory.BuildIntNode(el.Id.IntegerValue),
                 }
-                )).ToList();
+                    )).ToList();
 
-            var node = AstFactory.BuildExprList(newInputs);
+                node = AstFactory.BuildExprList(newInputs);
+            }
 
             return new[] {AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), node)};
         }
@@ -677,7 +700,7 @@ namespace Dynamo.Nodes
                     var id = subNode.Attributes[0].Value;
                     try
                     {
-                        saved = DocumentManager.GetInstance().CurrentUIDocument.Document.GetElement(id);
+                        saved = DocumentManager.Instance.CurrentUIDocument.Document.GetElement(id);
                     }
                     catch
                     {
@@ -892,8 +915,117 @@ namespace Dynamo.Nodes
             }
         }
 
+        public override Reference SelectedElement
+        {
+            get { return _selected; }
+            set
+            {
+                bool dirty = value != null;
+
+                _selected = value;
+
+                if (dirty)
+                    RequiresRecalc = true;
+
+                RaisePropertyChanged("SelectedElement");
+            }
+        }
         public DSPointOnElementSelection()
             : base(SelectionHelper.RequestReferenceXYZSelection, "Select a point on a face."){}
+
+        public override IEnumerable<AssociativeNode> BuildOutputAst(List<AssociativeNode> inputAstNodes)
+        {
+            GeometryObject geob = null;
+            string stableRep = string.Empty;
+            var dbDocument = DocumentManager.Instance.CurrentDBDocument;
+
+            if (SelectedElement == null || dbDocument == null)
+            {
+                return new[] { AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), AstFactory.BuildNullNode()) };
+            }
+
+            if (SelectedElement.GlobalPoint == null)
+            {
+                return new[] { AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), AstFactory.BuildNullNode()) };
+            }
+
+            var pt = SelectedElement.GlobalPoint;
+
+            //this is a selected point on a face
+            var ptArgs = new List<AssociativeNode>()
+            {
+                AstFactory.BuildDoubleNode(pt.X),
+                AstFactory.BuildDoubleNode(pt.Y),
+                AstFactory.BuildDoubleNode(pt.Z)
+            };
+
+            AssociativeNode node = AstFactory.BuildFunctionCall
+            (
+                "Autodesk.DesignScript.Geometry.Point",
+                "ByCoordinates",
+                ptArgs
+            );
+            return new[] { AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), node) };
+        }
+    }
+
+    [NodeName("Select UV on Face")]
+    [NodeCategory(BuiltinNodeCategories.CORE_INPUT)]
+    [NodeDescription("Select a UV on a face.")]
+    [IsDesignScriptCompatible]
+    public class DSUVOnElementSelection : DSReferenceSelection
+    {
+        public override string SelectionText
+        {
+            get
+            {
+                return _selectionText = SelectedElement == null
+                                            ? "Nothing Selected"
+                                            : "UV on element" + " (" + SelectedElement.ElementId + ")";
+            }
+            set
+            {
+                _selectionText = value;
+                RaisePropertyChanged("SelectionText");
+            }
+        }
+
+        public DSUVOnElementSelection()
+            : base(SelectionHelper.RequestReferenceXYZSelection, "Select a point on a face.") { }
+
+        public override IEnumerable<AssociativeNode> BuildOutputAst(List<AssociativeNode> inputAstNodes)
+        {
+            GeometryObject geob = null;
+            string stableRep = string.Empty;
+            var dbDocument = DocumentManager.Instance.CurrentDBDocument;
+
+            if (SelectedElement == null || dbDocument == null)
+            {
+                return new[] { AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), AstFactory.BuildNullNode()) };
+            }
+
+            if (SelectedElement.UVPoint == null)
+            {
+                return new[] { AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), AstFactory.BuildNullNode()) };
+            }
+
+            var pt = SelectedElement.UVPoint;
+
+            //this is a selected point on a face
+            var ptArgs = new List<AssociativeNode>()
+            {
+                AstFactory.BuildDoubleNode(pt.U),
+                AstFactory.BuildDoubleNode(pt.V)
+            };
+
+            AssociativeNode node = AstFactory.BuildFunctionCall
+            (
+                "Autodesk.DesignScript.Geometry.UV",
+                "ByCoordinates",
+                ptArgs
+            );
+            return new[] { AstFactory.BuildAssignment(GetAstIdentifierForOutputIndex(0), node) };
+        }
     }
 
     [NodeName("Select Divided Surface Families")]

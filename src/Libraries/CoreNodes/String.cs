@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Globalization;
-using System.Windows.Markup;
 
 namespace DSCore
 {
     /// <summary>
     /// Methods for managing strings.
     /// </summary>
-    public class String
+    public static class String
     {
         /// <summary>
         ///     Converts an object to a string representation.

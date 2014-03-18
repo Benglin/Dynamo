@@ -11,7 +11,7 @@ using RevitServices.Persistence;
 
 namespace Revit.Elements
 {
-    //[Browsable(false)]
+    //[SupressImportIntoVM]
     public class ElementSelector
     {
         /// <summary>
@@ -22,7 +22,7 @@ namespace Revit.Elements
         /// <returns></returns>
         public static IEnumerable<AbstractElement> ByType<T>(bool isRevitOwned) where T : Autodesk.Revit.DB.Element
         {
-            return DocumentManager.GetInstance().ElementsOfType<T>().Select(x => x.ToDSType(isRevitOwned));
+            return DocumentManager.Instance.ElementsOfType<T>().Select(x => x.ToDSType(isRevitOwned));
         }
 
         /// <summary>

@@ -54,7 +54,7 @@ namespace Revit.Elements
             }
 
             //Phase 2- There was no existing point, create one
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             var creationData = GetCreationData(curve, upVector, level, structuralType, symbol);
             
@@ -84,9 +84,9 @@ namespace Revit.Elements
 
             InternalSetFamilyInstance(fi);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.SetElementForTrace(this.InternalElementId);
+            ElementBinder.SetElementForTrace(this.InternalElement);
         }
 
         #endregion
@@ -129,13 +129,13 @@ namespace Revit.Elements
 
         private void InternalSetCurve(Autodesk.Revit.DB.Curve crv)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             //update the curve
             var locCurve = InternalFamilyInstance.Location as LocationCurve;
             locCurve.Curve = crv;
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
         }
 
         #endregion

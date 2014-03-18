@@ -80,7 +80,13 @@ namespace ProtoCore
         private int invokeCount; //Number of times the callsite has been executed within this run
 
         private Guid callsiteID = Guid.Empty;
-
+        public Guid CallSiteID
+        {
+            get
+            {
+                return callsiteID;
+            }
+        }
 
         public CallSite(int classScope, string methodName, FunctionTable globalFunctionTable, ExecutionMode execMode)
         {
@@ -110,13 +116,13 @@ namespace ProtoCore
         /// <returns></returns>
         private StackValue ReportMethodNotFound(Core core, List<StackValue> arguments)
         {
-            core.RuntimeStatus.LogMethodResolutionWarning(core, methodName, classScope, arguments);
+            core.RuntimeStatus.LogMethodResolutionWarning(methodName, classScope, arguments);
             return StackValue.Null;
         }
 
         private StackValue ReportMethodNotAccessible(Core core)
         {
-            core.RuntimeStatus.LogMethodNotAccessibleWarning(core, methodName);
+            core.RuntimeStatus.LogMethodNotAccessibleWarning(methodName);
             return StackValue.Null;
         }
 
@@ -181,11 +187,14 @@ namespace ProtoCore
         #region Target resolution
 
 
+
+
         private void ComputeFeps(StringBuilder log, ProtoCore.Runtime.Context context, List<StackValue> arguments, FunctionGroup funcGroup, ReplicationControl replicationControl,
-                                      List<List<int>> partialReplicationGuides, StackFrame stackFrame, Core core,
+                                      List<List<ProtoCore.ReplicationGuide>> partialReplicationGuides, StackFrame stackFrame, Core core,
             out List<FunctionEndPoint> resolvesFeps, out List<ReplicationInstruction> replicationInstructions)
         {
 
+            
 
             //With replication guides only
 
@@ -804,7 +813,7 @@ namespace ProtoCore
         
         //Inbound methods
 
-        public StackValue JILDispatchViaNewInterpreter(ProtoCore.Runtime.Context context, List<StackValue> arguments, List<List<int>> replicationGuides,
+        public StackValue JILDispatchViaNewInterpreter(ProtoCore.Runtime.Context context, List<StackValue> arguments, List<List<ProtoCore.ReplicationGuide>> replicationGuides,
                                                        StackFrame stackFrame, Core core)
         {
 #if DEBUG
@@ -817,7 +826,7 @@ namespace ProtoCore
             return DispatchNew(context, arguments, replicationGuides, stackFrame, core);
         }
 
-        public StackValue JILDispatch(List<StackValue> arguments, List<List<int>> replicationGuides,
+        public StackValue JILDispatch(List<StackValue> arguments, List<List<ProtoCore.ReplicationGuide>> replicationGuides,
                                       StackFrame stackFrame, Core core, Runtime.Context context)
         {
 #if DEBUG
@@ -834,7 +843,7 @@ namespace ProtoCore
 
         //Dispatch
         private StackValue DispatchNew(ProtoCore.Runtime.Context context, List<StackValue> arguments,
-                                      List<List<int>> partialReplicationGuides, StackFrame stackFrame, Core core)
+                                      List<List<ProtoCore.ReplicationGuide>> partialReplicationGuides, StackFrame stackFrame, Core core)
         {
 
             // Update the CallsiteExecutionState with 
@@ -900,6 +909,10 @@ namespace ProtoCore
             //Get the fep that are resolved
             List<FunctionEndPoint> resolvesFeps;
             List<ReplicationInstruction> replicationInstructions;
+
+
+            arguments = PerformRepGuideForcedPromotion(arguments, partialReplicationGuides, core);
+
 
             ComputeFeps(log, context, arguments, funcGroup, replicationControl, partialReplicationGuides, stackFrame, core, out resolvesFeps, out replicationInstructions);
 
@@ -969,7 +982,7 @@ namespace ProtoCore
                 }
                 
             }
-            else
+            else //replicated call
             {
                 //Extract the correct run data from the trace cache here
 
@@ -978,7 +991,6 @@ namespace ProtoCore
                 SingleRunTraceData singleRunTraceData;
                 SingleRunTraceData newTraceData = new SingleRunTraceData();
 
-                //READ TRACE FOR NON-REPLICATED CALL
                 //Lookup the trace data in the cache
                 if (invokeCount < traceData.Count)
                 {
@@ -1272,6 +1284,14 @@ namespace ProtoCore
                         //There was previous data that needs loading into the cache
                         lastExecTrace = previousTraceData.NestedData[i];
                     }
+                    else if (previousTraceData.HasData && i == 0)
+                    {
+                        //We've moved up one dimension, and there was a previous run
+                        lastExecTrace = new SingleRunTraceData();
+                        lastExecTrace.Data = previousTraceData.GetLeftMostData();
+
+                    }
+
                     else
                     {
                         //We're off the edge of the previous trace window
@@ -1379,6 +1399,69 @@ namespace ProtoCore
 
 
 
+        /// <summary>
+        /// Method to ensure that dimensionality of the arguments is at least
+        /// as large as the number of replication guides provided
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <param name="providedRepGuides"></param>
+        /// <param name="core"></param>
+        /// <returns></returns>
+        public static List<StackValue> PerformRepGuideForcedPromotion(List<StackValue> arguments,
+                                                                      List<List<ProtoCore.ReplicationGuide>>
+                                                                          providedRepGuides, Core core)
+        {
+            //return arguments; // no nothing for test validation
+
+
+            if (providedRepGuides.Count == 0)
+                return arguments;
+
+            //copy the arguments
+
+            List<StackValue> newArgs = new List<StackValue>();
+            newArgs.AddRange(arguments);
+
+
+            //Compute depth of rep guides
+            List<int> listOfGuidesCounts =  providedRepGuides.Select((x) => x.Count).ToList();
+            List<int> maxDepths = new List<int>();
+
+
+            for (int i = 0; i < newArgs.Count; i++)
+            {
+                maxDepths.Add(Replicator.GetMaxReductionDepth(newArgs[i], core));
+            }
+
+            for (int i = 0; i < newArgs.Count; i++)
+            {
+                int promotionsRequired = listOfGuidesCounts[i] - maxDepths[i];
+                StackValue oldSv = newArgs[i];
+
+                
+                for (int p = 0; p < promotionsRequired; p++)
+                {
+
+                    StackValue newSV = HeapUtils.StoreArray(
+                        new StackValue[1]
+                            {
+                                oldSv
+                            }
+                        , null, core);
+
+                    GCUtils.GCRetain(newSV, core);
+                    GCUtils.GCRelease(oldSv, core);
+
+                    oldSv = newSV;
+                }
+
+                newArgs[i] = oldSv;
+
+            }
+
+            return newArgs;
+
+        }
 
         public static StackValue PerformReturnTypeCoerce(ProcedureNode procNode, Core core, StackValue ret)
         {
@@ -1468,7 +1551,7 @@ namespace ProtoCore
         /// <param name="core"></param>
         /// <returns></returns>
         public bool WillCallReplicate(ProtoCore.Runtime.Context context, List<StackValue> arguments,
-                                      List<List<int>> partialReplicationGuides, StackFrame stackFrame, Core core,
+                                      List<List<ProtoCore.ReplicationGuide>> partialReplicationGuides, StackFrame stackFrame, Core core,
                                       out List<List<ReplicationInstruction>> replicationTrials)
         {
             replicationTrials = new List<List<ReplicationInstruction>>();

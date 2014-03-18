@@ -11,6 +11,16 @@ using ProtoCore.Runtime;
 
 namespace ProtoCore.DSASM.Mirror
 {
+    public class SymbolNotFoundException: Exception
+    {
+        public SymbolNotFoundException(string symbolName)
+            : base("Cannot find symbol: " + symbolName)
+        {
+            this.SymbolName = symbolName;
+        }
+
+        public string SymbolName { get; private set; } 
+    }
 
     //Status: Draft, experiment
     
@@ -771,7 +781,11 @@ namespace ProtoCore.DSASM.Mirror
                 index = exe.runtimeSymbols[block].IndexOf(name, classcope, Constants.kInvalidIndex);
             }
 
-            if (index != Constants.kInvalidIndex)
+            if (Constants.kInvalidIndex == index)
+            {
+                throw new SymbolNotFoundException(name);
+            }
+            else
             {
                 if (exe.runtimeSymbols[block].symbolList[index].arraySizeList != null)
                 {
@@ -784,8 +798,6 @@ namespace ProtoCore.DSASM.Mirror
                 return retVal;
 
             }
-            throw new NotImplementedException("{F5ACC95F-AEC9-486D-BC82-FF2CB26E7E6A}"); //@TODO(Luke): Replace this with a symbol lookup exception
-
         }
 
         public void UpdateValue(int line, int index, int value)
@@ -1140,51 +1152,86 @@ namespace ProtoCore.DSASM.Mirror
 
                         // TODO Jun: ret.members[0] is hardcoded  and means we are assuming a homogenous collection
                         // How to handle mixed-type arrays?
-                        Obj retO = new Obj(val) { Payload = ret, Type = core.TypeSystem.BuildTypeObject((ret.members.Length > 0) ? core.TypeSystem.GetType(ret.members[0].Type.Name) : (int)ProtoCore.PrimitiveType.kTypeVoid, true) };
+                        Obj retO = new Obj(val) 
+                        { 
+                            Payload = ret, 
+                            Type = core.TypeSystem.BuildTypeObject(
+                                        (ret.members.Length > 0) 
+                                        ? core.TypeSystem.GetType(ret.members[0].Type.Name) 
+                                        : (int)ProtoCore.PrimitiveType.kTypeVoid, Constants.kArbitraryRank) 
+                        };
 
                         return retO;
                     }
                 case AddressType.Int:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = data, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeInt, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeInt, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Boolean:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = (data != 0), Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeBool, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = (data != 0), 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeBool, 0) 
+                        };
                         return o;
                     }
 
                 case AddressType.Null:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = null, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeNull, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = null, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeNull, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Char:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = data, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeChar, false) };
+                        Obj o = new Obj(val) 
+                        {
+                            Payload = data, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeChar, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Double:
                     {
                         double data = val.opdata_d;
-                        Obj o = new Obj(val) { Payload = data, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeDouble, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, Type =
+                            TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeDouble, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Pointer:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = data, Type = core.TypeSystem.BuildTypeObject(type, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, 
+                            Type = core.TypeSystem.BuildTypeObject(type, 0) 
+                        };
                         return o;
                     }
                 case AddressType.FunctionPointer:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = data, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeFunctionPointer, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeFunctionPointer, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Invalid:
@@ -1219,54 +1266,90 @@ namespace ProtoCore.DSASM.Mirror
                             ret.members[i] = Unpack(nodes[i], core);
                         }
 
-                        Obj retO = new Obj(val) { Payload = ret, Type = core.TypeSystem.BuildTypeObject((ret.members.Length > 0) ? core.TypeSystem.GetType(ret.members[0].Type.Name) : (int)ProtoCore.PrimitiveType.kTypeVar, true) };
+                        Obj retO = new Obj(val) 
+                        { 
+                            Payload = ret, 
+                            Type = core.TypeSystem.BuildTypeObject((ret.members.Length > 0) ? core.TypeSystem.GetType(ret.members[0].Type.Name) : (int)ProtoCore.PrimitiveType.kTypeVar, Constants.kArbitraryRank)
+                        };
 
                         return retO;
                     }
                 case AddressType.Int:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = data, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeInt, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeInt, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Boolean:
                     {
-                        Obj o = new Obj(val) { Payload = val.opdata == 0 ? false : true, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeBool, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = val.opdata == 0 ? false : true, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeBool, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Null:
                     {
-                        Obj o = new Obj(val) { Payload = null, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeNull, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = null, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeNull, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Double:
                     {
                         double data = val.opdata_d;
-                        Obj o = new Obj(val) { Payload = data, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeDouble, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeDouble, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Char:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = data, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeChar, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeChar, 0) 
+                        };
                         return o;
                     }
                 case AddressType.Pointer:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = data, Type = core.TypeSystem.BuildTypeObject((int)val.metaData.type, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, 
+                            Type = core.TypeSystem.BuildTypeObject((int)val.metaData.type, 0) 
+                        };
                         return o;
                     }
                 case AddressType.DefaultArg:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = data, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeVar, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeVar, 0) 
+                        };
                         return o;
                     }
                 case AddressType.FunctionPointer:
                     {
                         Int64 data = val.opdata;
-                        Obj o = new Obj(val) { Payload = data, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeFunctionPointer, false) };
+                        Obj o = new Obj(val) 
+                        { 
+                            Payload = data, 
+                            Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeFunctionPointer, 0) 
+                        };
                         return o;
                     }
                 default:
@@ -1290,31 +1373,68 @@ namespace ProtoCore.DSASM.Mirror
             switch (val.optype)
             {
                 case AddressType.Pointer:
-                    obj = new Obj(val) { Payload = val.opdata, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypePointer, false) };
+                    obj = new Obj(val) 
+                    { 
+                        Payload = val.opdata, 
+                        Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypePointer, 0) 
+                    };
                     break;
                 case AddressType.ArrayPointer:
-                    obj = new Obj(val) { Payload = val.opdata, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeArray, true) };
+                    obj = new Obj(val) 
+                    { 
+                        Payload = val.opdata, 
+                        Type =
+                        TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeArray, Constants.kArbitraryRank)
+                    };
                     break;
                 case AddressType.Int:
-                    obj = new Obj(val) { Payload = val.opdata, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeInt, false) };
+                    obj = new Obj(val) 
+                    { 
+                        Payload = val.opdata, 
+                        Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeInt, 0) 
+                    };
                     break;
                 case AddressType.Boolean:
-                    obj = new Obj(val) { Payload = val.opdata == 0 ? false : true, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeBool, false) };
+                    obj = new Obj(val) 
+                    { 
+                        Payload = val.opdata == 0 ? false : true, 
+                        Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeBool, 0) 
+                    };
                     break;
                 case AddressType.Double:
-                    obj = new Obj(val) { Payload = val.opdata_d, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeDouble, false) };
+                    obj = new Obj(val) 
+                    { 
+                        Payload = val.opdata_d, 
+                        Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeDouble, 0) 
+                    };
                     break;
                 case AddressType.Null:
-                    obj = new Obj(val) { Payload = null, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeNull, false) };
+                    obj = new Obj(val) 
+                    { 
+                        Payload = null, 
+                        Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeNull, 0) 
+                    };
                     break;
                 case AddressType.FunctionPointer:
-                    obj = new Obj(val) { Payload = val.opdata, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeFunctionPointer, false) };
+                    obj = new Obj(val) 
+                    { 
+                        Payload = val.opdata, 
+                        Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeFunctionPointer, 0) 
+                    };
                     break;
                 case AddressType.String:
-                    obj = new Obj(val) { Payload = val.opdata, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeString, true, Constants.kPrimitiveSize) };
+                    obj = new Obj(val) 
+                    { 
+                        Payload = val.opdata, 
+                        Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeString, Constants.kPrimitiveSize) 
+                    };
                     break;
                 case AddressType.Char:
-                    obj = new Obj(val) { Payload = val.opdata, Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeChar, false) };
+                    obj = new Obj(val) 
+                    { 
+                        Payload = val.opdata, 
+                        Type = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeChar, 0) 
+                    };
                     break;
             }
 

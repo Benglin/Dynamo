@@ -71,7 +71,7 @@ namespace Revit.Elements.Views
             }
 
             //Phase 2 - There was no existing Element, create new one
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             // create sheet without title block
             var sheet = Autodesk.Revit.DB.ViewSheet.Create(Document, ElementId.InvalidElementId);
@@ -81,9 +81,9 @@ namespace Revit.Elements.Views
             InternalSetSheetNumber(numberOfSheet);
             InternalAddViewsToSheetView(views);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.SetElementForTrace(this.InternalElementId);
+            ElementBinder.SetElementForTrace(this.InternalElement);
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace Revit.Elements.Views
             }
 
             //Phase 2 - There was no existing Element, create new one
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             // create sheet with title block ID
             var sheet = Autodesk.Revit.DB.ViewSheet.Create(Document, titleBlockFamilySymbol.Id);
@@ -123,9 +123,9 @@ namespace Revit.Elements.Views
             InternalSetSheetNumber(sheetNumber);
             InternalAddViewsToSheetView(views);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.SetElementForTrace(this.InternalElementId);
+            ElementBinder.SetElementForTrace(this.InternalElement);
 
         }
 
@@ -141,16 +141,16 @@ namespace Revit.Elements.Views
         {
             var sheet = InternalViewSheet;
 
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             // (sic) from Dynamo Legacy
             var width = sheet.Outline.Max.U - sheet.Outline.Min.U;
             var height = sheet.Outline.Max.V - sheet.Outline.Min.V;
             var packer = new CygonRectanglePacker(width, height);
+            int count = 0;
 
             foreach (var view in views)
             {
-
                 var viewWidth = view.Outline.Max.U - view.Outline.Min.U;
                 var viewHeight = view.Outline.Max.V - view.Outline.Min.V;
 
@@ -162,7 +162,7 @@ namespace Revit.Elements.Views
                         //move the view
                         //find the corresponding viewport
                         var enumerable =
-                            DocumentManager.GetInstance().ElementsOfType<Autodesk.Revit.DB.Viewport>()
+                            DocumentManager.Instance.ElementsOfType<Autodesk.Revit.DB.Viewport>()
                                 .Where(x => x.SheetId == sheet.Id && x.ViewId == view.Id).ToArray();
 
                         if (!enumerable.Any())
@@ -183,12 +183,14 @@ namespace Revit.Elements.Views
                 }
                 else
                 {
-
-                    throw new Exception("View could not be packed on sheet.");
+                    throw new Exception( String.Format("View {0} could not be packed on the Sheet.  The sheet is {1} x {2} and the view to be added is {3} x {4}", 
+                        count, width, height, viewWidth, viewHeight));
                 }
+
+                count++;
             }
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
         }
 
         /// <summary>
@@ -208,11 +210,11 @@ namespace Revit.Elements.Views
         /// <param name="name"></param>
         private void InternalSetSheetName(string name)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             InternalViewSheet.Name = name;
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
         }
 
         /// <summary>
@@ -221,11 +223,11 @@ namespace Revit.Elements.Views
         /// <param name="number"></param>
         private void InternalSetSheetNumber(string number)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             InternalViewSheet.SheetNumber = number;
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
         }
 
         /// <summary>
@@ -234,13 +236,13 @@ namespace Revit.Elements.Views
         /// <param name="newTitleBlockId"></param>
         private void InternalSetTitleBlock(ElementId newTitleBlockId)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             // element collector result
             new FilteredElementCollector(Document, InternalViewSheet.Id).OfCategory(BuiltInCategory.OST_TitleBlocks)
                 .ToElements().ToArray().ForEach(x => x.ChangeTypeId(newTitleBlockId));
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
         }
 
         #endregion
@@ -288,41 +290,58 @@ namespace Revit.Elements.Views
 
         #region Public static constructors
 
-        /// <summary>
-        /// Create a Revit Sheet by the sheet name, number, and a collection of views.  This method will automatically
-        /// pack the views onto the sheet.
-        /// </summary>
-        /// <param name="sheetName"></param>
-        /// <param name="sheetNumber"></param>
-        /// <param name="views"></param>
-        /// <returns></returns>
-        public static Sheet ByNameNumberAndViews(string sheetName, string sheetNumber, AbstractView[] views)
-        {
-            if (sheetName == null)
-            {
-                throw new ArgumentNullException("sheetName");
-            }
+        // PB: Commented out until we have a good way of setting the sheet size given the views.  Not sure how to do that yet.
 
-            if (sheetNumber == null)
-            {
-                throw new ArgumentNullException("sheetNumber");
-            }
+        ///// <summary>
+        ///// Create a Revit Sheet by the sheet name, number, and a collection of views.  This method will automatically
+        ///// pack the views onto the sheet.
+        ///// </summary>
+        ///// <param name="sheetName"></param>
+        ///// <param name="sheetNumber"></param>
+        ///// <param name="views"></param>
+        ///// <returns></returns>
+        //public static Sheet ByNameNumberAndViews(string sheetName, string sheetNumber, AbstractView[] views)
+        //{
+        //    if (sheetName == null)
+        //    {
+        //        throw new ArgumentNullException("sheetName");
+        //    }
 
-            return new Sheet(sheetName, sheetNumber, views.Select(x => x.InternalView));
-        }
+        //    if (sheetNumber == null)
+        //    {
+        //        throw new ArgumentNullException("sheetNumber");
+        //    }
 
-        /// <summary>
-        /// Create a Revit Sheet by the sheet name, number, and a view.  This method will automatically
-        /// pack the views onto the sheet.
-        /// </summary>
-        /// <param name="sheetName"></param>
-        /// <param name="sheetNumber"></param>
-        /// <param name="view"></param>
-        /// <returns></returns>
-        public static Sheet ByNameNumberAndView(string sheetName, string sheetNumber, AbstractView view)
-        {
-            return Sheet.ByNameNumberAndViews(sheetName, sheetNumber, new[] { view });
-        }
+        //    if (views == null)
+        //    {
+        //        throw new ArgumentNullException("views");
+        //    }
+
+        //    if (views.Length == 0)
+        //    {
+        //        throw new ArgumentException("Must supply more than one view");
+        //    }
+
+        //    return new Sheet(sheetName, sheetNumber, views.Select(x => x.InternalView));
+        //}
+
+        ///// <summary>
+        ///// Create a Revit Sheet by the sheet name, number, and a view.  This method will automatically
+        ///// pack the views onto the sheet.
+        ///// </summary>
+        ///// <param name="sheetName"></param>
+        ///// <param name="sheetNumber"></param>
+        ///// <param name="view"></param>
+        ///// <returns></returns>
+        //public static Sheet ByNameNumberAndView(string sheetName, string sheetNumber, AbstractView view)
+        //{
+        //    if (view == null)
+        //    {
+        //        throw new ArgumentNullException("view");
+        //    }
+
+        //    return Sheet.ByNameNumberAndViews(sheetName, sheetNumber, new[] { view });
+        //}
 
         /// <summary>
         /// Create a Revit Sheet by the sheet name, number, a title block FamilySymbol, and a collection of views.  This method will automatically
@@ -350,6 +369,16 @@ namespace Revit.Elements.Views
                 throw new ArgumentNullException("titleBlockFamilySymbol");
             }
 
+            if (views == null)
+            {
+                throw new ArgumentNullException("views");
+            }
+
+            if (views.Length == 0)
+            {
+                throw new ArgumentException("Must supply more than 0 views");
+            }
+
             return new Sheet(sheetName, sheetNumber, titleBlockFamilySymbol.InternalFamilySymbol, views.Select(x => x.InternalView));
         }
 
@@ -364,6 +393,11 @@ namespace Revit.Elements.Views
         /// <returns></returns>
         public static Sheet ByNameNumberTitleBlockAndView(string sheetName, string sheetNumber, FamilySymbol titleBlockFamilySymbol, AbstractView view)
         {
+            if (view == null)
+            {
+                throw new ArgumentNullException("view");
+            }
+
             return Sheet.ByNameNumberTitleBlockAndViews(sheetName, sheetNumber, titleBlockFamilySymbol, new[] { view });
         }
 

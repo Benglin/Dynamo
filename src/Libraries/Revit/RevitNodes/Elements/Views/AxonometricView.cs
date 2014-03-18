@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Autodesk.DesignScript.Geometry;
 using Autodesk.Revit.DB;
 using DSNodeServices;
 using Revit.GeometryConversion;
@@ -55,7 +56,7 @@ namespace Revit.Elements.Views
             }
 
             //Phase 2 - There was no existing Element, create new one
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             var vd = Create3DView(BuildOrientation3D(eye, target), name, false);
             InternalSetView3D(vd);
@@ -69,9 +70,9 @@ namespace Revit.Elements.Views
             }
             InternalSetName(name);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.SetElementForTrace(this.InternalElementId);
+            ElementBinder.SetElementForTrace(this.InternalElement);
         }
 
         /// <summary>
@@ -101,7 +102,7 @@ namespace Revit.Elements.Views
             }
 
             //Phase 2 - There was no existing Element, create new one
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             var vd = Create3DView(BuildOrientation3D(eye, target), name, false);
             InternalSetView3D(vd);
@@ -115,9 +116,9 @@ namespace Revit.Elements.Views
             }
             InternalSetName(name);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.SetElementForTrace(this.InternalElementId);
+            ElementBinder.SetElementForTrace(this.InternalElement);
         }
 
         #endregion
@@ -145,6 +146,18 @@ namespace Revit.Elements.Views
         {
             if (element == null)
                 throw new ArgumentNullException("element");
+
+            if (eyePoint == null)
+                throw new ArgumentNullException("eyePoint");
+
+            if (target == null)
+                throw new ArgumentNullException("target");
+
+            if (element == null)
+                throw new ArgumentNullException("element");
+
+            if (name == null)
+                throw new ArgumentNullException("name");
 
             AbstractElement abstractElement = element as AbstractElement;
             if (abstractElement != null)
@@ -176,12 +189,27 @@ namespace Revit.Elements.Views
         /// <param name="name"></param>
         /// <param name="isolateElement"></param>
         /// <returns></returns>
-        public static AxonometricView ByEyePointTargetAndElement(Autodesk.DesignScript.Geometry.Point eyePoint, Autodesk.DesignScript.Geometry.Point target, AbstractElement element, string name, bool isolateElement)
+        public static AxonometricView ByEyePointTargetAndElement(
+            Autodesk.DesignScript.Geometry.Point eyePoint, 
+            Autodesk.DesignScript.Geometry.Point target, 
+            AbstractElement element, 
+            string name, bool isolateElement)
         {
             if (element == null)
-            {
                 throw new ArgumentNullException("element");
-            }
+
+            if (eyePoint == null)
+                throw new ArgumentNullException("eyePoint");
+
+            if (target == null)
+                throw new ArgumentNullException("target");
+
+            if (element == null)
+                throw new ArgumentNullException("element");
+
+            if (name == null)
+                throw new ArgumentNullException("name");
+
 
             return new AxonometricView(eyePoint.ToXyz(), target.ToXyz(), element.InternalElement, name, isolateElement);
         }
@@ -195,14 +223,23 @@ namespace Revit.Elements.Views
         /// <param name="name"></param>
         /// <param name="isolateElement"></param>
         /// <returns></returns>
-        public static AxonometricView ByEyePointTargetAndBoundingBox(Autodesk.DesignScript.Geometry.Point eyePoint, Autodesk.DesignScript.Geometry.Point target, BoundingBox boundingBox, string name, bool isolateElement)
+        public static AxonometricView ByEyePointTargetAndBoundingBox(Autodesk.DesignScript.Geometry.Point eyePoint, Autodesk.DesignScript.Geometry.Point target, Autodesk.DesignScript.Geometry.BoundingBox boundingBox, string name, bool isolateElement)
         {
             if (boundingBox == null)
             {
                 throw new ArgumentNullException("boundingBox");
             }
 
-            return new AxonometricView(eyePoint.ToXyz(), target.ToXyz(), boundingBox.InternalBoundingBoxXyz, name, isolateElement);
+            if (eyePoint == null)
+                throw new ArgumentNullException("eyePoint");
+
+            if (target == null)
+                throw new ArgumentNullException("target");
+
+            if (name == null)
+                throw new ArgumentNullException("name");
+
+            return new AxonometricView(eyePoint.ToXyz(), target.ToXyz(), boundingBox.ToRevitType(), name, isolateElement);
         }
 
         #endregion

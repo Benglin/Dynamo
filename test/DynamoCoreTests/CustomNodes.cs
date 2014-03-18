@@ -8,10 +8,15 @@ using Dynamo.Nodes;
 using Dynamo.Selection;
 using Dynamo.Utilities;
 using NUnit.Framework;
+using System.Text;
+using Dynamo.DSEngine;
+using ProtoCore.DSASM;
+using ProtoCore.Mirror;
+using System.Collections;
 
 namespace Dynamo.Tests
 {
-    internal class CustomNodes : DynamoUnitTest
+    internal class CustomNodes : DSEvaluationUnitTest
     {
         [Test]
         public void CanCollapseNodesAndGetSameResult()
@@ -63,17 +68,22 @@ namespace Dynamo.Tests
 
             var valuePostCollapse = watchNode.OldValue;
 
-            Assert.AreEqual(valuePreCollapse, valuePostCollapse);
+            // Ensure the values are equal and both 65.
+            var svPreCollapse = ((long)valuePreCollapse.Data);
+            var svPostCollapse = ((long)valuePostCollapse.Data);
+            Assert.AreEqual(65, svPreCollapse);
+            Assert.AreEqual(svPreCollapse, svPostCollapse);
         }
 
         [Test]
         public void CanCollapseNodesWithDefaultValues()
         {
+            /*
             var model = Controller.DynamoModel;
             var examplePath = Path.Combine(GetTestDirectory(), @"core\collapse\");
 
             string openPath = Path.Combine(examplePath, "collapse-defaults.dyn");
-            model.Open(openPath);
+            RunModel(openPath);
 
             //Confirm that everything is working OK.
             Controller.RunExpression();
@@ -81,7 +91,10 @@ namespace Dynamo.Tests
             var minNode = model.CurrentWorkspace.FirstNodeFromWorkspace<ListMin>();
             var numNode = model.CurrentWorkspace.FirstNodeFromWorkspace<DoubleInput>();
 
-            Assert.AreEqual(10, minNode.OldValue.Data);
+            Assert.AreEqual(2, model.CurrentWorkspace.Nodes.Count);
+            Assert.AreEqual(1, model.CurrentWorkspace.Connectors.Count);
+
+            AssertPreviewValue("13f58ca4-4e48-4757-b16a-45b971a6d7fc", 10);
 
             model.AddToSelection(minNode);
             model.AddToSelection(numNode);
@@ -103,48 +116,52 @@ namespace Dynamo.Tests
 
             var collapsedNode = model.CurrentWorkspace.FirstNodeFromWorkspace<Function>();
 
-            Assert.AreEqual(10, collapsedNode.OldValue.Data);
+            AssertPreviewValue(collapsedNode.GUID.ToString(), 10);
+             * */
+            Assert.Inconclusive("Porting : DoubleInput");
         }
 
         [Test]
         public void CanCollapseWith1NodeHoleInSelection()
         {
-            var model = Controller.DynamoModel;
-            var examplePath = Path.Combine(GetTestDirectory(), @"core\collapse\");
+            //var model = Controller.DynamoModel;
+            //var examplePath = Path.Combine(GetTestDirectory(), @"core\collapse\");
 
-            string openPath = Path.Combine(examplePath, "collapse-function.dyn");
-            model.Open(openPath);
+            //string openPath = Path.Combine(examplePath, "collapse-function.dyn");
+            //RunModel(openPath);
 
-            //Confirm that everything is working OK.
-            Controller.RunExpression();
+            ////Confirm that everything is working OK.
+            //Controller.RunExpression();
 
-            var mulNode = model.CurrentWorkspace.FirstNodeFromWorkspace<Multiplication>();
+            //var mulNode = model.CurrentWorkspace.FirstNodeFromWorkspace<Multiplication>();
 
-            Assert.AreEqual(0, mulNode.OldValue.Data);
+            //AssertPreviewValue(mulNode.GUID.ToString(), 0);
 
-            foreach (var node in model.CurrentWorkspace.Nodes.Where(x => !(x is Addition)))
-            {
-                model.AddToSelection(node);
-            }
+            //foreach (var node in model.CurrentWorkspace.Nodes.Where(x => !(x is DSFunction)))
+            //{
+            //    model.AddToSelection(node);
+            //}
 
-            NodeCollapser.Collapse(
-                DynamoSelection.Instance.Selection.OfType<NodeModel>(),
-                model.CurrentWorkspace,
-                new FunctionNamePromptEventArgs
-                {
-                    Category = "Testing",
-                    Description = "",
-                    Name = "__CollapseTest__",
-                    Success = true
-                });
+            //NodeCollapser.Collapse(
+            //    DynamoSelection.Instance.Selection.OfType<NodeModel>(),
+            //    model.CurrentWorkspace,
+            //    new FunctionNamePromptEventArgs
+            //    {
+            //        Category = "Testing",
+            //        Description = "",
+            //        Name = "__CollapseTest__",
+            //        Success = true
+            //    });
 
-            Assert.AreEqual(2, model.CurrentWorkspace.Nodes.Count);
+            //Assert.AreEqual(2, model.CurrentWorkspace.Nodes.Count);
 
-            Controller.RunExpression();
+            //Controller.RunExpression();
 
-            var collapsedNode = model.CurrentWorkspace.FirstNodeFromWorkspace<Function>();
+            //var collapsedNode = model.CurrentWorkspace.FirstNodeFromWorkspace<Function>();
 
-            Assert.AreEqual(0, collapsedNode.OldValue.Data);
+            //AssertPreviewValue(collapsedNode.GUID.ToString(),0);
+
+            Assert.Inconclusive("Porting : Multiplication");
         }
 
         [Test]
@@ -308,13 +325,17 @@ namespace Dynamo.Tests
             Controller.DynamoViewModel.GoToWorkspace(
                 Controller.CustomNodeManager.GetGuidFromName("__CollapseTest2__"));
 
-            var numNodes = model.CurrentWorkspace.Nodes.Count;
+            var workspace = model.CurrentWorkspace;
+            Assert.AreEqual(6, workspace.Nodes.Count);
 
             List<ModelBase> modelsToDelete = new List<ModelBase>();
-            modelsToDelete.Add(model.CurrentWorkspace.FirstNodeFromWorkspace<Addition>());
-            model.DeleteModelInternal(modelsToDelete);
+            var addition = workspace.FirstNodeFromWorkspace<DSFunction>();
+            Assert.IsNotNull(addition);
+            Assert.AreEqual("+", (addition as DSFunction).NickName);
 
-            Assert.AreEqual(numNodes - 1, model.CurrentWorkspace.Nodes.Count);
+            modelsToDelete.Add(addition);
+            model.DeleteModelInternal(modelsToDelete);
+            Assert.AreEqual(5, model.CurrentWorkspace.Nodes.Count);
         }
 
         [Test, Ignore]
@@ -456,7 +477,6 @@ namespace Dynamo.Tests
             Assert.AreEqual(2, outs.Count);
 
             var out1 = outs[0];
-            Assert.IsAssignableFrom<double>(out1.Data);
             Assert.AreEqual(0, out1.Data);
 
             var out2 = outs[1];

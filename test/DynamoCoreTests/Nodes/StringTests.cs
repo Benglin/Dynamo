@@ -360,22 +360,40 @@ namespace Dynamo.Tests
         public void TestStringToNumberFileInput()
         {
             DynamoModel model = Controller.DynamoModel;
-            string testFilePath = Path.Combine(localDynamoStringTestFloder, "TestStringToNumber_fromFile.dyn");
+            var testDynFile = "TestStringToNumber_fromFile.dyn";
+            OpenModel(Path.Combine(localDynamoStringTestFloder, testDynFile));
 
-            RunModel(testFilePath);
-            AssertPreviewValue("f8767579-f7c1-475f-980e-7cd6a42684c8", 123521);
+            // "Dynamo.Nodes.dynString2Num" has been deprecated.
+            var workspace = model.CurrentWorkspace;
+            var nodeGuid = "0f912454-b278-499f-b15f-c42c039a5453";
+            var nodeModel = workspace.NodeFromWorkspace(nodeGuid);
+            Assert.IsNotNull(nodeModel);
+            Assert.IsTrue(nodeModel is DSCoreNodesUI.DummyNode);
 
+            var dummyNode = nodeModel as DSCoreNodesUI.DummyNode;
+            Assert.AreEqual(1, dummyNode.InputCount);
+            Assert.AreEqual(1, dummyNode.OutputCount);
+            Assert.AreEqual("Dynamo.Nodes.dynString2Num", dummyNode.LegacyNodeName);
         }
 
         [Test]
         public void TestStringToNumberFunctionInput()
         {
             DynamoModel model = Controller.DynamoModel;
-            string testFilePath = Path.Combine(localDynamoStringTestFloder, "TestStringToNumber_fromFunction.dyn");
+            var testDynFile = "TestStringToNumber_fromFunction.dyn";
+            OpenModel(Path.Combine(localDynamoStringTestFloder, testDynFile));
 
-            RunModel(testFilePath);
-            AssertPreviewValue("f8767579-f7c1-475f-980e-7cd6a42684c8", 12);
+            // "Dynamo.Nodes.dynString2Num" has been deprecated.
+            var workspace = model.CurrentWorkspace;
+            var nodeGuid = "0f912454-b278-499f-b15f-c42c039a5453";
+            var nodeModel = workspace.NodeFromWorkspace(nodeGuid);
+            Assert.IsNotNull(nodeModel);
+            Assert.IsTrue(nodeModel is DSCoreNodesUI.DummyNode);
 
+            var dummyNode = nodeModel as DSCoreNodesUI.DummyNode;
+            Assert.AreEqual(1, dummyNode.InputCount);
+            Assert.AreEqual(1, dummyNode.OutputCount);
+            Assert.AreEqual("Dynamo.Nodes.dynString2Num", dummyNode.LegacyNodeName);
         }
 
         [Test]
@@ -395,10 +413,14 @@ namespace Dynamo.Tests
             string testFilePath = Path.Combine(localDynamoStringTestFloder, "TestStringToNumber_normal.dyn");
 
             RunModel(testFilePath);
-            AssertPreviewValue("ca09bc3a-35c3-488f-a013-c05a5b7733c5", 12);
-            AssertPreviewValue("251210e5-2e04-4e81-b11d-39a8aff10887", 12.3);
-            AssertPreviewValue("898ee89d-a934-4b43-a051-da3459be329a", 1000);
-            AssertPreviewValue("0afc0a8f-3d8a-4d7c-a2ec-d868cbb29b5f", 123456789);
+
+            var dummy = model.CurrentWorkspace.NodeFromWorkspace<DSCoreNodesUI.DummyNode>("301a5d5f-3c61-471d-ab4c-180a775df93e");
+            Assert.IsNotNull(dummy);
+
+            //AssertPreviewValue("ca09bc3a-35c3-488f-a013-c05a5b7733c5", 12);
+            //AssertPreviewValue("251210e5-2e04-4e81-b11d-39a8aff10887", 12.3);
+            //AssertPreviewValue("898ee89d-a934-4b43-a051-da3459be329a", 1000);
+            //AssertPreviewValue("0afc0a8f-3d8a-4d7c-a2ec-d868cbb29b5f", 123456789);
 
         }
 

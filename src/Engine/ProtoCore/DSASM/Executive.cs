@@ -605,8 +605,8 @@ namespace ProtoCore.DSASM
 
             // Build the arg values list
             List<StackValue> arguments = new List<StackValue>();
-            List<int> replicationGuideList = null;
-            List<List<int>> replicationGuides = new List<List<int>>();
+            List<ProtoCore.ReplicationGuide> replicationGuideList = null;
+            List<List<ProtoCore.ReplicationGuide>> replicationGuides = new List<List<ProtoCore.ReplicationGuide>>();
 
             // Retrive the param values from the stack
             int stackindex = rmem.Stack.Count - 1;
@@ -664,7 +664,7 @@ namespace ProtoCore.DSASM
                         bool hasGuide = (AddressType.ReplicationGuide == rmem.Stack[stackindex].optype);
                         if (hasGuide)
                         {
-                            replicationGuideList = new List<int>();
+                            replicationGuideList = new List<ProtoCore.ReplicationGuide>();
 
                             // Retrieve replication guides
                             value = rmem.Stack[stackindex--];
@@ -676,8 +676,18 @@ namespace ProtoCore.DSASM
                             {
                                 for (int i = 0; i < guides; ++i)
                                 {
+                                    // Get the replicationguide number from the stack
                                     value = rmem.Stack[stackindex--];
-                                    replicationGuideList.Add((int)value.opdata);
+                                    Validity.Assert(value.optype == AddressType.Int);
+                                    int guideNumber = (int)value.opdata;
+
+                                    // Get the replication guide property from the stack
+                                    value = rmem.Stack[stackindex--];
+                                    Validity.Assert(value.optype == AddressType.Boolean);
+                                    bool isLongest = (int)value.opdata == 1 ? true : false;
+
+                                    ProtoCore.ReplicationGuide guide = new ReplicationGuide(guideNumber, isLongest);
+                                    replicationGuideList.Add(guide);
                                     ++argFrameSize;
                                 }
                             }
@@ -847,12 +857,12 @@ namespace ProtoCore.DSASM
             {
                 if (null != Properties.executingGraphNode)
                 {
-                    core.ExecutingGraphnodeUID = Properties.executingGraphNode.UID;
+                    core.ExecutingGraphnode = Properties.executingGraphNode;
                 }
             }
 
             // Get the cached callsite, creates a new one for a first-time call
-            ProtoCore.CallSite callsite = core.GetCallSite(core.ExecutingGraphnodeUID, classIndex, fNode.name);
+            ProtoCore.CallSite callsite = core.GetCallSite(core.ExecutingGraphnode, classIndex, fNode.name);
             Validity.Assert(null != callsite);
 
 
@@ -2205,6 +2215,13 @@ namespace ProtoCore.DSASM
                 {
                     return;
                 }
+
+                if (gnode.guid == executingNode.guid && gnode.ssaExprID == executingNode.ssaExprID)
+                //if (gnode.exprUID == executingNode.exprUID)
+                {
+                    // These nodes are within the same expression, no redifinition can occur
+                    return;
+                }
             }
 
             //if (executingNode.dependentList.Count > 0)
@@ -3555,18 +3572,13 @@ namespace ProtoCore.DSASM
             SymbolNode symbolnode = GetSymbolNode(blockId, classIndex, symbol);
 
             Type t = symbolnode.staticType;
-            if (t.rank < 0)
-            {
-                t.rank = Constants.kArbitraryRank;
-                t.IsIndexable = true;
-            }
 
             StackValue value = core.watchStack[symindex];
             if (value.optype == AddressType.ArrayPointer)
             {
                 StackValue oldValue;
 
-                if (t.UID == (int)PrimitiveType.kTypeVar && t.rank < 0)
+                if (t.UID == (int)PrimitiveType.kTypeVar && t.rank == Constants.kArbitraryRank)
                 {
                     oldValue = ArrayUtils.SetValueForIndices(value, dimlist, data, t, core);
                 }
@@ -3586,15 +3598,7 @@ namespace ProtoCore.DSASM
                         t.rank = t.rank - dimlist.Count;
                         t.rank += lhsRepCount;
 
-                        if (t.rank > 0)
-                        {
-                            t.IsIndexable = true;
-                        }
-                        else if (t.rank == 0)
-                        {
-                            t.IsIndexable = false;
-                        }
-                        else if (t.rank < 0)
+                        if (t.rank < 0)
                         {
                             string message = String.Format(RuntimeData.WarningMessage.kSymbolOverIndexed, symbolnode.name);
                             core.RuntimeStatus.LogWarning(RuntimeData.WarningID.kOverIndexing, message);
@@ -3608,9 +3612,7 @@ namespace ProtoCore.DSASM
             }
             else if (value.optype == AddressType.String)
             {
-                t.UID = (int)ProtoCore.PrimitiveType.kTypeChar;
-                t.rank = 0;
-                t.IsIndexable = false;
+                t = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeChar, 0);
 
                 return ArrayUtils.SetValueForIndices(value, dimlist, data, t, core);
             }
@@ -3644,12 +3646,6 @@ namespace ProtoCore.DSASM
             }
 
             Type t = symbolnode.staticType;
-            if (t.rank < 0)
-            {
-                t.rank = Constants.kArbitraryRank;
-                t.IsIndexable = true;
-            }
-
             StackValue ret = StackValue.Null;
             if (value.optype == AddressType.ArrayPointer)
             {
@@ -3669,15 +3665,7 @@ namespace ProtoCore.DSASM
                         t.rank = t.rank - dimlist.Count;
                         t.rank += lhsRepCount;
 
-                        if (t.rank > 0)
-                        {
-                            t.IsIndexable = true;
-                        }
-                        else if (t.rank == 0)
-                        {
-                            t.IsIndexable = false;
-                        }
-                        else if (t.rank < 0)
+                        if (t.rank < 0)
                         {
                             string message = String.Format(RuntimeData.WarningMessage.kSymbolOverIndexed, symbolnode.name);
                             core.RuntimeStatus.LogWarning(RuntimeData.WarningID.kOverIndexing, message);
@@ -3690,10 +3678,7 @@ namespace ProtoCore.DSASM
             }
             else if (value.optype == AddressType.String)
             {
-                t.UID = (int)ProtoCore.PrimitiveType.kTypeChar;
-                t.rank = 0;
-                t.IsIndexable = false;
-
+                t = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeChar, 0);
                 ret = ArrayUtils.SetValueForIndices(value, dimlist, data, t, core);
             }
             else
@@ -4313,8 +4298,8 @@ namespace ProtoCore.DSASM
                     argSvList.Add(sv); //actual arguments
                     ProtoCore.Type paramType = new ProtoCore.Type();
                     paramType.UID = (int)sv.metaData.type;
-                    paramType.IsIndexable = sv.optype == AddressType.ArrayPointer;
-                    if (paramType.IsIndexable)
+                    paramType.rank = 0;
+                    if (sv.optype == AddressType.ArrayPointer)
                     {
                         StackValue paramSv = sv;
                         while (paramSv.optype == AddressType.ArrayPointer)
@@ -4833,7 +4818,7 @@ namespace ProtoCore.DSASM
         }
          * */
 
-        public List<List<int>> GetCachedReplicationGuides(Core core, int argumentCount)
+        public List<List<ProtoCore.ReplicationGuide>> GetCachedReplicationGuides(Core core, int argumentCount)
         {
             int index = core.replicationGuides.Count - argumentCount;
             if (index >= 0)
@@ -4842,7 +4827,7 @@ namespace ProtoCore.DSASM
                 core.replicationGuides.RemoveRange(index, argumentCount);
                 return replicationGuides;
             }
-            return new List<List<int>>();
+            return new List<List<ProtoCore.ReplicationGuide>>();
         }
 
         private void NONE_Handler(Instruction instruction)
@@ -5077,12 +5062,18 @@ namespace ProtoCore.DSASM
             {
                 int guides = (int)instruction.op1.opdata;
 
-                List<int> argGuides = new List<int>();
+                List<ProtoCore.ReplicationGuide> argGuides = new List<ProtoCore.ReplicationGuide>();
                 for (int i = 0; i < guides; ++i)
                 {
+                    StackValue svGuideProperty = rmem.Pop();
+                    runtimeVerify(ProtoCore.DSASM.AddressType.Boolean == svGuideProperty.optype);
+                    bool isLongest = (int)svGuideProperty.opdata == 1 ? true : false;
+
                     StackValue svGuide = rmem.Pop();
                     runtimeVerify(ProtoCore.DSASM.AddressType.Int == svGuide.optype);
-                    argGuides.Add((int)svGuide.opdata);
+                    int guideNumber = (int)svGuide.opdata;
+
+                    argGuides.Add(new ProtoCore.ReplicationGuide(guideNumber, isLongest));
                 }
 
                 argGuides.Reverse();
@@ -5127,12 +5118,18 @@ namespace ProtoCore.DSASM
                     runtimeVerify(ProtoCore.DSASM.AddressType.ReplicationGuide == svNumGuides.optype);
                     guides = (int)svNumGuides.opdata;
 
-                    List<int> argGuides = new List<int>();
+                    List<ProtoCore.ReplicationGuide> argGuides = new List<ProtoCore.ReplicationGuide>();
                     for (int i = 0; i < guides; ++i)
                     {
+                        StackValue svGuideProperty = rmem.Pop();
+                        runtimeVerify(ProtoCore.DSASM.AddressType.Boolean == svGuideProperty.optype);
+                        bool isLongest = (int)svGuideProperty.opdata == 1 ? true : false;
+
                         StackValue svGuide = rmem.Pop();
                         runtimeVerify(ProtoCore.DSASM.AddressType.Int == svGuide.optype);
-                        argGuides.Add((int)svGuide.opdata);
+                        int guideNumber = (int)svGuide.opdata;
+
+                        argGuides.Add(new ProtoCore.ReplicationGuide(guideNumber, isLongest));
                     }
 
                     argGuides.Reverse();
@@ -5200,12 +5197,18 @@ namespace ProtoCore.DSASM
 
                 if (0 == dimensions)
                 {
-                    List<int> argGuides = new List<int>();
+                    List<ProtoCore.ReplicationGuide> argGuides = new List<ProtoCore.ReplicationGuide>();
                     for (int i = 0; i < guides; ++i)
                     {
+                        StackValue svGuideProperty = rmem.Pop();
+                        runtimeVerify(ProtoCore.DSASM.AddressType.Boolean == svGuideProperty.optype);
+                        bool isLongest = (int)svGuideProperty.opdata == 1 ? true : false;
+
                         StackValue svGuide = rmem.Pop();
                         runtimeVerify(ProtoCore.DSASM.AddressType.Int == svGuide.optype);
-                        argGuides.Add((int)svGuide.opdata);
+                        int guideNumber = (int)svGuide.opdata;
+
+                        argGuides.Add(new ProtoCore.ReplicationGuide(guideNumber, isLongest));
                     }
 
                     argGuides.Reverse();
@@ -5355,7 +5358,7 @@ namespace ProtoCore.DSASM
             dimensions = 0;
             blockId = DSASM.Constants.kInvalidIndex;
             int staticType = (int)ProtoCore.PrimitiveType.kTypeVar;
-            int rank = ProtoCore.DSASM.Constants.kUndefinedRank;
+            int rank = ProtoCore.DSASM.Constants.kArbitraryRank;
             bool objectIndexing = false;
             if (AddressType.VarIndex == instruction.op1.optype
                 || AddressType.Pointer == instruction.op1.optype
@@ -5442,7 +5445,8 @@ namespace ProtoCore.DSASM
                     }
                 }
 
-                if (!isSSANode && instruction.op1.optype != AddressType.Register)
+                //if (!isSSANode && instruction.op1.optype != AddressType.Register)
+                if (instruction.op1.optype != AddressType.Register)
                 {
                     GCRelease(EX);
                 }
@@ -5542,7 +5546,7 @@ namespace ProtoCore.DSASM
             int dimensions = 0;
             int blockId = DSASM.Constants.kInvalidIndex;
             int staticType = (int)ProtoCore.PrimitiveType.kTypeVar;
-            int rank = ProtoCore.DSASM.Constants.kUndefinedRank;
+            int rank = ProtoCore.DSASM.Constants.kArbitraryRank;
             if (ProtoCore.DSASM.AddressType.VarIndex == instruction.op1.optype
                 || ProtoCore.DSASM.AddressType.Pointer == instruction.op1.optype
                 || ProtoCore.DSASM.AddressType.ArrayPointer == instruction.op1.optype)
@@ -5616,12 +5620,18 @@ namespace ProtoCore.DSASM
             runtimeVerify(ProtoCore.DSASM.AddressType.ReplicationGuide == svNumGuides.optype);
             int guides = (int)svNumGuides.opdata;
 
-            List<int> argGuides = new List<int>();
+            List<ProtoCore.ReplicationGuide> argGuides = new List<ProtoCore.ReplicationGuide>();
             for (int i = 0; i < guides; ++i)
             {
+                StackValue svGuideProperty = rmem.Pop();
+                runtimeVerify(ProtoCore.DSASM.AddressType.Boolean == svGuideProperty.optype);
+                bool isLongest = (int)svGuideProperty.opdata == 1 ? true : false;
+
                 StackValue svGuide = rmem.Pop();
                 runtimeVerify(ProtoCore.DSASM.AddressType.Int == svGuide.optype);
-                argGuides.Add((int)svGuide.opdata);
+                int guideNumber = (int)svGuide.opdata;
+
+                argGuides.Add(new ProtoCore.ReplicationGuide(guideNumber, isLongest));
             }
 
             argGuides.Reverse();
@@ -5712,7 +5722,7 @@ namespace ProtoCore.DSASM
             StackValue svProperty = core.Heap.Heaplist[thisptr].Stack[stackIndex];
 
             StackValue svOldData = svData;
-            Type targetType = new Type { UID = (int)PrimitiveType.kTypeVar, rank = Constants.kArbitraryRank, IsIndexable = true };
+            Type targetType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeVar, Constants.kArbitraryRank);
             if (staticType != (int)PrimitiveType.kTypeFunctionPointer)
             {
                 if (dimensions == 0)
@@ -5725,11 +5735,6 @@ namespace ProtoCore.DSASM
                 {
                     SymbolNode symbolnode = GetSymbolNode(blockId, classIndex, symbolIndex);
                     targetType = symbolnode.staticType;
-                    if (targetType.rank < 0)
-                    {
-                        targetType.rank = Constants.kArbitraryRank;
-                        targetType.IsIndexable = true;
-                    }
 
                     if (svProperty.optype == AddressType.ArrayPointer)
                     {
@@ -5749,15 +5754,7 @@ namespace ProtoCore.DSASM
                                 targetType.rank = targetType.rank - dimList.Count;
                                 targetType.rank += lhsRepCount;
 
-                                if (targetType.rank > 0)
-                                {
-                                    targetType.IsIndexable = true;
-                                }
-                                else if (targetType.rank == 0)
-                                {
-                                    targetType.IsIndexable = false;
-                                }
-                                else if (targetType.rank < 0)
+                                if (targetType.rank < 0)
                                 {
                                     string message = String.Format(RuntimeData.WarningMessage.kSymbolOverIndexed, symbolnode.name);
                                     core.RuntimeStatus.LogWarning(RuntimeData.WarningID.kOverIndexing, message);

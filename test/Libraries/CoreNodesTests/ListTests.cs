@@ -2,11 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
 using NUnit.Framework;
-using DSCore;
-using Enum = Dynamo.Nodes.Enum;
 using List = DSCore.List;
 
 namespace DSCoreNodesTests
@@ -36,11 +32,13 @@ namespace DSCoreNodesTests
             Assert.AreEqual(new ArrayList { 5, 4, 3, 2, 1 }, List.Reverse(new List<int> { 1, 2, 3, 4, 5 }));
         }
 
+        /*
         [Test]
         public static void CreateList()
         {
             Assert.AreEqual(new ArrayList { 1, 2, 3, 4, 5 }, List.Create(1, 2, 3, 4, 5));
         }
+         * */
 
         [Test]
         public static void SortList()
@@ -88,6 +86,37 @@ namespace DSCoreNodesTests
             Assert.AreEqual(66, List.MaximumItem(new List<int> { 8, 4, 0, 66, 10 }));
         }
 
+        [Test]
+        public static void FilterListByMask()
+        {
+            Assert.AreEqual(
+                new Dictionary<string, object>
+                {
+                    { "in", new List<int> { 1, 3, 5 } },
+                    { "out", new List<int> { 2, 4, 6 } }
+                },
+                List.FilterByBoolMask(
+                    new List<int> { 1, 2, 3, 4, 5, 6 },
+                    new List<bool> { true, false, true, false, true, false }));
+
+            Assert.AreEqual(
+                new Dictionary<string, object>
+                {
+                    { "in", new List<object> { 1, 3, new List<object> { 5, 7 } } },
+                    { "out", new List<object> { 2, 4, new List<object> { 6, 8 } } }
+                },
+                List.FilterByBoolMask(
+                    new List<object> { 1, 2, 3, 4, new List<object> { 5, 6, 7, 8 } },
+                    new List<object>
+                    {
+                        true,
+                        false,
+                        true,
+                        false,
+                        new List<object> { true, false, true, false }
+                    }));
+        }
+
         //[Test]
         //public static void ListMaximumByKey()
         //{
@@ -127,9 +156,18 @@ namespace DSCoreNodesTests
         [Test]
         public static void SplitList()
         {
-            Assert.AreEqual(
-                new object[] { 0, new List<int> { 1, 2, 3, 4, 5 } },
-                List.Deconstruct(new List<int> { 0, 1, 2, 3, 4, 5 }));
+            var results = List.Deconstruct(new List<int> { 0, 1, 2, 3, 4, 5 });
+
+            // Explicitly test each aspect of the returned value.
+            Assert.IsNotNull(results);
+            Assert.AreEqual(2, results.Count);
+            Assert.AreEqual("first", results.Keys.Cast<string>().First());
+            Assert.AreEqual("rest", results.Keys.Cast<string>().ElementAt(1));
+            Assert.AreEqual(0, results["first"]);
+
+            var rest = results["rest"] as List<object>;
+            Assert.IsNotNull(rest);
+            Assert.AreEqual(new List<object> { 1, 2, 3, 4, 5 }, rest);
         }
 
         [Test]
@@ -177,7 +215,7 @@ namespace DSCoreNodesTests
         [Test]
         public static void RemoveValueFromList()
         {
-            Assert.AreEqual(new List<int> { 0, 1, 3, 4 }, List.RemoveItemAtIndex(new List<int> { 0, 1, 2, 3, 4 }, 2));
+            Assert.AreEqual(new List<int> { 0, 1, 3, 4 }, List.RemoveItemAtIndex(new List<int> { 0, 1, 2, 3, 4 }, new int[]{2}));
         }
 
         [Test]
@@ -185,7 +223,16 @@ namespace DSCoreNodesTests
         {
             Assert.AreEqual(
                 new List<int> { 0, 4 },
-                List.RemoveItemsAtIndices(new List<int> { 0, 1, 2, 3, 4 }, new List<int> { 1, 2, 3 }));
+                List.RemoveItemAtIndex(new List<int> { 0, 1, 2, 3, 4 }, new int[] { 1, 2, 3 }));
+        }
+
+        [Test]
+        public static void RemoveMultipleValuesFromNestedList()
+        {
+            var strings = new List<string> { "one", "two" };
+            Assert.AreEqual(
+                new List<object> { 0, 4 },
+                List.RemoveItemAtIndex(new List<object> { 0, 1, strings, new List<object> { 1, strings }, 4 }, new int[] { 1, 2, 3 }));
         }
 
         [Test]
@@ -288,19 +335,19 @@ namespace DSCoreNodesTests
                 List.DiagonalLeft(Enumerable.Range(0, 20).ToList(), 5));
         }
 
-        [Test]
-        public static void TransposeListOfLists()
-        {
-            Assert.AreEqual(
-                new List<IList> { new ArrayList { 0, 3, 6 }, new ArrayList { 1, 4, 7 }, new ArrayList { 2, 5, 8 } },
-                List.Transpose(
-                    new List<IList<object>>
-                    {
-                        new List<object> { 0, 1, 2 },
-                        new List<object> { 3, 4, 5 },
-                        new List<object> { 6, 7, 8 }
-                    }));
-        }
+        //[Test]
+        //public static void TransposeListOfLists()
+        //{
+        //    Assert.AreEqual(
+        //        new List<IList> { new ArrayList { 0, 3, 6 }, new ArrayList { 1, 4, 7 }, new ArrayList { 2, 5, 8 } },
+        //        List.Transpose(
+        //            new List<IList<object>>
+        //            {
+        //                new List<object> { 0, 1, 2 },
+        //                new List<object> { 3, 4, 5 },
+        //                new List<object> { 6, 7, 8 }
+        //            }));
+        //}
 
         [Test]
         public static void RepeatObject()

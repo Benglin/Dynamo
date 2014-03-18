@@ -32,27 +32,21 @@ namespace Dynamo.Models
         }
     }
 
-    public class NodeMigrationException : Exception
-    {
-        internal NodeMigrationException(string nodeType)
-        {
-            this.NodeType = nodeType;
-        }
-
-        public override string Message
-        {
-            get
-            {
-                return string.Format("NodeMigrationException: {0}", NodeType);
-            }
-        }
-
-        public string NodeType { get; private set; }
-    }
-
     public class MigrationManager
     {
         private static MigrationManager _instance;
+
+        private static int IdentifierIndex = 0;
+
+        public static int GetNextIdentifierIndex()
+        {
+            return IdentifierIndex++;
+        }
+
+        public static void ResetIdentifierIndex()
+        {
+            IdentifierIndex = 0;
+        }
 
         /// <summary>
         /// The singleton instance property.
@@ -127,17 +121,16 @@ namespace Dynamo.Models
 
                 if (type == null)
                 {
-                    // For the duration of migration work, we display exception
-                    // so that it shows up in the NUnit result. This may need to
-                    // be disabled (and simply 'continue') if there are still 
-                    // nodes left to be migrated.
-                    // 
-                    // throw new NodeMigrationException(typeName);
-                    continue;
+                    // If we are not able to resolve the type given its name, 
+                    // turn it into a deprecated node so that user is aware.
+                    migratedNodes.Add(MigrationManager.CreateDummyNode(
+                        elNode as XmlElement, 1, 1));
+
+                    continue; // Error displayed in console, continue on.
                 }
 
                 // Migrate the given node into one or more new nodes.
-                NodeMigrationData migrationData = this.MigrateXmlNode(elNode, type, workspaceVersion);
+                var migrationData = this.MigrateXmlNode(elNode, type, workspaceVersion);
                 migratedNodes.AddRange(migrationData.MigratedNodes);
             }
 
@@ -163,17 +156,8 @@ namespace Dynamo.Models
                               orderby result.From
                               select result).ToList();
 
-            if (migrations == null || (migrations.Count <= 0))
-            {
-                // For the duration of migration work, we display exception
-                // so that it shows up in the NUnit result. This may need to
-                // be disabled (and simply 'continue') if there are still 
-                // nodes left to be migrated.
-                // 
-                // throw new NodeMigrationException(type.FullName);
-            }
-
-            Version currentVersion = dynSettings.Controller.DynamoModel.HomeSpace.WorkspaceVersion;
+            var homespace = dynSettings.Controller.DynamoModel.HomeSpace;
+            var currentVersion = MigrationManager.VersionFromWorkspace(homespace);
 
             XmlElement nodeToMigrate = elNode as XmlElement;
             NodeMigrationData migrationData = new NodeMigrationData(elNode.OwnerDocument);
@@ -214,7 +198,7 @@ namespace Dynamo.Models
 
             try
             {
-                string folder = Path.GetDirectoryName(originalPath);
+                string folder = GetBackupFolder(Path.GetDirectoryName(originalPath), true);
                 string destFileName = GetUniqueFileName(folder, Path.GetFileName(originalPath));
                 System.IO.File.Copy(originalPath, destFileName);
                 backupPath = destFileName;
@@ -229,7 +213,8 @@ namespace Dynamo.Models
 
             try
             {
-                string folder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                var myDocs = Environment.SpecialFolder.MyDocuments;
+                string folder = GetBackupFolder(Environment.GetFolderPath(myDocs), true);
                 string destFileName = GetUniqueFileName(folder, Path.GetFileName(originalPath));
                 System.IO.File.Copy(originalPath, destFileName);
                 backupPath = destFileName;
@@ -258,6 +243,41 @@ namespace Dynamo.Models
             // The file name will be in the form of "fileName.NNN.backup".
             string fileName = fileNameWithExtension + string.Format(".{0}.backup", indexToUse);
             return Path.Combine(folder, fileName);
+        }
+
+        /// <summary>
+        /// Call this method with a root directory path information, and then 
+        /// a backup sub-directory will be created below it (if one does not 
+        /// already exist).
+        /// </summary>
+        /// <param name="baseFolder">This is a directory inside which a new 
+        /// backup sub-directory will be created. If this paramter does not 
+        /// represent a valid directory name, an exception will be thrown.
+        /// </param>
+        /// <param name="create">Set this parameter to false if the creation of 
+        /// the backup sub-directory is not desired. Typically this means the
+        /// method is called from within a test case and it is only interested 
+        /// in getting the resulting path back without actually creating a new 
+        /// backup sub-directory.</param>
+        /// <returns>Returns full path to the backup folder created.</returns>
+        /// 
+        internal static string GetBackupFolder(string baseFolder, bool create)
+        {
+            if (string.IsNullOrEmpty(baseFolder))
+                throw new ArgumentNullException("rootFolder");
+
+            if (Directory.Exists(baseFolder) == false)
+            {
+                var message = string.Format("Folder {0} does not exist", baseFolder);
+                throw new ArgumentException(message, "rootFolder");
+            }
+
+            var backupFolderName = Dynamo.UI.Configurations.BackupFolderName;
+            var subFolder = Path.Combine(baseFolder, backupFolderName);
+            if (create && (Directory.Exists(subFolder) == false))
+                Directory.CreateDirectory(subFolder);
+
+            return subFolder;
         }
 
         /// <summary>
@@ -337,7 +357,25 @@ namespace Dynamo.Models
                 new Version(0, 0, 0, 0) : new Version(version);
 
             // Ignore revision number.
-            return new Version(ver.Major, ver.Minor, ver.Build);
+            return new Version(ver.Major, ver.Minor, ver.Build, 0);
+        }
+
+        /// <summary>
+        /// Call this method to obtain the version of current WorkspaceModel.
+        /// Note that the revision number is dropped as both "0.7.0.1234" 
+        /// should be treated as the same version as "0.7.0.5678", and no file 
+        /// migration should take place.
+        /// </summary>
+        /// <param name="workspace">The WorkspaceModel to get the Version from.
+        /// </param>
+        /// <returns>Returns the Version object representing the workspace 
+        /// version with the revision set to 0.</returns>
+        /// 
+        internal static Version VersionFromWorkspace(WorkspaceModel workspace)
+        {
+            // Ignore revision number.
+            var ver = workspace.WorkspaceVersion;
+            return new Version(ver.Major, ver.Minor, ver.Build, 0);
         }
 
         /// <summary>
@@ -399,6 +437,22 @@ namespace Dynamo.Models
             element.SetAttribute("nickname", "Code Block");
             element.SetAttribute("CodeText", codeTest);
             element.SetAttribute("ShouldFocus", "false");
+
+            // Attributes with default values (as in DynamoModel.OpenWorkspace).
+            element.SetAttribute("isVisible", "true");
+            element.SetAttribute("isUpstreamVisible", "true");
+            element.SetAttribute("lacing", "Disabled");
+            element.SetAttribute("x", "0.0");
+            element.SetAttribute("y", "0.0");
+            element.SetAttribute("guid", Guid.NewGuid().ToString());
+            return element;
+        }
+
+        public static XmlElement CreateNode(XmlDocument document, string name, string nickname)
+        {
+            XmlElement element = document.CreateElement(name);
+            element.SetAttribute("type", name);
+            element.SetAttribute("nickname", nickname);
 
             // Attributes with default values (as in DynamoModel.OpenWorkspace).
             element.SetAttribute("isVisible", "true");
@@ -614,11 +668,23 @@ namespace Dynamo.Models
             if (element == null)
                 throw new ArgumentNullException("element");
             if (element.Name.Equals("Dynamo.Nodes.DSFunction") == false)
-                throw new ArgumentException("Only DSFunction should be here.");
+            {
+                if (element.Name.Equals("Dynamo.Nodes.DSVarArgFunction") == false)
+                {
+                    var message = "Only DSFunction/DSVarArgFunction should be here.";
+                    throw new ArgumentException(message);
+                }
+            }
 
             var type = element.Attributes["type"].Value;
             if (type.Equals("Dynamo.Nodes.DSFunction") == false)
-                throw new ArgumentException("Only DSFunction should be here.");
+            {
+                if (type.Equals("Dynamo.Nodes.DSVarArgFunction") == false)
+                {
+                    var message = "Only DSFunction/DSVarArgFunction should be here.";
+                    throw new ArgumentException(message);
+                }
+            }
 
             var nicknameAttrib = element.Attributes["nickname"];
             if (nicknameAttrib == null)
@@ -640,6 +706,23 @@ namespace Dynamo.Models
         private static int DetermineFunctionInputCount(XmlElement element)
         {
             int additionalPort = 0;
+
+            // "DSVarArgFunction" is a "VariableInputNode", therefore it will 
+            // have "inputcount" as one of the attributes. If such attribute 
+            // does not exist, throw an ArgumentException.
+            if (element.Name.Equals("Dynamo.Nodes.DSVarArgFunction"))
+            {
+                var inputCountAttrib = element.Attributes["inputcount"];
+
+                if (inputCountAttrib == null)
+                {
+                    throw new ArgumentException(string.Format(
+                        "Function inputs cannot be determined ({0}).",
+                        element.GetAttribute("nickname")));
+                }
+
+                return Convert.ToInt32(inputCountAttrib.Value);
+            }
 
             var signature = string.Empty;
             var signatureAttrib = element.Attributes["function"];

@@ -4,6 +4,7 @@ using System.Linq;
 using Autodesk.DesignScript.Geometry;
 using Autodesk.DesignScript.Interfaces;
 using Autodesk.Revit.DB;
+using Revit.Elements;
 using Revit.GeometryConversion;
 using Revit.GeometryObjects;
 using Revit.Graphics;
@@ -15,7 +16,7 @@ using PlanarFace = Autodesk.Revit.DB.PlanarFace;
 using Point = Autodesk.DesignScript.Geometry.Point;
 using Solid = Autodesk.Revit.DB.Solid;
 
-namespace Revit.Elements
+namespace Revit.GeometryObjects
 {
     public class Solid : AbstractGeometryObject
     {
@@ -117,14 +118,14 @@ namespace Revit.Elements
                     }
                     else
                         lastParam = xsects.get_Item(0).Parameter;
-                    attachParams.Add(lastParam);
+                    attachParams.Add( lastParam );
                 }
             }
             else
             {
                 foreach (double vPar in inputParameters)
                 {
-                    attachParams.Add(vPar);
+                    attachParams.Add( pathCurve.ComputeRawParameter(vPar) );
                 }
             }
             //check the parameter and set it if not right or not defined
@@ -194,6 +195,7 @@ namespace Revit.Elements
                 if (!gF.Combinations.IsEmpty)
                     bNotVisibleOption = true;
             }
+
             int nTry = (bNotVisibleOption) ? 2 : 1;
             for (int iTry = 0; iTry < nTry && (mySolid == null); iTry++)
             {
@@ -356,7 +358,7 @@ namespace Revit.Elements
         /// <param name="startAngle">The start angle in radians.</param>
         /// <param name="endAngle">The end angle in radians.</param>
         /// <returns></returns>
-        public static Solid ByRevolve(List<Autodesk.DesignScript.Geometry.Curve> profile,  CoordinateSystem coordinateSystem, double startAngle, double endAngle )
+        public static Solid ByRevolve(Autodesk.DesignScript.Geometry.PolyCurve profile,  CoordinateSystem coordinateSystem, double startAngle, double endAngle )
         {
             if (profile == null)
             {
@@ -368,7 +370,7 @@ namespace Revit.Elements
                 throw new ArgumentException("coordinate system");
             }
 
-            var crvs = CurveLoop.Create(profile.Select(x => x.ToRevitType()).ToList());
+            var crvs = profile.ToRevitType();
 
             return new Solid( crvs, coordinateSystem.ToTransform(), startAngle, endAngle);
         }
@@ -378,7 +380,7 @@ namespace Revit.Elements
         /// </summary>
         /// <param name="profiles">A list of lists of curves representing the profiles to blend.</param>
         /// <returns></returns>
-        public static Solid ByBlend(List<List<Autodesk.DesignScript.Geometry.Curve>> profiles)
+        public static Solid ByBlend(List<PolyCurve> profiles)
         {
             if (profiles == null)
             {
@@ -390,7 +392,7 @@ namespace Revit.Elements
                 throw new Exception("You must have two profiles to create a blend.");
             }
 
-            var loops = profiles.Select(x => CurveLoop.Create(x.Select(y => y.ToRevitType()).ToList()));
+            var loops = profiles.Select(x => x.ToRevitType()).ToList();
 
             return new Solid(loops);
         }
@@ -401,7 +403,7 @@ namespace Revit.Elements
         /// <param name="profiles"></param>
         /// <param name="spine"></param>
         /// <returns></returns>
-        public static Solid BySweptBlend(List<List<Autodesk.DesignScript.Geometry.Curve>> profiles, Autodesk.DesignScript.Geometry.Curve spine, List<double> attachmentParameters)
+        public static Solid BySweptBlend(List<PolyCurve> profiles, Autodesk.DesignScript.Geometry.Curve spine, List<double> attachmentParameters)
         {
             if (profiles == null)
             {
@@ -418,7 +420,7 @@ namespace Revit.Elements
                 throw new Exception("You must have the same number of profiles as attachment parameters.");
             }
 
-            var loops = profiles.Select(x => CurveLoop.Create(x.Select(y => y.ToRevitType()).ToList()));
+            var loops = profiles.Select(x => x.ToRevitType() ).ToList();
 
             return new Solid(loops, spine.ToRevitType(), attachmentParameters);
         }
@@ -699,6 +701,16 @@ namespace Revit.Elements
 
         #endregion
 
+        #region Internal Static Constructors
+
+        internal static Revit.GeometryObjects.Solid FromExisting(Autodesk.Revit.DB.Solid solid)
+        {
+            return new Solid(solid);
+        }
+
+        #endregion
+
+
         #region Tesselation
 
         public override void Tessellate(IRenderPackage package)
@@ -708,17 +720,8 @@ namespace Revit.Elements
 
             foreach (var mesh in meshes)
             {
-                for (var i = 0; i < mesh.NumTriangles; i++)
-                {
-                    var triangle = mesh.get_Triangle(i);
-                    for (var j = 0; j < 3; j++)
-                    {
-                        var xyz = triangle.get_Vertex(j);
-                        package.PushTriangleVertex(xyz.X, xyz.Y, xyz.Z);
-                    }
-                }
+                GraphicsManager.PushMesh(mesh, package);
             }
-
         }
 
         #endregion
@@ -788,7 +791,7 @@ namespace Revit.Elements
                 var faceAtIndex = facesOfExtrusion.get_Item(indexFace);
                 if (faceAtIndex is PlanarFace)
                 {
-                    var pFace = faceAtIndex as PlanarFace;
+                    var pFace = faceAtIndex as Autodesk.Revit.DB.PlanarFace;
                     if (System.Math.Abs(thisPlane.Normal.DotProduct(pFace.Normal)) < 0.99)
                         continue;
                     if (System.Math.Abs(thisPlane.Normal.DotProduct(thisPlane.Origin - pFace.Origin)) > 0.1)

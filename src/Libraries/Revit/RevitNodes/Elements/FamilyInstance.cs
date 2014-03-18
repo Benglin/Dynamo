@@ -9,7 +9,6 @@ using Revit.GeometryObjects;
 using Revit.References;
 using RevitServices.Persistence;
 using RevitServices.Transactions;
-using Curve = Revit.GeometryObjects.Curve;
 using Face = Revit.GeometryObjects.Face;
 using Point = Autodesk.DesignScript.Geometry.Point;
 
@@ -54,7 +53,7 @@ namespace Revit.Elements
             }
 
             //Phase 2- There was no existing point, create one
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             Autodesk.Revit.DB.FamilyInstance fi;
 
@@ -71,9 +70,9 @@ namespace Revit.Elements
 
             InternalSetFamilyInstance(fi);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.SetElementForTrace(this.InternalElementId);
+            ElementBinder.SetElementForTrace(this.InternalElement);
         }
 
         /// <summary>
@@ -95,7 +94,7 @@ namespace Revit.Elements
             }
 
             //Phase 2- There was no existing point, create one
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             Autodesk.Revit.DB.FamilyInstance fi;
 
@@ -112,9 +111,9 @@ namespace Revit.Elements
 
             InternalSetFamilyInstance(fi);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.SetElementForTrace(this.InternalElementId);
+            ElementBinder.SetElementForTrace(this.InternalElement);
         }
 
         #endregion
@@ -123,22 +122,22 @@ namespace Revit.Elements
 
         private void InternalSetLevel(Autodesk.Revit.DB.Level level)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             // http://thebuildingcoder.typepad.com/blog/2011/01/family-instance-missing-level-property.html
             InternalFamilyInstance.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM).Set(level.Id);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
         }
 
         private void InternalSetPosition(XYZ fi)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             var lp = this.InternalFamilyInstance.Location as LocationPoint;
             lp.Point = fi;
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
         }
 
         #endregion
@@ -148,7 +147,7 @@ namespace Revit.Elements
         public Autodesk.DesignScript.Geometry.Curve[] Curves {
             get
             {
-                var curves = this.GetCurvesFromFamily(InternalFamilyInstance, new Options()
+                var curves = this.GetCurves(new Options()
                 {
                     ComputeReferences = true
                 });
@@ -161,12 +160,38 @@ namespace Revit.Elements
         {
             get
             {
-                var curves = this.GetCurvesFromFamily(InternalFamilyInstance, new Options()
+                var curves = this.GetCurves(new Options()
                 {
                     ComputeReferences = true
                 });
 
-                return curves.Select(x => new CurveReference(x)).ToArray();
+                return curves.Select(CurveReference.FromExisting).ToArray();
+            }
+        }
+
+        public Face[] Faces
+        {
+            get
+            {
+                var faces = this.GetFaces(new Options()
+                {
+                    ComputeReferences = true
+                });
+
+                return faces.Select(Face.FromExisting).ToArray();
+            }
+        }
+
+        public Revit.References.FaceReference[] FaceReferences
+        {
+            get
+            {
+                var faces = this.GetFaces(new Options()
+                {
+                    ComputeReferences = true
+                });
+
+                return faces.Select(FaceReference.FromExisting).ToArray();
             }
         }
 
@@ -242,7 +267,7 @@ namespace Revit.Elements
                 throw new ArgumentNullException("familySymbol");
             }
 
-            return DocumentManager.GetInstance()
+            return DocumentManager.Instance
                 .ElementsOfType<Autodesk.Revit.DB.FamilyInstance>()
                 .Where(x => x.Symbol.Id == familySymbol.InternalFamilySymbol.Id)
                 .Select(x => FamilyInstance.FromExisting(x, true))
@@ -271,7 +296,7 @@ namespace Revit.Elements
 
         #region Incomplete Static constructors
 
-        static FamilyInstance ByCurve(FamilySymbol fs, Curve c)
+        static FamilyInstance ByCurve(FamilySymbol fs, Autodesk.DesignScript.Geometry.Curve c)
         {
             throw new NotImplementedException();
         }
@@ -283,98 +308,10 @@ namespace Revit.Elements
 
         #endregion
 
-        #region Private helper methods
-
-        private IEnumerable<Autodesk.Revit.DB.Curve> GetCurvesFromFamily(Autodesk.Revit.DB.FamilyInstance fi, Autodesk.Revit.DB.Options options)
+        public override string ToString()
         {
-            var geomElem = fi.get_Geometry(options);
-
-            var curves = new CurveArray();
-
-            //Find all curves and insert them into curve array
-            AddCurves(fi, geomElem, ref curves);
-
-            return curves.Cast<Autodesk.Revit.DB.Curve>();
-
+            return InternalFamilyInstance.Name;
         }
-
-        /// <summary>
-        /// Retrieve the first curve found for 
-        /// the given element. In case the element is a 
-        /// family instance, it may have its own non-empty
-        /// solid, in which case we use that. Otherwise we 
-        /// search the symbol geometry. If we use the 
-        /// symbol geometry, we have to keep track of the 
-        /// instance transform to map it to the actual
-        /// instance project location.
-        /// </summary>
-        private Autodesk.Revit.DB.Curve GetCurve(Autodesk.Revit.DB.Element e, Options opt)
-        {
-            GeometryElement geo = e.get_Geometry(opt);
-
-            Autodesk.Revit.DB.Curve curve = null;
-            GeometryInstance inst = null;
-            Transform t = Transform.Identity;
-
-            // Some columns have no solids, and we have to 
-            // retrieve the geometry from the symbol; 
-            // others do have solids on the instance itself 
-            // and no contents in the instance geometry 
-            // (e.g. in rst_basic_sample_project.rvt).
-
-            foreach (GeometryObject obj in geo)
-            {
-                curve = obj as Autodesk.Revit.DB.Curve;
-
-                if (null != curve)
-                {
-                    break;
-                }
-
-                inst = obj as GeometryInstance;
-            }
-
-            if (null == curve && null != inst)
-            {
-                geo = inst.GetSymbolGeometry();
-                t = inst.Transform;
-
-                foreach (GeometryObject obj in geo)
-                {
-                    curve = obj as Autodesk.Revit.DB.Curve;
-
-                    if (null != curve)
-                    {
-                        break;
-                    }
-                }
-            }
-            return curve;
-        }
-
-        private void AddCurves(Autodesk.Revit.DB.FamilyInstance fi, GeometryElement geomElem, ref CurveArray curves)
-        {
-            foreach (GeometryObject geomObj in geomElem)
-            {
-                Autodesk.Revit.DB.Curve curve = geomObj as Autodesk.Revit.DB.Curve;
-                if (null != curve)
-                {
-                    curves.Append(curve);
-                    continue;
-                }
-
-                //If this GeometryObject is Instance, call AddCurve
-                GeometryInstance geomInst = geomObj as GeometryInstance;
-                if (null != geomInst)
-                {
-                    GeometryElement transformedGeomElem // curves transformed into project coords
-                        = geomInst.GetInstanceGeometry(geomInst.Transform.Inverse);
-                    AddCurves(fi, transformedGeomElem, ref curves);
-                }
-            }
-        }
-
-        #endregion
 
     }
 }

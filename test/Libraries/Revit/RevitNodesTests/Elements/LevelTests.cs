@@ -7,6 +7,7 @@ using Revit;
 using Revit.Elements;
 using Revit.GeometryObjects;
 using NUnit.Framework;
+using RevitServices.Persistence;
 
 namespace DSRevitNodesTests.Elements
 {
@@ -74,7 +75,7 @@ namespace DSRevitNodesTests.Elements
         {
             var elevation = 100;
             var offset = 100;
-            var name = "Ham";
+            var name = "TortoiseTime";
             var level = Level.ByElevation(elevation);
 
             var level2 = Level.ByLevelOffsetAndName(level, offset, name);

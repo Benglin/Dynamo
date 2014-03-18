@@ -15,7 +15,7 @@ namespace IntegrationTests
     class IncrementingTraceTests
     {
         private const string __TEMP_REVIT_TRACE_ID = "{0459D869-0C72-447F-96D8-08A7FB92214B}-REVIT";
-        public TestFrameWork thisTest = new TestFrameWork();
+        public TestFrameWork testFx = new TestFrameWork();
         private ILiveRunner astLiveRunner = null;
 
 
@@ -23,7 +23,7 @@ namespace IntegrationTests
         [SetUp]
         public void Setup()
         {
-            thisTest = new TestFrameWork();
+            testFx = new TestFrameWork();
             astLiveRunner = new ProtoScript.Runners.LiveRunner();
             FFITarget.IncrementerTracedClass.ResetForNextTest();
 
@@ -42,7 +42,7 @@ namespace IntegrationTests
             //Verify that multiple calls to the same FEP from different callsites
             //do not over-increment
 
-            var mirror = thisTest.RunScriptSource(
+            var mirror = testFx.RunScriptSource(
 @"import(""FFITarget.dll"");
 mtcA = IncrementerTracedClass.IncrementerTracedClass(1);
 cleanA = mtcA.WasCreatedWithTrace();
@@ -65,7 +65,7 @@ cleanB = mtcB.WasCreatedWithTrace();
             //Verify that multiple calls to the same FEP from different callsites
             //do not over-increment
 
-            var mirror = thisTest.RunScriptSource(
+            var mirror = testFx.RunScriptSource(
 @"import(""FFITarget.dll"");
 mtcA = IncrementerTracedClass.IncrementerTracedClass(0..3);
 cleanA = mtcA.WasCreatedWithTrace();
@@ -94,7 +94,7 @@ cleanB = mtcB.WasCreatedWithTrace();
             //Verify that multiple calls to the same FEP from different callsites
             //do not over-increment
 
-            var mirror = thisTest.RunScriptSource(
+            var mirror = testFx.RunScriptSource(
 @"import(""FFITarget.dll"");
 x = 0..3;
 mtcA = IncrementerTracedClass.IncrementerTracedClass(x);
@@ -122,7 +122,7 @@ x = 1..4;
             //Verify that multiple calls to the same FEP from different callsites
             //do not over-increment
 
-            var mirror = thisTest.RunScriptSource(
+            var mirror = testFx.RunScriptSource(
 @"import(""FFITarget.dll"");
 mtcA = IncrementerTracedClass.IncrementerTracedClass(0);
 mtcAID = mtcA.ID;
@@ -149,7 +149,7 @@ mtcBWasTraced = mtcB.WasCreatedWithTrace();
             //do not over-increment
 
 
-            var mirror = thisTest.RunScriptSource(
+            var mirror = testFx.RunScriptSource(
 @"import(""FFITarget.dll"");
 x = 0;
 mtcA = IncrementerTracedClass.IncrementerTracedClass(x);
@@ -188,7 +188,7 @@ x = 1;
             var syncData = new GraphSyncData(null, added, null);
             astLiveRunner.UpdateGraph(syncData);
 
-            AssertValue("a", 1);
+            TestFrameWork.AssertValue("a", 1, astLiveRunner);
 
 
 
@@ -202,7 +202,7 @@ x = 1;
             astLiveRunner.UpdateGraph(syncData);
 
             // Verify that a is re-executed
-            AssertValue("a", 2);
+            TestFrameWork.AssertValue("a", 2, astLiveRunner);
 
 
             // Redefine the CBN
@@ -214,7 +214,7 @@ x = 1;
             astLiveRunner.UpdateGraph(syncData);
 
             // Verify that x must have automatically re-executed
-            AssertValue("a", 3);
+            TestFrameWork.AssertValue("a", 3, astLiveRunner);
 
         }
 
@@ -222,7 +222,7 @@ x = 1;
 
         [Test]
         [Category("Trace")]
-        public void IntermediateValueIncrementerIDTestUpdate()
+        public void SingleToSingle()
         {
 
             //Test to ensure that the first time the code is executed the wasTraced attribute is marked as false
@@ -250,8 +250,8 @@ mtcAWasTraced = mtcA.WasCreatedWithTrace(); ";
             var syncData = new GraphSyncData(null, added, null);
             astLiveRunner.UpdateGraph(syncData);
 
-            AssertValue("mtcAID", 0);
-            AssertValue("mtcAWasTraced", false);
+            TestFrameWork.AssertValue("mtcAID", 0, astLiveRunner);
+            TestFrameWork.AssertValue("mtcAWasTraced", false, astLiveRunner);
 
 
 
@@ -265,13 +265,14 @@ mtcAWasTraced = mtcA.WasCreatedWithTrace(); ";
             astLiveRunner.UpdateGraph(syncData);
 
             // Verify that a is re-executed
-            AssertValue("mtcAID", 0);
-            AssertValue("mtcAWasTraced", true);
+            TestFrameWork.AssertValue("mtcAID", 0, astLiveRunner);
+            TestFrameWork.AssertValue("mtcAWasTraced", true, astLiveRunner);
         }
 
+        
         [Test]
         [Category("Trace")]
-        public void IntermediateValueIncrementerIDTestUpdate1DReplicated()
+        public void ReplicatedToReplicated()
         {
             string setupCode =
             @"import(""FFITarget.dll""); 
@@ -293,18 +294,19 @@ mtcAWasTraced = mtcA.WasCreatedWithTrace(); ";
             var syncData = new GraphSyncData(null, added, null);
             astLiveRunner.UpdateGraph(syncData);
 
-            AssertValue("mtcAID", new List<int>()
+            TestFrameWork.AssertValue("mtcAID", new List<int>()
                 {
                     0,
                     1,
                     2
-                });
-            AssertValue("mtcAWasTraced", new List<bool>()
+                }, astLiveRunner);
+
+            TestFrameWork.AssertValue("mtcAWasTraced", new List<bool>()
                 {
                     false,
                     false,
                     false
-                });
+                }, astLiveRunner);
 
 
 
@@ -318,23 +320,72 @@ mtcAWasTraced = mtcA.WasCreatedWithTrace(); ";
             astLiveRunner.UpdateGraph(syncData);
 
             // Verify that a is re-executed
-            AssertValue("mtcAID",new List<int>()
+            TestFrameWork.AssertValue("mtcAID", new List<int>()
             {
                 0,
                 1 ,
                 2
-            }
-        );
-            AssertValue("mtcAWasTraced", new List<bool>()
+            }, astLiveRunner);
+            TestFrameWork.AssertValue("mtcAWasTraced", new List<bool>()
                 {
                     true,
                     true,
                     true
-                });
+                }, astLiveRunner);
         }
-        
-        
+
+        [Test]
+        [Category("Trace")]
+        public void SingleToReplicated()
+        {
+            string setupCode =
+            @"import(""FFITarget.dll""); 
+x = 0; 
+mtcA = IncrementerTracedClass.IncrementerTracedClass(x); 
+mtcAID = mtcA.ID;
+mtcAWasTraced = mtcA.WasCreatedWithTrace(); ";
+
+            ExecuteMoreCode(setupCode);
+
+            TestFrameWork.AssertValue("mtcAID", 
+                    0, astLiveRunner);
+
+            TestFrameWork.AssertValue("mtcAWasTraced", 
+                    false, astLiveRunner);
+
+
+
+            ExecuteMoreCode("x = 1..3;");
+
+            // Verify that a is re-executed
+            TestFrameWork.AssertValue("mtcAID", new List<int>()
+            {
+                0,
+                1,
+                2
+            }, astLiveRunner);
+            TestFrameWork.AssertValue("mtcAWasTraced", new List<bool>()
+                {
+                    true,
+                    false,
+                    false
+                }, astLiveRunner);
+        }
+
+
+
         //Migrate this code into the test framework
+        private void ExecuteMoreCode(string newCode)
+        {
+            Guid guid2 = System.Guid.NewGuid();
+            List<Subtree> added = new List<Subtree>();
+            added.Add(CreateSubTreeFromCode(guid2, newCode));
+
+
+            GraphSyncData syncData = new GraphSyncData(null, added, null);
+            astLiveRunner.UpdateGraph(syncData);
+        }
+
         private Subtree CreateSubTreeFromCode(Guid guid, string code)
         {
             CodeBlockNode commentCode;
@@ -343,36 +394,6 @@ mtcAWasTraced = mtcA.WasCreatedWithTrace(); ";
             return subtree;
         }
 
-        private void AssertValue(string varname, object value)
-        {
-            var mirror = astLiveRunner.InspectNodeValue(varname);
-            MirrorData data = mirror.GetData();
-            object svValue = data.Data;
-            if (value is double)
-            {
-                Assert.AreEqual((double)svValue, Convert.ToDouble(value));
-            }
-            else if (value is int)
-            {
-                Assert.AreEqual((Int64)svValue, Convert.ToInt64(value));
-            }
-            else if (value is bool)
-            {
-                Assert.AreEqual((bool)svValue, Convert.ToBoolean(value));
-            }
-            else if (value is IEnumerable<int>)
-            {
-                Assert.IsTrue(data.IsCollection);
-                var values = (value as IEnumerable<int>).ToList().Select(v => (object)v).ToList();
-                Assert.IsTrue(mirror.GetUtils().CompareArrays(varname, values, typeof(Int64)));
-            }
-            else if (value is IEnumerable<double>)
-            {
-                Assert.IsTrue(data.IsCollection);
-                var values = (value as IEnumerable<double>).ToList().Select(v => (object)v).ToList();
-                Assert.IsTrue(mirror.GetUtils().CompareArrays(varname, values, typeof(double)));
-            }
-        }
 
 
 

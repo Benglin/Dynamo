@@ -85,6 +85,26 @@ namespace ProtoCore
 
     }
 
+    /// <summary>
+    /// Represents a single replication guide entity that is associated with an argument to a function
+    /// 
+    /// Given:
+    ///     a = f(i<1>, j<2L>)
+    ///     
+    ///     <1> and <2L> are each represented by a ReplicationGuide instance
+    ///     
+    /// </summary>
+    public class ReplicationGuide
+    {
+        public ReplicationGuide(int guide, bool longest)
+        {
+            this.guideNumber = guide;
+            this.isLongest = longest;
+        }
+
+        public int guideNumber { get; private set; }
+        public bool isLongest {get; private set;}
+    }
 
     public class InterpreterProperties
     {
@@ -595,8 +615,8 @@ namespace ProtoCore
             }
         }
 
-        public void SetUpCallrForDebug(ProtoCore.Core core, ProtoCore.DSASM.Executive exec, ProcedureNode fNode, int pc, bool isBaseCall = false, 
-            ProtoCore.CallSite callsite = null, List<StackValue> arguments = null, List<List<int>> replicationGuides = null, ProtoCore.DSASM.StackFrame stackFrame = null,
+        public void SetUpCallrForDebug(ProtoCore.Core core, ProtoCore.DSASM.Executive exec, ProcedureNode fNode, int pc, bool isBaseCall = false,
+            ProtoCore.CallSite callsite = null, List<StackValue> arguments = null, List<List<ProtoCore.ReplicationGuide>> replicationGuides = null, ProtoCore.DSASM.StackFrame stackFrame = null,
             List<StackValue> dotCallDimensions = null, bool hasDebugInfo = false, bool isMember = false, StackValue? thisPtr = null)
         {
             //ProtoCore.DSASM.Executive exec = core.CurrentExecutive.CurrentDSASMExec;
@@ -946,11 +966,6 @@ namespace ProtoCore
             public RuntimeData.WarningID RuntimeId;
             public int Line;
             public int Col;
-
-            //public ErrorEntry()
-            //{
-
-            //}
         }
 
         public Dictionary<ulong, ulong> codeToLocation = new Dictionary<ulong, ulong>();
@@ -1073,7 +1088,7 @@ namespace ProtoCore
 
         // Cached replication guides for the current call. 
         // TODO Jun: Store this in the dynamic table node
-        public List<List<int>> replicationGuides;
+        public List<List<ProtoCore.ReplicationGuide>> replicationGuides;
 
         // if CompileToLib is true, this is used to output the asm instruction to the dsASM file
         // if CompilerToLib is false, this will be set to Console.Out
@@ -1115,6 +1130,16 @@ namespace ProtoCore
         public CallsiteExecutionState csExecutionState { get; set; }
 
         public Dictionary<int, CallSite> CallsiteCache { get; set; }
+
+        /// <summary>
+        /// Map from a callsite's guid to a graph UI node. 
+        /// </summary>
+        public Dictionary<Guid, Guid> CallSiteToNodeMap { get; private set; }
+
+        /// <summary>
+        /// Map from a AST node's ID to a callsite.
+        /// </summary>
+        public Dictionary<int, CallSite> ASTToCallSiteMap { get; private set; }
 
         // A list of graphnodes that contain a function call
         public List<AssociativeGraph.GraphNode> GraphNodeCallList { get; set; }
@@ -1179,6 +1204,7 @@ namespace ProtoCore
             }
         }
 
+        [Obsolete("This is only used in obsolete live runner")]
         public void LogErrorInGlobalMap(Core.ErrorType type, string msg, string fileName = null, int line = -1, int col = -1, 
             BuildData.WarningID buildId = BuildData.WarningID.kDefault, RuntimeData.WarningID runtimeId = RuntimeData.WarningID.kDefault)
         {
@@ -1447,7 +1473,7 @@ namespace ProtoCore
             //Initialize the dynamic string table and dynamic function table
             DynamicVariableTable = new DSASM.DynamicVariableTable();
             DynamicFunctionTable = new DSASM.DynamicFunctionTable();
-            replicationGuides = new List<List<int>>();
+            replicationGuides = new List<List<ProtoCore.ReplicationGuide>>();
 
             ExceptionHandlingManager = new ExceptionHandlingManager();
             startPC = ProtoCore.DSASM.Constants.kInvalidIndex;
@@ -1595,7 +1621,7 @@ namespace ProtoCore
             //Initialize the dynamic string table and dynamic function table
             DynamicVariableTable = new DSASM.DynamicVariableTable();
             DynamicFunctionTable = new DSASM.DynamicFunctionTable();
-            replicationGuides = new List<List<int>>();
+            replicationGuides = new List<List<ProtoCore.ReplicationGuide>>();
 
             ExceptionHandlingManager = new ExceptionHandlingManager();
             startPC = ProtoCore.DSASM.Constants.kInvalidIndex;
@@ -1666,6 +1692,9 @@ namespace ProtoCore
                 csExecutionState = new CallsiteExecutionState();
             }
             CallsiteCache = new Dictionary<int, CallSite>();
+            CallSiteToNodeMap = new Dictionary<Guid, Guid>();
+            ASTToCallSiteMap = new Dictionary<int, CallSite>();
+
             ForLoopBlockIndex = ProtoCore.DSASM.Constants.kInvalidIndex;
 
             GraphNodeCallList = new List<GraphNode>();
@@ -2349,7 +2378,7 @@ namespace ProtoCore
             return false;
         }
 
-        public int ExecutingGraphnodeUID { get; set; }
+        public GraphNode ExecutingGraphnode { get; set; }
 
         /// <summary>
         /// Retrieves an existing instance of a callsite associated with a UID
@@ -2358,28 +2387,47 @@ namespace ProtoCore
         /// <param name="core"></param>
         /// <param name="uid"></param>
         /// <returns></returns>
-        public CallSite GetCallSite(int uid, int classScope, string methodName)
+        public CallSite GetCallSite(GraphNode graphNode, 
+                                    int classScope, 
+                                    string methodName)
         {
             Validity.Assert(null != FunctionTable);
             CallSite csInstance = null;
 
-            // TODO Jun: Currently generates a new callsite for imperative and internally generated functions
-            // Fix the issues that cause the cache to go out of sync when attempting to cache internal functions
-            // This may require a secondary callsite cache for internal functions so they dont clash with the graphNode UID key
+            // TODO Jun: Currently generates a new callsite for imperative and 
+            // internally generated functions.
+            // Fix the issues that cause the cache to go out of sync when 
+            // attempting to cache internal functions. This may require a 
+            // secondary callsite cache for internal functions so they dont 
+            // clash with the graphNode UID key
+            var language = DSExecutable.instrStreamList[RunningBlock].language;
+            bool isImperative =  language == Language.kImperative;
             bool isInternalFunction = CoreUtils.IsInternalFunction(methodName);
-            bool isImperative = DSExecutable.instrStreamList[RunningBlock].language == Language.kImperative;
+
             if (isInternalFunction || isImperative)
             {
-                csInstance = new CallSite(classScope, methodName, FunctionTable, Options.ExecutionMode);
+                csInstance = new CallSite(classScope, 
+                                          methodName, 
+                                          FunctionTable, 
+                                          Options.ExecutionMode);
             }
-            else
+            else if (!CallsiteCache.TryGetValue(graphNode.UID, out csInstance))
             {
-                if (!CallsiteCache.TryGetValue(uid, out csInstance))
-                {
-                    csInstance = new CallSite(classScope, methodName, FunctionTable, Options.ExecutionMode);
-                    CallsiteCache.Add(uid, csInstance);
-                }
+                csInstance = new CallSite(classScope,
+                                          methodName,
+                                          FunctionTable,
+                                          Options.ExecutionMode);
+
+                CallsiteCache.Add(graphNode.UID, csInstance);
+                CallSiteToNodeMap[csInstance.CallSiteID] = graphNode.guid;
+                ASTToCallSiteMap[graphNode.AstID] = csInstance;
             }
+
+            if (graphNode != null && Options.IsDeltaExecution)
+            {
+                this.RuntimeStatus.ClearWarningForExpression(graphNode.exprUID);
+            }
+
             return csInstance;
         }
 

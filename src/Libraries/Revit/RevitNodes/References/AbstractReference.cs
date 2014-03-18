@@ -11,12 +11,12 @@ namespace Revit.References
     /// <summary>
     /// A base class for revit Reference objects
     /// </summary>
-    //[Browsable(false)]
+    //[SupressImportIntoVM]
     public abstract class AbstractReference
     {
         public static Document Document
         {
-            get { return DocumentManager.GetInstance().CurrentDBDocument; }
+            get { return DocumentManager.Instance.CurrentDBDocument; }
         }
 
         /// <summary>

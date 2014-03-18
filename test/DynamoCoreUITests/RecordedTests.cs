@@ -19,15 +19,19 @@ using Dynamo.Tests;
 using ProtoCore.DSASM;
 using ProtoCore.Mirror;
 using DSIronPythonNode;
+using Dynamo.DSEngine;
 
 namespace Dynamo.Tests.UI
 {
+    public delegate void CommandCallback(string commandTag);
+
     [TestFixture]
     public class RecordedTests : DSEvaluationUnitTest
     {
         #region Generic Set-up Routines and Data Members
 
         private System.Random randomizer = null;
+        private CommandCallback commandCallback = null;
 
         // For access within test cases.
         protected WorkspaceModel workspace = null;
@@ -47,11 +51,13 @@ namespace Dynamo.Tests.UI
             SetupDirectories();
         }
 
-        [TearDown]
-        public void Exit()
+        protected void Exit()
         {
-            this.Controller.ShutDown(true);
-            this.Controller = null;
+            if (this.Controller != null)
+            {
+                this.Controller.ShutDown(true);
+                this.Controller = null;
+            }
         }
 
         #endregion
@@ -61,13 +67,25 @@ namespace Dynamo.Tests.UI
         [Test, RequiresSTA]
         public void _SnowPeashooter()
         {
-            RunCommandsFromFile("SnowPeashooter.xml");
+            //RunCommandsFromFile("SnowPeashooter.xml");
 
-            Assert.AreEqual(1, workspace.Nodes.Count);
-            Assert.AreEqual(0, workspace.Connectors.Count);
+            //Assert.AreEqual(1, workspace.Nodes.Count);
+            //Assert.AreEqual(0, workspace.Connectors.Count);
 
-            var number = GetNode("045decd1-7454-4b85-b92e-d59d35f31ab2") as DoubleInput;
-            Assert.AreEqual("12.34", number.Value);
+            //var number = GetNode("045decd1-7454-4b85-b92e-d59d35f31ab2") as DoubleInput;
+            //Assert.AreEqual("12.34", number.Value);
+
+            Assert.Inconclusive("Porting : DoubleInput");
+        }
+
+        [Test, RequiresSTA]
+        public void TestPausePlaybackCommand()
+        {
+            int pauseDurationInMs = randomizer.Next(2000);
+
+            var cmdOne = new DynCmd.PausePlaybackCommand(pauseDurationInMs);
+            var cmdTwo = DuplicateAndCompare(cmdOne);
+            Assert.AreEqual(cmdOne.PauseDurationInMs, cmdTwo.PauseDurationInMs);
         }
 
         [Test, RequiresSTA]
@@ -247,6 +265,26 @@ namespace Dynamo.Tests.UI
         #region General Node Operations Test Cases
 
         [Test, RequiresSTA]
+        public void MultiPassValidationSample()
+        {
+            RunCommandsFromFile("MultiPassValidationSample.xml", false, (commandTag) =>
+            {
+                if (commandTag == "InitialRun")
+                {
+                    AssertPreviewValue("c8d1655c-f4f4-41d1-bd5b-7ad39fc04118", 10);
+                    AssertPreviewValue("0f2ef49a-eff4-445a-987b-9417b1a52cc5", 20);
+                    AssertPreviewValue("e0556feb-95d9-4043-945b-f83aed25ef02", 30);
+                }
+                else if (commandTag == "SecondRun")
+                {
+                    AssertPreviewValue("c8d1655c-f4f4-41d1-bd5b-7ad39fc04118", 2);
+                    AssertPreviewValue("0f2ef49a-eff4-445a-987b-9417b1a52cc5", 3);
+                    AssertPreviewValue("e0556feb-95d9-4043-945b-f83aed25ef02", 5);
+                }
+            });
+        }
+
+        [Test, RequiresSTA]
         public void TestModifyPythonNodes()
         {
             RunCommandsFromFile("ModifyPythonNodes.xml");
@@ -298,7 +336,8 @@ namespace Dynamo.Tests.UI
             return workspace.GetModelInternal(id);
         }
 
-        protected void RunCommandsFromFile(string commandFileName, bool autoRun = false)
+        protected void RunCommandsFromFile(string commandFileName,
+            bool autoRun = false, CommandCallback commandCallback = null)
         {
             string commandFilePath = DynamoTestUI.GetTestDirectory();
             commandFilePath = Path.Combine(commandFilePath, @"core\recorded\");
@@ -316,6 +355,8 @@ namespace Dynamo.Tests.UI
             controller.DynamoViewModel.DynamicRunEnabled = autoRun;
             DynamoController.IsTestMode = true;
 
+            RegisterCommandCallback(commandCallback);
+
             // Create the view.
             var dynamoView = new DynamoView();
             dynamoView.DataContext = controller.DynamoViewModel;
@@ -327,6 +368,36 @@ namespace Dynamo.Tests.UI
             Assert.IsNotNull(controller.DynamoModel.CurrentWorkspace);
             workspace = controller.DynamoModel.CurrentWorkspace;
             workspaceViewModel = controller.DynamoViewModel.CurrentSpaceViewModel;
+        }
+
+        private void RegisterCommandCallback(CommandCallback commandCallback)
+        {
+            if (commandCallback == null)
+                return;
+
+            if (this.commandCallback != null)
+                throw new InvalidOperationException("RunCommandsFromFile called twice");
+
+            this.commandCallback = commandCallback;
+            var automation = this.Controller.DynamoViewModel.Automation;
+            automation.PlaybackStateChanged += OnAutomationPlaybackStateChanged;
+        }
+
+        private void OnAutomationPlaybackStateChanged(object sender, PlaybackStateChangedEventArgs e)
+        {
+            if (e.OldState == AutomationSettings.State.Paused)
+            {
+                if (e.NewState == AutomationSettings.State.Playing)
+                {
+                    // Call back to the delegate registered by the test case. We
+                    // only handle command transition from Paused to Playing. Note 
+                    // that "commandCallback" is not checked against "null" value 
+                    // because "OnAutomationPlaybackStateChanged" would not have 
+                    // been called if the "commandCallback" was not registered.
+                    // 
+                    this.commandCallback(e.NewTag);
+                }
+            }
         }
 
         private CmdType DuplicateAndCompare<CmdType>(CmdType command)
@@ -804,27 +875,29 @@ namespace Dynamo.Tests.UI
         [Test, RequiresSTA]
         public void TestConvertAllNodesToCodeUndo()
         {
-            RunCommandsFromFile("TestConvertAllNodesToCodeUndo.xml");
+            //RunCommandsFromFile("TestConvertAllNodesToCodeUndo.xml");
 
-            //Check the nodes
-            var nodes = workspaceViewModel.Nodes;
-            Assert.NotNull(nodes);
-            Assert.AreEqual(4, nodes.Count);
+            ////Check the nodes
+            //var nodes = workspaceViewModel.Nodes;
+            //Assert.NotNull(nodes);
+            //Assert.AreEqual(4, nodes.Count);
 
-            //Check the connectors
-            var connectors = workspaceViewModel.Connectors;
-            Assert.NotNull(connectors);
-            Assert.AreEqual(2, connectors.Count);
+            ////Check the connectors
+            //var connectors = workspaceViewModel.Connectors;
+            //Assert.NotNull(connectors);
+            //Assert.AreEqual(2, connectors.Count);
 
-            //Check that there is no CBN
-            var cbn = GetNode("37fade4a-e7ad-43ae-8b6f-27dacb17c1c5") as CodeBlockNodeModel;
-            Assert.AreEqual(null, cbn);
+            ////Check that there is no CBN
+            //var cbn = GetNode("37fade4a-e7ad-43ae-8b6f-27dacb17c1c5") as CodeBlockNodeModel;
+            //Assert.AreEqual(null, cbn);
 
-            var addNode = workspaceViewModel._model.Nodes.Where(x => x is DSFunction).First() as DSFunction;
-            Assert.NotNull(addNode);
+            //var addNode = workspaceViewModel._model.Nodes.Where(x => x is DSFunction).First() as DSFunction;
+            //Assert.NotNull(addNode);
 
-            var numberList = workspaceViewModel._model.Nodes.Where(x => x is DoubleInput).ToList<NodeModel>();
-            Assert.AreEqual(3, numberList.Count);
+            //var numberList = workspaceViewModel._model.Nodes.Where(x => x is DoubleInput).ToList<NodeModel>();
+            //Assert.AreEqual(3, numberList.Count);
+
+            Assert.Inconclusive("Porting : DoubleInput");
         }
 
         /// <summary>
@@ -916,14 +989,16 @@ namespace Dynamo.Tests.UI
         [Test, RequiresSTA]
         public void Defect_MAGN_159()
         {
-            // Details are available in defect http://adsk-oss.myjetbrains.com/youtrack/issue/MAGN-159
+            //// Details are available in defect http://adsk-oss.myjetbrains.com/youtrack/issue/MAGN-159
 
-            RunCommandsFromFile("Defect_MAGN_159.xml", true);
+            //RunCommandsFromFile("Defect_MAGN_159.xml", true);
 
-            Assert.AreEqual(1, workspace.Nodes.Count);
-            Assert.AreEqual(0, workspace.Connectors.Count);
+            //Assert.AreEqual(1, workspace.Nodes.Count);
+            //Assert.AreEqual(0, workspace.Connectors.Count);
 
-            var number1 = GetNode("045decd1-7454-4b85-b92e-d59d35f31ab2") as DoubleInput;
+            //var number1 = GetNode("045decd1-7454-4b85-b92e-d59d35f31ab2") as DoubleInput;
+
+            Assert.Inconclusive("Porting : DoubleInput");
         }
 
         [Test, RequiresSTA]
@@ -1613,7 +1688,7 @@ namespace Dynamo.Tests.UI
             cbn = GetNode("c553dcff-09fa-4ff9-b1fb-04c95f1ce2d8") as CodeBlockNodeModel;
             AssertValue("d", 3);
             cbn = GetNode("ed9c9950-a1dc-4487-b126-9a07d999d8a8") as CodeBlockNodeModel;
-            AssertValue("p", 1);
+            AssertValue("p", 2);
 
         }
         [Test]
@@ -1708,12 +1783,12 @@ namespace Dynamo.Tests.UI
 
             RunCommandsFromFile("Defect_MAGN_164.xml", true);
 
-            Assert.AreEqual(2, workspace.Nodes.Count);
+            Assert.AreEqual(3, workspace.Nodes.Count);
             Assert.AreEqual(0, workspace.Connectors.Count);
 
-            AssertPreviewValue("2e1e5f33-52fc-4cc9-9d4a-33e46ec64a53", 30);
+            AssertPreviewValue("428fc0eb-aacf-41ca-b4d9-d4152e945ad8", 10);
 
-            AssertPreviewValue("a4ba7320-3cb8-4524-bc8c-8688d7abc599", "Dynamo");
+            AssertPreviewValue("635bd033-03f6-4b98-b03d-a5c3c2969607", 10);
         }
 
         [Test]
@@ -1799,10 +1874,10 @@ namespace Dynamo.Tests.UI
         public void Defect_MAGN_520()
         {
             // Details are available in defect http://adsk-oss.myjetbrains.com/youtrack/issue/MAGN-520
-            RunCommandsFromFile("Defect_MAGN_520.xml");
-
+            RunCommandsFromFile("Defect_MAGN_520.xml", true);
             Assert.AreEqual(2, workspace.Nodes.Count);
-            Assert.AreEqual(0, workspace.Connectors.Count);
+            Assert.AreEqual(2, workspace.Connectors.Count);
+            AssertPreviewValue("41f52d8e-1a88-4f09-a2f1-f14e61d81f2c", 4);
         }
 
         [Test]
@@ -1818,6 +1893,8 @@ namespace Dynamo.Tests.UI
         [Test]
         public void Defect_MAGN_57()
         {
+            Assert.Inconclusive("Deprecated: Map");
+
             // Details are available in defect http://adsk-oss.myjetbrains.com/youtrack/issue/MAGN-57
             RunCommandsFromFile("Defect_MAGN_57.xml");
 
@@ -1910,53 +1987,50 @@ namespace Dynamo.Tests.UI
         [Test]
         public void TestUpdateNodeCaptions()
         {
-            RunCommandsFromFile("UpdateNodeCaptions.xml");
-            Assert.AreEqual(0, workspace.Connectors.Count);
-            Assert.AreEqual(1, workspace.Notes.Count);
-            Assert.AreEqual(2, workspace.Nodes.Count);
+            //RunCommandsFromFile("UpdateNodeCaptions.xml");
+            //Assert.AreEqual(0, workspace.Connectors.Count);
+            //Assert.AreEqual(1, workspace.Notes.Count);
+            //Assert.AreEqual(2, workspace.Nodes.Count);
 
-            var number = GetNode("0b171995-528b-480a-b203-9cee49fcec9d") as DoubleInput;
-            var strIn = GetNode("d17de86f-0665-4e22-abd4-d16360ee17d7") as StringInput;
-            var note = GetNode("6aed237b-beb6-4a24-8774-9b7e29615be1") as NoteModel;
+            //var number = GetNode("a9762506-2ab6-4b50-8166-138de5b0c704") as DoubleInput;
+            //var note = GetNode("21c66403-d102-42bd-97ae-9e7b9c0b6e7d") as NoteModel;
 
-            Assert.IsNotNull(number);
-            Assert.IsNotNull(strIn);
-            Assert.IsNotNull(note);
+            //Assert.IsNotNull(number);
+            //Assert.IsNotNull(note);
 
-            Assert.AreEqual("Caption 1", number.NickName);
-            Assert.AreEqual("Caption 2", strIn.NickName);
-            Assert.AreEqual("Caption 3", note.Text);
+            //Assert.AreEqual("Caption 1", number.NickName);
+            //Assert.AreEqual("Caption 3", note.Text);
+
+            Assert.Inconclusive("Porting : DoubleInput");
         }
 
         [Test]
         public void TestUpdateNodeContents()
         {
-            RunCommandsFromFile("UpdateNodeContents.xml");
-            Assert.AreEqual(0, workspace.Connectors.Count);
-            Assert.AreEqual(5, workspace.Nodes.Count);
+            //RunCommandsFromFile("UpdateNodeContents.xml", true);
+            //Assert.AreEqual(2, workspace.Connectors.Count);
+            //Assert.AreEqual(3, workspace.Nodes.Count);
 
-            var number = GetNode("2ba65a2e-c3dd-4d27-9d18-9bf123835fb8") as DoubleInput;
-            var slider = GetNode("2279f845-4ba9-4300-a6c3-a566cd8b4a32") as DoubleSliderInput;
-            var strIn = GetNode("d33abcb6-50fd-4d18-ac89-87adb2d28053") as StringInput;
-            var formula = GetNode("540fffbb-4f5b-4496-9231-eba5b04e388c") as Formula;
-            var sublist = GetNode("0a60f132-25a0-4b7c-85f2-3c31f39ef9da") as Sublists;
+            //var number = GetNode("31f48bb5-4bdf-4066-b343-5df0f6f4337f") as DoubleInput;
+            //var slider = GetNode("ff4d4e43-8932-4588-95ed-f41c7f322ad0") as IntegerSlider;
+            //var codeblock = GetNode("d7e88a85-d32f-416c-b449-b22f099c5471") as CodeBlockNodeModel;
 
-            Assert.IsNotNull(number);
-            Assert.IsNotNull(slider);
-            Assert.IsNotNull(strIn);
-            Assert.IsNotNull(formula);
-            Assert.IsNotNull(sublist);
+            //Assert.IsNotNull(number);
+            //Assert.IsNotNull(slider);
+            //Assert.IsNotNull(codeblock);
 
-            Assert.AreEqual("12.34", number.Value);
-            Assert.AreEqual(23.45, slider.Min, 0.000001);
-            Assert.AreEqual(34.56, slider.Value, 0.000001);
-            Assert.AreEqual(45.67, slider.Max, 0.000001);
-            Assert.AreEqual("Test String Input", strIn.Value);
-            Assert.AreEqual("d", sublist.Value);
+            //Assert.AreEqual("10", number.Value);
+            //Assert.AreEqual(0, slider.Min, 0.000001);
+            //Assert.AreEqual(70, slider.Value, 0.000001);
+            //Assert.AreEqual(100, slider.Max, 0.000001);
 
-            Assert.AreEqual("a+b+c", formula.FormulaString);
-            Assert.AreEqual(3, formula.InPorts.Count);
-            Assert.AreEqual(1, formula.OutPorts.Count);
+            //Assert.AreEqual("a+b;", codeblock.Code);
+            //Assert.AreEqual(2, codeblock.InPorts.Count);
+            //Assert.AreEqual(1, codeblock.OutPorts.Count);
+
+            //AssertPreviewValue("d7e88a85-d32f-416c-b449-b22f099c5471", 80);
+
+            Assert.Inconclusive("Porting : DoubleInput");
         }
 
         [Test]

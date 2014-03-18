@@ -5,6 +5,7 @@ using System.Text;
 using NUnit.Framework;
 using ProtoCore.DSASM.Mirror;
 using ProtoCore.Lang;
+using ProtoCore.Mirror;
 using ProtoCore.Utils;
 using ProtoFFI;
 using ProtoScript.Runners;
@@ -13,6 +14,7 @@ using System.Diagnostics;
 using Autodesk.DesignScript.Interfaces;
 using Autodesk.DesignScript.Runtime;
 using ProtoCore.DSASM;
+using System.Collections;
 
 namespace ProtoTestFx.TD
 {
@@ -320,8 +322,11 @@ namespace ProtoTestFx.TD
                 {
                     Assert.Fail(String.Format("\t{0}{1} is expected to be null, but it isn't.\n{2}", dsVariable, TestFrameWork.BuildIndicesString(indices), TestFrameWork.mErrorMessage));
                 }
+                return;
             }
-            else if (dsObject.DsasmValue.optype == ProtoCore.DSASM.AddressType.Null && expectedObject != null)
+
+            Type expectedType = expectedObject.GetType();
+            if (dsObject.DsasmValue.optype == ProtoCore.DSASM.AddressType.Null && expectedObject != null)
             {
                 Assert.Fail(String.Format("\tThe value of {0} was null, but wasn't expected to be.\n{1}", dsVariable, mErrorMessage));
                 
@@ -427,26 +432,21 @@ namespace ProtoTestFx.TD
 
                 // VerifyInternal(objs, dsObject, dsVariable, indices);
             }
-            else if (expectedObject.GetType().IsArray)
+            else if (typeof(IEnumerable).IsAssignableFrom(expectedType))
             {
-                object[] expectedArray = expectedObject as object[];
+                IEnumerable collection = expectedObject as IEnumerable;
+                int index = 0;
                 ProtoCore.DSASM.Mirror.DsasmArray dsArray = dsObject.Payload as ProtoCore.DSASM.Mirror.DsasmArray;
                 if (dsArray == null)
                 {
                     Assert.Fail(String.Format("{0}{1} is expected to be an array, but its actual value isn't an array.\n{2}", dsVariable, BuildIndicesString(indices), mErrorMessage));
                 }
-                else if (expectedArray.Count() != dsArray.members.Count())
+                foreach (var item in collection)
                 {
-                    Assert.Fail(String.Format("{0}{1} is expected to be an array of length {2}, but its actual length is {3}.\n{4}", dsVariable, BuildIndicesString(indices), expectedArray.Count(), dsArray.members.Count(), mErrorMessage));
-                }
-                else
-                {
-                    for (int i = 0; i < expectedArray.Count(); ++i)
-                    {
-                        indices.Add(i);
-                        VerifyInternal(expectedArray[i], dsArray.members[i], dsVariable, indices);
-                        indices.RemoveAt(indices.Count - 1);
-                    }
+                    indices.Add(index);
+                    VerifyInternal(item, dsArray.members[index], dsVariable, indices);
+                    indices.RemoveAt(indices.Count - 1);
+                    ++index;
                 }
             }
             else
@@ -544,7 +544,7 @@ namespace ProtoTestFx.TD
 
         public static void VerifyBuildWarning(ProtoCore.BuildData.WarningID id)
         {
-            Assert.IsTrue(testCore.BuildStatus.ContainsWarning(id), mErrorMessage);
+            Assert.IsTrue(testCore.BuildStatus.Warnings.Any(w => w.ID == id), mErrorMessage);
         }
 
         public void VerifyBuildWarningCount(int count)
@@ -559,12 +559,12 @@ namespace ProtoTestFx.TD
 
         public static void VerifyRuntimeWarning(ProtoCore.Core core, ProtoCore.RuntimeData.WarningID id)
         {
-            Assert.IsTrue(core.RuntimeStatus.ContainsWarning(id), mErrorMessage);
+            Assert.IsTrue(core.RuntimeStatus.Warnings.Any(w => w.ID == id), mErrorMessage);
         }
 
         public void VerifyRuntimeWarningCount(int count)
         {
-            Assert.IsTrue(testCore.RuntimeStatus.Warnings.Count == count, mErrorMessage);
+            Assert.IsTrue(testCore.RuntimeStatus.WarningCount == count, mErrorMessage);
         }
 
         public void VerifyProperty(string dsVariable, string propertyName, object expectedValue, int startBlock = 0)
@@ -620,5 +620,40 @@ namespace ProtoTestFx.TD
             Assert.IsFalse(string.IsNullOrEmpty(str), string.Format("\"{0}\" is null, arrayIndex = {1}", dsVariable, arrayIndex));
 
         }
+
+
+        public static void AssertValue(string varname, object value, ILiveRunner liveRunner)
+        {
+            var mirror = liveRunner.InspectNodeValue(varname);
+            MirrorData data = mirror.GetData();
+            object svValue = data.Data;
+            if (value is double)
+            {
+                Assert.AreEqual((double)svValue, Convert.ToDouble(value));
+            }
+            else if (value is int)
+            {
+                Assert.AreEqual((Int64)svValue, Convert.ToInt64(value));
+            }
+            else if (value is bool)
+            {
+                Assert.AreEqual((bool)svValue, Convert.ToBoolean(value));
+            }
+            else if (value is IEnumerable<int>)
+            {
+                Assert.IsTrue(data.IsCollection);
+                var values = (value as IEnumerable<int>).ToList().Select(v => (object)v).ToList();
+                Assert.IsTrue(mirror.GetUtils().CompareArrays(varname, values, typeof(Int64)));
+            }
+            else if (value is IEnumerable<double>)
+            {
+                Assert.IsTrue(data.IsCollection);
+                var values = (value as IEnumerable<double>).ToList().Select(v => (object)v).ToList();
+                Assert.IsTrue(mirror.GetUtils().CompareArrays(varname, values, typeof(double)));
+            }
+        }
+    
+    
+    
     }
 }

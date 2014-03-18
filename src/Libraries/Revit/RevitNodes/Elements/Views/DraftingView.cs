@@ -52,7 +52,7 @@ namespace Revit.Elements.Views
         /// </summary>
         private DraftingView(string name)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             var vd = Document.Create.NewViewDrafting();
 
@@ -62,9 +62,9 @@ namespace Revit.Elements.Views
 
             InternalSetDraftingView(vd);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElementId);
+            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElement);
         }
 
         #endregion

@@ -1081,9 +1081,7 @@ namespace ProtoCore
             {
                 ++indexCnt;
                 dynamic array = arrayNode;
-                ProtoCore.Type lastType = new ProtoCore.Type();
-                lastType.UID = (int)PrimitiveType.kTypeVoid;
-                lastType.IsIndexable = false;
+                ProtoCore.Type lastType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeVar, 0);
                 DfsTraverse(array.Expr, ref lastType, false, graphNode, subPass, parentNode);
                 arrayNode = array.Type;
             }
@@ -2024,7 +2022,20 @@ namespace ProtoCore
                 return;
             }
 
-            dynamic iNode = node;
+            Int64 value;
+            if (node is AST.ImperativeAST.IntNode)
+            {
+                value = (node as AST.ImperativeAST.IntNode).Value;
+            }
+            else if (node is AST.AssociativeAST.IntNode)
+            {
+                value = (node as AST.AssociativeAST.IntNode).Value;
+            }
+            else
+            {
+                throw new InvalidDataException("The input node is not a IntNode");
+            }
+
             if (!enforceTypeCheck || core.TypeSystem.IsHigherRank((int)PrimitiveType.kTypeInt, inferedType.UID))
             {
                 inferedType.UID = (int)PrimitiveType.kTypeInt;
@@ -2047,27 +2058,16 @@ namespace ProtoCore
             }
 
 
-            StackValue op = new StackValue();
-            op.optype = ProtoCore.DSASM.AddressType.Int;
-            try
-            {
-                op.opdata = System.Convert.ToInt64(iNode.value);
-                op.opdata_d = System.Convert.ToDouble(iNode.value, cultureInfo);
-            }
-            catch (System.OverflowException)
-            {
-                buildStatus.LogSemanticError("The value is too big or too small to be converted to an integer", core.CurrentDSFileName, node.line, node.col);
-            }
-
+            StackValue op = StackValue.BuildInt(value);
             if (core.Options.TempReplicationGuideEmptyFlag && emitReplicationGuide)
             {
-                EmitInstrConsole(ProtoCore.DSASM.kw.pushg, iNode.value);
-                EmitPushG(op, iNode.line, iNode.col);
+                EmitInstrConsole(ProtoCore.DSASM.kw.pushg, value.ToString());
+                EmitPushG(op, node.line, node.col);
             }
             else
             {
-                EmitInstrConsole(ProtoCore.DSASM.kw.push, iNode.value);
-                EmitPush(op, iNode.line, iNode.col);
+                EmitInstrConsole(ProtoCore.DSASM.kw.push, value.ToString());
+                EmitPush(op, node.line, node.col);
             }
 
             if (IsAssociativeArrayIndexing)
@@ -2076,7 +2076,7 @@ namespace ProtoCore
                 {
                     // Get the last dependent which is the current identifier being indexed into
                     SymbolNode literalSymbol = new SymbolNode();
-                    literalSymbol.name = iNode.value;
+                    literalSymbol.name = value.ToString();
 
                     AssociativeGraph.UpdateNode intNode = new AssociativeGraph.UpdateNode();
                     intNode.symbol = literalSymbol;
@@ -2176,7 +2176,20 @@ namespace ProtoCore
                 return;
             }
 
-            dynamic dNode = node;
+            double value;
+            if (node is AST.ImperativeAST.DoubleNode)
+            {
+                value = (node as AST.ImperativeAST.DoubleNode).Value;
+            }
+            else if (node is AST.AssociativeAST.DoubleNode)
+            {
+                value = (node as AST.AssociativeAST.DoubleNode).Value;
+            }
+            else
+            {
+                throw new InvalidDataException("The input node is not DoubleNode");
+            }
+
             if (!enforceTypeCheck || core.TypeSystem.IsHigherRank((int)PrimitiveType.kTypeDouble, inferedType.UID))
             {
                 inferedType.UID = (int)PrimitiveType.kTypeDouble;
@@ -2196,20 +2209,16 @@ namespace ProtoCore
                 }
             }
 
-            StackValue op = new StackValue();
-            op.optype = ProtoCore.DSASM.AddressType.Double;
-            op.opdata = (Int64)System.Convert.ToDouble(dNode.value);
-            op.opdata_d = System.Convert.ToDouble(dNode.value, cultureInfo);
-
+            StackValue op = StackValue.BuildDouble(value);
             if (core.Options.TempReplicationGuideEmptyFlag && emitReplicationGuide)
             {
-                EmitInstrConsole(ProtoCore.DSASM.kw.pushg, dNode.value);
-                EmitPushG(op, dNode.line, dNode.col);
+                EmitInstrConsole(ProtoCore.DSASM.kw.pushg, value.ToString());
+                EmitPushG(op, node.line, node.col);
             }
             else
             {
-                EmitInstrConsole(ProtoCore.DSASM.kw.push, dNode.value);
-                EmitPush(op, dNode.line, dNode.col);
+                EmitInstrConsole(ProtoCore.DSASM.kw.push, value.ToString());
+                EmitPush(op, node.line, node.col);
             }
 
             if (IsAssociativeArrayIndexing)
@@ -2218,7 +2227,7 @@ namespace ProtoCore
                 {
                     // Get the last dependent which is the current identifier being indexed into
                     SymbolNode literalSymbol = new SymbolNode();
-                    literalSymbol.name = dNode.value;
+                    literalSymbol.name = value.ToString();
 
                     AssociativeGraph.UpdateNode intNode = new AssociativeGraph.UpdateNode();
                     intNode.symbol = literalSymbol;
@@ -2255,7 +2264,20 @@ namespace ProtoCore
                 return;
             }
 
-            dynamic bNode = node;
+            bool value;
+            if (node is AST.ImperativeAST.BooleanNode)
+            {
+                value = (node as AST.ImperativeAST.BooleanNode).Value;
+            }
+            else if (node is AST.AssociativeAST.BooleanNode)
+            {
+                value = (node as AST.AssociativeAST.BooleanNode).Value;
+            }
+            else
+            {
+                throw new InvalidDataException("The input node is not a BooleanNode");
+            }
+
             // We need to get inferedType for boolean variable so that we can perform type check
             if (enforceTypeCheck || core.TypeSystem.IsHigherRank((int)PrimitiveType.kTypeBool, inferedType.UID))
             {
@@ -2275,17 +2297,17 @@ namespace ProtoCore
                 }
             }
 
-            StackValue op = StackValue.BuildBoolean(bNode.value.Equals("true"));
+            StackValue op = StackValue.BuildBoolean(value);
 
             if (core.Options.TempReplicationGuideEmptyFlag && emitReplicationGuide)
             {
-                EmitInstrConsole(ProtoCore.DSASM.kw.pushg, bNode.value);
-                EmitPushG(op, bNode.line, bNode.col);
+                EmitInstrConsole(ProtoCore.DSASM.kw.pushg, value.ToString());
+                EmitPushG(op, node.line, node.col);
             }
             else
             {
-                EmitInstrConsole(ProtoCore.DSASM.kw.push, bNode.value);
-                EmitPush(op, bNode.line, bNode.col);
+                EmitInstrConsole(ProtoCore.DSASM.kw.push, value.ToString());
+                EmitPush(op, node.line, node.col);
             }
         }
 
@@ -2348,9 +2370,15 @@ namespace ProtoCore
                     Validity.Assert(repGuideNode.RepGuide is ProtoCore.AST.AssociativeAST.IdentifierNode);
                     ProtoCore.AST.AssociativeAST.IdentifierNode nodeGuide = repGuideNode.RepGuide as ProtoCore.AST.AssociativeAST.IdentifierNode;
 
+                    // Emit the repguide
                     EmitInstrConsole(ProtoCore.DSASM.kw.push, nodeGuide.Value);
                     StackValue opguide = StackValue.BuildInt(System.Convert.ToInt64(nodeGuide.Value));
                     EmitPush(opguide);
+
+                    // Emit the rep guide property
+                    EmitInstrConsole(ProtoCore.DSASM.kw.push, repGuideNode.IsLongest.ToString());
+                    StackValue opGuideProperty = StackValue.BuildBoolean(repGuideNode.IsLongest);
+                    EmitPush(opGuideProperty);
                 }
 
                 if (emitNumber)
@@ -2412,7 +2440,6 @@ namespace ProtoCore
             }
 
             inferedType.UID = commonType;
-            inferedType.IsIndexable = true;
             inferedType.rank = rank;
 
             if (subPass == DSASM.AssociativeSubCompilePass.kUnboundIdentifier)
@@ -2630,9 +2657,7 @@ namespace ProtoCore
                     {
                         foreach (dynamic paramNode in rightNode.FormalArguments)
                         {
-                            ProtoCore.Type paramType = new ProtoCore.Type();
-                            paramType.UID = (int)ProtoCore.PrimitiveType.kTypeVoid;
-                            paramType.IsIndexable = false;
+                            ProtoCore.Type paramType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kTypeVar, 0);
                             DfsTraverse(paramNode, ref paramType, false, graphNode, DSASM.AssociativeSubCompilePass.kUnboundIdentifier);
                         }
                     }
@@ -2643,9 +2668,7 @@ namespace ProtoCore
 
             int depth = 0;
 
-            ProtoCore.Type leftType = new ProtoCore.Type();
-            leftType.UID = (int)PrimitiveType.kInvalidType;
-            leftType.IsIndexable = false;
+            ProtoCore.Type leftType = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kInvalidType, 0);
             bool isFirstIdent = true;
 
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB;
 using DSNodeServices;
+using Revit.GeometryConversion;
 using Revit.GeometryObjects;
 using RevitServices.Persistence;
 using RevitServices.Transactions;
@@ -53,15 +54,15 @@ namespace Revit.Elements.Views
         /// </summary>
         private SectionView( BoundingBoxXYZ bbox )
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             ViewSection vd = CreateSectionView(bbox);
 
             InternalSetSectionView(vd);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElementId);
+            ElementBinder.CleanupAndSetElementForTrace(Document, this.InternalElement);
         }
 
         #endregion
@@ -85,10 +86,10 @@ namespace Revit.Elements.Views
 
         private static ViewSection CreateSectionView(BoundingBoxXYZ bbox)
         {
-            TransactionManager.GetInstance().EnsureInTransaction(Document);
+            TransactionManager.Instance.EnsureInTransaction(Document);
 
             // (sic) From the Dynamo legacy implementation
-            var viewFam = DocumentManager.GetInstance().ElementsOfType<ViewFamilyType>()
+            var viewFam = DocumentManager.Instance.ElementsOfType<ViewFamilyType>()
                 .FirstOrDefault(x => x.ViewFamily == ViewFamily.Section);
 
             if (viewFam == null)
@@ -98,7 +99,7 @@ namespace Revit.Elements.Views
 
             var viewSection = ViewSection.CreateSection( Document, viewFam.Id, bbox);
 
-            TransactionManager.GetInstance().TransactionTaskDone();
+            TransactionManager.Instance.TransactionTaskDone();
 
             return viewSection;
 
@@ -113,14 +114,14 @@ namespace Revit.Elements.Views
         /// </summary>
         /// <param name="box"></param>
         /// <returns></returns>
-        public static SectionView ByBoundingBox(BoundingBox box)
+        public static SectionView ByBoundingBox(Autodesk.DesignScript.Geometry.BoundingBox box)
         {
             if (box == null)
             {
                 throw new ArgumentNullException("box");
             }
 
-            return new SectionView(box.InternalBoundingBoxXyz);
+            return new SectionView(box.ToRevitType());
         }
 
         #endregion

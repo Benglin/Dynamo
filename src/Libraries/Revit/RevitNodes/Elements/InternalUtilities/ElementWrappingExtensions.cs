@@ -9,7 +9,7 @@ using Revit.Elements.Views;
 
 namespace Revit.Elements
 {
-    //[Browsable(false)]
+    //[SupressImportIntoVM]
     public static class ElementWrappingExtensions
     {
         /// <summary>
@@ -104,6 +104,11 @@ namespace Revit.Elements
             return ModelCurve.FromExisting(ele, isRevitOwned);
         }
 
+        public static CurveByPoints Wrap(Autodesk.Revit.DB.CurveByPoints ele, bool isRevitOwned)
+        {
+            return CurveByPoints.FromExisting(ele, isRevitOwned);
+        }
+
         public static ModelText Wrap(Autodesk.Revit.DB.ModelText ele, bool isRevitOwned)
         {
             return ModelText.FromExisting(ele, isRevitOwned);
@@ -181,6 +186,11 @@ namespace Revit.Elements
         public static DraftingView Wrap(Autodesk.Revit.DB.ViewDrafting view, bool isRevitOwned)
         {
             return DraftingView.FromExisting(view, isRevitOwned);
+        }
+
+        public static Topography Wrap(Autodesk.Revit.DB.Architecture.TopographySurface topoSurface, bool isRevitOwned)
+        {
+            return Topography.FromExisting(topoSurface, isRevitOwned);
         }
 
         #endregion

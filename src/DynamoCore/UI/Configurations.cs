@@ -8,6 +8,9 @@ namespace Dynamo.UI
         #region Dynamo Universal Constants
         // Add 0.5 to place the point in the middle of a pixel to sharpen it
         public static readonly double PixelSharpeningConstant = 0.5;
+        public static readonly string BackupFolderName = "backup";
+        public static readonly double DoubleSliderTextBoxWidth = 55.0;
+        public static readonly double IntegerSliderTextBoxWidth = 30.0;
         #endregion
 
         #region Usage Reporting Error Message
@@ -18,6 +21,9 @@ namespace Dynamo.UI
 
         #region Canvas Configurations
         //public static readonly double Minimum
+
+        // Generic Constants
+        public static readonly double PortHeight = 20;
 
         // Grid Settings
         public static readonly int GridSpacing = 100;
@@ -58,7 +64,7 @@ namespace Dynamo.UI
 
         public static double PreviewTextFontSize = 10;
         public static FontWeight PreviewTextFontWeight = FontWeights.Light;
-        public static SolidColorBrush PreviewTextForeground = new SolidColorBrush(Color.FromRgb(153, 153, 153));
+        public static SolidColorBrush PreviewTextForeground = new SolidColorBrush(Color.FromRgb(51, 51, 51));
         public static TextWrapping PreviewContentWrapping = TextWrapping.Wrap;
         public static Thickness PreviewContentMargin = new Thickness(5, 12, 5, 5);
 
@@ -124,7 +130,7 @@ namespace Dynamo.UI
 
         public static double NodeTooltipTextFontSize = 11;
         public static FontWeight NodeTooltipTextFontWeight = FontWeights.Light;
-        public static SolidColorBrush NodeTooltipTextForeground = new SolidColorBrush(Color.FromRgb(98, 140, 153));
+        public static SolidColorBrush NodeTooltipTextForeground = new SolidColorBrush(Color.FromRgb(51, 51, 51));
         public static TextWrapping NodeTooltipContentWrapping = TextWrapping.Wrap;
 
         public static Thickness NodeTooltipContentMarginLeft = new Thickness(11, 5, 5, 5);
@@ -166,6 +172,7 @@ namespace Dynamo.UI
 
         public static readonly int CBNMaxPortNameLength = 24;
         public static readonly int CBNMaxTextBoxWidth = 500;
+        public static readonly double CBNFontSize = 14.67;
 
         #endregion
 
@@ -174,6 +181,7 @@ namespace Dynamo.UI
 
     public class ResourceNames
     {
+        public static readonly string FontResourceUri = "./UI/Fonts/#Open Sans";
         public static readonly string ResourceBaseUri = "pack://application:,,,/DynamoCore;component/UI/Images/";
     }
 }

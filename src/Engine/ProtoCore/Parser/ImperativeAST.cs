@@ -110,25 +110,13 @@ namespace ProtoCore.AST.ImperativeAST
         public IdentifierNode()
         {
             ArrayDimensions = null;
-            datatype = new ProtoCore.Type
-            {
-                UID = (int)PrimitiveType.kInvalidType,
-                rank = 0,
-                IsIndexable = false,
-                Name = null
-            };
+            datatype = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kInvalidType, 0);
         }
 
         public IdentifierNode(string identName = null)
         {
             ArrayDimensions = null;
-            datatype = new ProtoCore.Type
-            {
-                UID = (int)PrimitiveType.kInvalidType,
-                rank = 0,
-                IsIndexable = false,
-                Name = null
-            };
+            datatype = TypeSystem.BuildPrimitiveTypeObject(PrimitiveType.kInvalidType, 0);
             Value = Name = identName;
         }
 
@@ -139,7 +127,6 @@ namespace ProtoCore.AST.ImperativeAST
             {
                 UID = rhs.datatype.UID,
                 rank = rhs.datatype.rank,
-                IsIndexable = rhs.datatype.IsIndexable,
                 Name = rhs.datatype.Name
             };
 
@@ -162,64 +149,62 @@ namespace ProtoCore.AST.ImperativeAST
 
     public class IntNode : ImperativeNode
     {
-        public string value { get; set; }
-        public IntNode()
-        {
-            value = string.Empty;
-        }
+        public Int64 Value { get; set; }
 
-        public IntNode(string val = null)
+        public IntNode(Int64 value)
         {
-            value = val;
+            Value = value;
         }
 
         public IntNode(IntNode rhs)
             : base(rhs)
         {
-            value = rhs.value;
+            Value = rhs.Value;
         }
 
         public override string ToString()
         {
-            return value;
+            return Value.ToString();
         }
     }
 
     public class DoubleNode : ImperativeNode
     {
-        public string value { get; set; }
-        public DoubleNode()
+        public double Value { get; set; }
+
+        public DoubleNode(double value)
         {
-            value = string.Empty;
+            Value = value;
         }
-        public DoubleNode(DoubleNode rhs)
-            : base(rhs)
+
+        public DoubleNode(DoubleNode rhs) : base(rhs)
         {
-            value = rhs.value;
+            Value = rhs.Value;
         }
 
         public override string ToString()
         {
-            return value;
+            return Value.ToString();
         }
     }
 
     public class BooleanNode : ImperativeNode
     {
-        public string value { get; set; }
-        public BooleanNode()
+        public bool Value { get; set; }
+
+        public BooleanNode(bool value)
         {
-            value = string.Empty;
+            Value = value;
         }
-        public BooleanNode(BooleanNode rhs)
-            : base(rhs)
+
+        public BooleanNode(BooleanNode rhs) : base(rhs)
         {
-            value = rhs.value;
+            Value = rhs.Value;
         }
 
         public override string ToString()
         {
-            return value;
+            return Value.ToString();
         }
     }
 
