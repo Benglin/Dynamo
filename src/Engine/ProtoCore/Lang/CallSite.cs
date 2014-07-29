@@ -162,6 +162,46 @@ namespace ProtoCore
 
             public List<SingleRunTraceData> NestedData;
             public ISerializable Data;
+
+            public bool Contains(ISerializable data)
+            {
+                if (HasData)
+                {
+                    if (Data.Equals(data))
+                    {
+                        return true;
+                    }
+                }
+
+                if (HasNestedData)
+                {
+                    foreach (SingleRunTraceData srtd in NestedData)
+                    {
+                        if (srtd.Contains(data))
+                            return true;
+                    }
+                }
+
+                return false;
+            }
+
+
+            public List<ISerializable> RecursiveGetNestedData()
+            {
+                List<ISerializable> ret = new List<ISerializable>();
+
+                if (HasData)
+                    ret.Add(Data);
+
+                if (HasNestedData)
+                {
+                    foreach (SingleRunTraceData srtd in NestedData)
+                        ret.AddRange(srtd.RecursiveGetNestedData());
+                }
+
+                return ret;
+            }
+
         }
 
         /// <summary>
@@ -1621,8 +1661,12 @@ namespace ProtoCore
                                           List<StackValue> formalParameters, StackFrame stackFrame, Core core,
                                           FunctionGroup funcGroup, SingleRunTraceData previousTraceData, SingleRunTraceData newTraceData)
         {
-            //@PERF: Todo add a fast path here for the case where we have a homogenious array so we can directly dispatch
+            if(core.CancellationPending)
+            {
+                throw new ExecutionCancelledException();               
+            }
 
+            //@PERF: Todo add a fast path here for the case where we have a homogenious array so we can directly dispatch
             FunctionEndPoint finalFep = SelectFinalFep(c, functionEndPoint, formalParameters, stackFrame, core);
 
             if (functionEndPoint == null)
