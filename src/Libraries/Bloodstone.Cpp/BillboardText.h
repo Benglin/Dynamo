@@ -11,8 +11,9 @@
 #include <map>
 
 #define MAKEGLYPHID(fid, c) (((fid & 0x0000ffff) << 16) | (c & 0x0000ffff))
+#define GETFONTID(gid)      ((FontId)((gid & 0xffff0000) >> 16))
 #define ADDFLAG(c, n)       (c = ((RegenerationHints)(c | n)))
-#define HASFLAG(c, f)       ((c & f) != RegenerationHints::None)
+#define HASFLAG(c, f)       ((c & f) != 0)
 
 namespace Dynamo { namespace Bloodstone {
 
@@ -84,6 +85,7 @@ namespace Dynamo { namespace Bloodstone {
         const GlyphBitmap* GenerateBitmap();
 
     protected:
+        virtual GlyphMetrics MeasureGlyphCore(GlyphId glyphId) = 0;
         virtual GlyphBitmap* GenerateBitmapCore() const = 0;
 
     protected:
@@ -101,9 +103,20 @@ namespace Dynamo { namespace Bloodstone {
     {
     public:
         TextBitmapGeneratorWin32();
+        ~TextBitmapGeneratorWin32();
 
     protected:
+        virtual GlyphMetrics MeasureGlyphCore(GlyphId glyphId);
         virtual GlyphBitmap* GenerateBitmapCore() const;
+
+    private:
+        void PlaceGlyphs(bool measurementPass);
+        HFONT EnsureFontResourceLoaded(GlyphId glyphId);
+
+        HDC mDeviceContext;
+        HFONT mSelectedFont;
+        HBITMAP mPrevBitmap, mCurrBitmap;
+        std::map<std::wstring, HFONT> mFontResources;
     };
 
 #endif

@@ -85,13 +85,100 @@ const GlyphBitmap* TextBitmapGenerator::GenerateBitmap()
 // TextBitmapGeneratorWin32
 // ================================================================================
 
-TextBitmapGeneratorWin32::TextBitmapGeneratorWin32()
+TextBitmapGeneratorWin32::TextBitmapGeneratorWin32() : 
+    mDeviceContext(nullptr),
+    mSelectedFont(nullptr),
+    mPrevBitmap(nullptr),
+    mCurrBitmap(nullptr)
 {
+}
+
+TextBitmapGeneratorWin32::~TextBitmapGeneratorWin32()
+{
+    if (mSelectedFont != nullptr) {
+        ::SelectObject(mDeviceContext, mSelectedFont);
+        mSelectedFont = nullptr;
+    }
+
+    auto iterator = mFontResources.begin();
+    for (; iterator != mFontResources.end(); ++ iterator)
+        ::DeleteObject(iterator->second);
+
+    mFontResources.clear();
+
+    if (mPrevBitmap != nullptr) {
+        ::SelectObject(mDeviceContext, mPrevBitmap);
+        mPrevBitmap = nullptr;
+    }
+
+    if (mCurrBitmap != nullptr) {
+        ::DeleteObject(mCurrBitmap);
+        mCurrBitmap = nullptr;
+    }
+
+    if (mDeviceContext != nullptr) {
+        ::DeleteDC(mDeviceContext);
+        mDeviceContext = nullptr;
+    }
+}
+
+GlyphMetrics TextBitmapGeneratorWin32::MeasureGlyphCore(GlyphId glyphId)
+{
+    auto fontForGlyph = EnsureFontResourceLoaded(glyphId);
+    if (fontForGlyph != mSelectedFont) {
+        ::SelectObject(mDeviceContext, fontForGlyph);
+        mSelectedFont = fontForGlyph;
+    }
+
+    TEXTMETRIC textMetrics = { 0 };
+    ::GetTextMetrics(mDeviceContext, &textMetrics);
+    const auto height = textMetrics.tmAscent
+        + textMetrics.tmDescent
+        - textMetrics.tmInternalLeading;
+
+    GlyphMetrics glyphMetrics = { 0 };
+    return glyphMetrics;
 }
 
 GlyphBitmap* TextBitmapGeneratorWin32::GenerateBitmapCore() const
 {
     return nullptr;
+}
+
+void TextBitmapGeneratorWin32::PlaceGlyphs(bool measurementPass)
+{
+}
+
+HFONT TextBitmapGeneratorWin32::EnsureFontResourceLoaded(GlyphId glyphId)
+{
+    auto fontId = GETFONTID(glyphId);
+    auto fontSpecs = mFontSpecs.find(fontId)->second;
+
+    auto iterator = mFontResources.find(fontSpecs.face);
+    if (iterator != mFontResources.end())
+        return iterator->second;
+
+    LOGFONT lf = { 0 };
+    lf.lfHeight = fontSpecs.height;
+    lf.lfWeight = FW_NORMAL;
+
+    if (HASFLAG(fontSpecs.flags, FontFlags::Bold))
+        lf.lfWeight = FW_BOLD;
+    else if (HASFLAG(fontSpecs.flags, FontFlags::Thin))
+        lf.lfWeight = FW_THIN;
+
+    if (HASFLAG(fontSpecs.flags, FontFlags::Italic))
+        lf.lfItalic = TRUE;
+    if (HASFLAG(fontSpecs.flags, FontFlags::Underline))
+        lf.lfUnderline = TRUE;
+    if (HASFLAG(fontSpecs.flags, FontFlags::StrikeOut))
+        lf.lfStrikeOut = TRUE;
+
+    wcscpy_s(lf.lfFaceName, fontSpecs.face.c_str());
+    auto hfont = ::CreateFontIndirect(&lf);
+    std::pair<std::wstring, HFONT> pair(fontSpecs.face, hfont);
+    mFontResources.insert(pair);
+    return pair.second;
 }
 
 TextBitmapGenerator* CreateTextBitmapGenerator(void)
