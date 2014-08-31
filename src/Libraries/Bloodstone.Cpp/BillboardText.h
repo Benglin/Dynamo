@@ -68,13 +68,14 @@ namespace Dynamo { namespace Bloodstone {
     class GlyphBitmap
     {
     public:
+        GlyphBitmap(int width, int height, const unsigned char* pBitmapData);
         int Width() const;
         int Height() const;
-        unsigned char* Data() const;
+        const unsigned char* Data() const;
 
     private:
         int mPixelWidth, mPixelHeight;
-        unsigned char* mpBitmapData;
+        const unsigned char* mpBitmapData;
     };
 
     struct GlyphComparer : public std::binary_function<GlyphId, GlyphId, bool>
@@ -125,12 +126,15 @@ namespace Dynamo { namespace Bloodstone {
 
     private:
         void PlaceGlyphs(bool measurementPass);
+        void CreateBitmap(int width, int height);
         HFONT EnsureFontResourceLoaded(GlyphId glyphId);
 
         HDC mDeviceContext;
         HFONT mSelectedFont;
         HBITMAP mPrevBitmap, mCurrBitmap;
         std::map<std::wstring, HFONT> mFontResources;
+
+        GlyphBitmap* mpGlyphBitmap;
     };
 
 #endif

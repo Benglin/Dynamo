@@ -8,19 +8,24 @@ using namespace Dynamo::Bloodstone;
 // GlyphBitmap
 // ================================================================================
 
+GlyphBitmap::GlyphBitmap(int width, int height, const unsigned char* pBitmapData) : 
+    mPixelWidth(width), mPixelHeight(height), mpBitmapData(pBitmapData)
+{
+}
+
 int GlyphBitmap::Width() const
 {
-    return 0;
+    return mPixelWidth;
 }
 
 int GlyphBitmap::Height() const
 {
-    return 0;
+    return mPixelHeight;
 }
 
-unsigned char* GlyphBitmap::Data() const
+const unsigned char* GlyphBitmap::Data() const
 {
-    return nullptr;
+    return mpBitmapData;
 }
 
 // ================================================================================
@@ -132,13 +137,18 @@ TextBitmapGeneratorWin32::TextBitmapGeneratorWin32() :
     mDeviceContext(nullptr),
     mSelectedFont(nullptr),
     mPrevBitmap(nullptr),
-    mCurrBitmap(nullptr)
+    mCurrBitmap(nullptr),
+    mpGlyphBitmap(nullptr)
 {
     mDeviceContext = ::CreateCompatibleDC(nullptr);
+    CreateBitmap(256, 256);
 }
 
 TextBitmapGeneratorWin32::~TextBitmapGeneratorWin32()
 {
+    delete mpGlyphBitmap;   // No null check required.
+    mpGlyphBitmap = nullptr;
+
     if (mSelectedFont != nullptr) {
         ::SelectObject(mDeviceContext, mSelectedFont);
         mSelectedFont = nullptr;
@@ -196,11 +206,38 @@ GlyphMetrics TextBitmapGeneratorWin32::MeasureGlyphCore(GlyphId glyphId)
 
 GlyphBitmap* TextBitmapGeneratorWin32::GenerateBitmapCore() const
 {
-    return nullptr;
+    return mpGlyphBitmap;
 }
 
 void TextBitmapGeneratorWin32::PlaceGlyphs(bool measurementPass)
 {
+}
+
+void TextBitmapGeneratorWin32::CreateBitmap(int width, int height)
+{
+    // Destroy existing, if any.
+    if (mCurrBitmap != nullptr) {
+        SelectObject(mDeviceContext, mPrevBitmap);
+        DeleteObject(mCurrBitmap);
+        mCurrBitmap = nullptr;
+    }
+
+    BITMAPINFO bitmapInfo = { 0 };
+    bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bitmapInfo.bmiHeader.biWidth = width;
+    bitmapInfo.bmiHeader.biHeight = height;
+    bitmapInfo.bmiHeader.biPlanes = 1;
+    bitmapInfo.bmiHeader.biBitCount = 32;
+    bitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+    unsigned char* pBitmapBits = nullptr;
+    mCurrBitmap = CreateDIBSection(mDeviceContext, &bitmapInfo,
+        DIB_RGB_COLORS, ((void **) &pBitmapBits), nullptr, 0);
+
+    mPrevBitmap = ((HBITMAP) ::SelectObject(mDeviceContext, mCurrBitmap));
+
+    delete mpGlyphBitmap;
+    mpGlyphBitmap = new GlyphBitmap(width, height, pBitmapBits);
 }
 
 HFONT TextBitmapGeneratorWin32::EnsureFontResourceLoaded(GlyphId glyphId)
