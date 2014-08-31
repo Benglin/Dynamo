@@ -12,6 +12,7 @@
 
 #define MAKEGLYPHID(fid, c) (((fid & 0x0000ffff) << 16) | (c & 0x0000ffff))
 #define GETFONTID(gid)      ((FontId)((gid & 0xffff0000) >> 16))
+#define GETCHARACTER(gid)   ((wchar_t)(gid & 0x0000ffff))
 #define ADDFLAG(c, n)       (c = ((RegenerationHints)(c | n)))
 #define HASFLAG(c, f)       ((c & f) != 0)
 
@@ -54,10 +55,10 @@ namespace Dynamo { namespace Bloodstone {
 
     struct GlyphMetrics
     {
-        int innerWidth;
-        int innerHeight;
-        int outerWidth;
-        int outerHeight;
+        float characterWidth;
+        float characterHeight;
+        float extendedWidth;
+        float extendedHeight;
         float texCoords[4];
         float advance;
     };
@@ -95,6 +96,8 @@ namespace Dynamo { namespace Bloodstone {
         std::vector<GlyphId> mGlyphsToCache;
         std::map<FontId, FontSpecs> mFontSpecs;
         std::map<GlyphId, GlyphMetrics> mCachedGlyphs;
+
+        const static float Margin;
     };
 
 #ifdef _WIN32

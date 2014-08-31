@@ -27,6 +27,9 @@ unsigned char* GlyphBitmap::Data() const
 // TextBitmapGenerator
 // ================================================================================
 
+// Padding of 2 pixels on each side of a character.
+const float TextBitmapGenerator::Margin = 2.0f;
+
 TextBitmapGenerator::TextBitmapGenerator() :
     mContentUpdated(false),
     mCurrentFontId(1024),
@@ -73,6 +76,17 @@ const GlyphBitmap* TextBitmapGenerator::GenerateBitmap()
 {
     if (mContentUpdated == false)
         return mpGlyphBitmap;
+
+    auto iterator = mGlyphsToCache.begin();
+    for (; iterator != mGlyphsToCache.end(); ++iterator)
+    {
+        auto glyphId = *iterator;
+        auto metrics = MeasureGlyphCore(glyphId);
+        std::pair<GlyphId, GlyphMetrics> pair(glyphId, metrics);
+        mCachedGlyphs.insert(pair);
+    }
+
+    mGlyphsToCache.clear(); // Done caching all glyphs.
 
     mContentUpdated = false;
     mpGlyphBitmap = this->GenerateBitmapCore();
@@ -132,11 +146,21 @@ GlyphMetrics TextBitmapGeneratorWin32::MeasureGlyphCore(GlyphId glyphId)
 
     TEXTMETRIC textMetrics = { 0 };
     ::GetTextMetrics(mDeviceContext, &textMetrics);
-    const auto height = textMetrics.tmAscent
-        + textMetrics.tmDescent
-        - textMetrics.tmInternalLeading;
+    const auto height = textMetrics.tmHeight - textMetrics.tmInternalLeading;
+
+    const auto c = GETCHARACTER(glyphId);
+    ABCFLOAT widths = { 0 };
+    ::GetCharABCWidthsFloat(mDeviceContext, c, c, &widths);
 
     GlyphMetrics glyphMetrics = { 0 };
+    glyphMetrics.characterWidth = widths.abcfB;
+    glyphMetrics.characterHeight = ((float) height);
+    glyphMetrics.advance = widths.abcfA + widths.abcfB + widths.abcfC;
+
+    // Add extra padding around the character.
+    const auto margins = TextBitmapGenerator::Margin * 2.0f;
+    glyphMetrics.extendedWidth = glyphMetrics.characterWidth + margins;
+    glyphMetrics.extendedHeight = glyphMetrics.characterHeight + margins;
     return glyphMetrics;
 }
 
