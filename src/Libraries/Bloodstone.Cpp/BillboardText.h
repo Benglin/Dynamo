@@ -18,6 +18,8 @@
 
 namespace Dynamo { namespace Bloodstone {
 
+    class TextBitmapGenerator; // Forward declaration.
+
     typedef unsigned int    TextId;
     typedef unsigned short  FontId;
     typedef unsigned int    GlyphId;
@@ -75,6 +77,13 @@ namespace Dynamo { namespace Bloodstone {
         unsigned char* mpBitmapData;
     };
 
+    struct GlyphComparer : public std::binary_function<GlyphId, GlyphId, bool>
+    {
+        GlyphComparer() {} // Default constructor, used by STL.
+        GlyphComparer(TextBitmapGenerator* pTextBitmapGenerator);
+        bool operator()(GlyphId idOne, GlyphId idTwo);
+    };
+
     class TextBitmapGenerator
     {
     public:
@@ -83,21 +92,23 @@ namespace Dynamo { namespace Bloodstone {
 
         FontId CacheFont(const FontSpecs& fontSpecs);
         void CacheGlyphs(const std::vector<GlyphId>& glyphs);
+        const FontSpecs& GetFontSpecs(FontId fontId) const;
         const GlyphBitmap* GenerateBitmap();
 
     protected:
         virtual GlyphMetrics MeasureGlyphCore(GlyphId glyphId) = 0;
         virtual GlyphBitmap* GenerateBitmapCore() const = 0;
 
-    protected:
+        const static float Margin;
+
+    private:
         bool mContentUpdated;
         FontId mCurrentFontId;
         GlyphBitmap* mpGlyphBitmap;
+        GlyphComparer mGlyphComparer;
         std::vector<GlyphId> mGlyphsToCache;
         std::map<FontId, FontSpecs> mFontSpecs;
-        std::map<GlyphId, GlyphMetrics> mCachedGlyphs;
-
-        const static float Margin;
+        std::map<GlyphId, GlyphMetrics, GlyphComparer>* mpCachedGlyphs;
     };
 
 #ifdef _WIN32

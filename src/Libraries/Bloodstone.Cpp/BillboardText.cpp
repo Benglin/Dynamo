@@ -24,6 +24,21 @@ unsigned char* GlyphBitmap::Data() const
 }
 
 // ================================================================================
+// GlyphComparer
+// ================================================================================
+
+GlyphComparer::GlyphComparer(TextBitmapGenerator* pTextBitmapGenerator)
+{
+}
+
+bool GlyphComparer::operator()(GlyphId idOne, GlyphId idTwo)
+{
+    // This method sorts all cached glyphs based on their 
+    // font height, larger fonts go before the smaller ones.
+    return idOne < idTwo;
+}
+
+// ================================================================================
 // TextBitmapGenerator
 // ================================================================================
 
@@ -33,12 +48,19 @@ const float TextBitmapGenerator::Margin = 2.0f;
 TextBitmapGenerator::TextBitmapGenerator() :
     mContentUpdated(false),
     mCurrentFontId(1024),
-    mpGlyphBitmap(nullptr)
+    mpGlyphBitmap(nullptr),
+    mpCachedGlyphs(nullptr),
+    mGlyphComparer(this)
 {
+    mpCachedGlyphs = new std::map<GlyphId, GlyphMetrics, GlyphComparer>(mGlyphComparer);
 }
 
 TextBitmapGenerator::~TextBitmapGenerator()
 {
+    if (mpCachedGlyphs != nullptr) {
+        delete mpCachedGlyphs;
+        mpCachedGlyphs = nullptr;
+    }
 }
 
 FontId TextBitmapGenerator::CacheFont(const FontSpecs& fontSpecs)
@@ -64,12 +86,19 @@ void TextBitmapGenerator::CacheGlyphs(const std::vector<GlyphId>& glyphs)
     for (; iterator != glyphs.end(); ++iterator)
     {
         // If glyph is not currently cached, add to pending list.
-        if (mCachedGlyphs.find(*iterator) != mCachedGlyphs.end())
+        if (mpCachedGlyphs->find(*iterator) != mpCachedGlyphs->end())
             continue;
 
         mContentUpdated = true;
         mGlyphsToCache.push_back(*iterator);
     }
+}
+
+const FontSpecs& TextBitmapGenerator::GetFontSpecs(FontId fontId) const
+{
+    // There is no way to have a FontId without a corresponding 
+    // entry in the mFontSpecs map, so this is safe access.
+    return (mFontSpecs.find(fontId))->second;
 }
 
 const GlyphBitmap* TextBitmapGenerator::GenerateBitmap()
@@ -83,7 +112,7 @@ const GlyphBitmap* TextBitmapGenerator::GenerateBitmap()
         auto glyphId = *iterator;
         auto metrics = MeasureGlyphCore(glyphId);
         std::pair<GlyphId, GlyphMetrics> pair(glyphId, metrics);
-        mCachedGlyphs.insert(pair);
+        mpCachedGlyphs->insert(pair);
     }
 
     mGlyphsToCache.clear(); // Done caching all glyphs.
@@ -105,6 +134,7 @@ TextBitmapGeneratorWin32::TextBitmapGeneratorWin32() :
     mPrevBitmap(nullptr),
     mCurrBitmap(nullptr)
 {
+    mDeviceContext = ::CreateCompatibleDC(nullptr);
 }
 
 TextBitmapGeneratorWin32::~TextBitmapGeneratorWin32()
@@ -175,9 +205,7 @@ void TextBitmapGeneratorWin32::PlaceGlyphs(bool measurementPass)
 
 HFONT TextBitmapGeneratorWin32::EnsureFontResourceLoaded(GlyphId glyphId)
 {
-    auto fontId = GETFONTID(glyphId);
-    auto fontSpecs = mFontSpecs.find(fontId)->second;
-
+    auto fontSpecs = GetFontSpecs(GETFONTID(glyphId));
     auto iterator = mFontResources.find(fontSpecs.face);
     if (iterator != mFontResources.end())
         return iterator->second;
