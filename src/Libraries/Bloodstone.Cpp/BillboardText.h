@@ -99,11 +99,13 @@ namespace Dynamo { namespace Bloodstone {
     protected:
         virtual GlyphMetrics MeasureGlyphCore(GlyphId glyphId) = 0;
         virtual bool AllocateBitmapCore(int width, int height) = 0;
+        virtual void RenderGlyphCore(float x, float y, GlyphId glyphId) const = 0;
         virtual const unsigned char* GetBitmapDataCore(void) const = 0;
 
         const static float Margin;
 
     private:
+        bool PlaceAllGlyphsOnBitmap(int width, int height) const;
 
         bool mContentUpdated;
         FontId mCurrentFontId;
@@ -125,11 +127,12 @@ namespace Dynamo { namespace Bloodstone {
     protected:
         virtual GlyphMetrics MeasureGlyphCore(GlyphId glyphId);
         virtual bool AllocateBitmapCore(int width, int height);
+        virtual void RenderGlyphCore(float x, float y, GlyphId glyphId) const;
         virtual const unsigned char* GetBitmapDataCore(void) const;
 
     private:
-        void PlaceGlyphs(bool measurementPass);
         void CreateBitmap(int width, int height);
+        void EnsureFontSelected(HFONT fontForGlyph);
         HFONT EnsureFontResourceLoaded(GlyphId glyphId);
 
         HDC mDeviceContext;

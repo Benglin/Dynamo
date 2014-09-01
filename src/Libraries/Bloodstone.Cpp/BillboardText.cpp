@@ -128,17 +128,62 @@ const GlyphBitmap* TextBitmapGenerator::GenerateBitmap()
     mGlyphsToCache.clear(); // Done caching all glyphs.
 
     int width = 256, height = 256; // Initial size if no bitmap was created.
-    if (mpGlyphBitmap != nullptr) {
+    if (mpGlyphBitmap == nullptr)
+        AllocateBitmapCore(width, height);
+    else
+    {
         width = mpGlyphBitmap->Width();
         height = mpGlyphBitmap->Height();
     }
 
-    // Begin placing all glyphs onto the glyph bitmap.
+    while (true) // Begin placing all glyphs onto the glyph bitmap.
+    {
+        if (PlaceAllGlyphsOnBitmap(width, height))
+            break; // Placed all glyphs, get outta here.
+
+        // Take turn to increase the width and height. If width is larger than 
+        // height, then height will be doubled; otherwise, increase the width.
+        // 
+        if (height > width)
+            width = width * 2;
+        else
+            height = height * 2;
+
+        AllocateBitmapCore(width, height);
+    }
 
     mContentUpdated = false;
     delete mpGlyphBitmap;
     mpGlyphBitmap = new GlyphBitmap(width, height, GetBitmapDataCore());
     return mpGlyphBitmap;
+}
+
+bool TextBitmapGenerator::PlaceAllGlyphsOnBitmap(int width, int height) const
+{
+    float x = 0.0f, y = 0.0f;
+    float currentLineHeight = 0.0f;
+
+    auto iterator = mpCachedGlyphs->begin();
+    for (; iterator != mpCachedGlyphs->end(); ++iterator)
+    {
+        auto gm = iterator->second; // GlyphMetrics
+        if (currentLineHeight < gm.extendedHeight)
+            currentLineHeight = gm.extendedHeight;
+
+        if (((int)(x + gm.extendedWidth)) > width) {
+            x = 0.0f;
+            y = y + currentLineHeight;
+        }
+
+        if (((int)(y + gm.extendedHeight)) > height)
+            break; // There is no space for this glyph.
+
+        // Render the glyph on the underlying bitmap.
+        RenderGlyphCore(x, y, iterator->first);
+        x = x + gm.extendedWidth;
+    }
+
+    return (iterator == mpCachedGlyphs->end()); // Placed all the glyphs?
 }
 
 #ifdef _WIN32
@@ -192,11 +237,7 @@ TextBitmapGeneratorWin32::~TextBitmapGeneratorWin32()
 
 GlyphMetrics TextBitmapGeneratorWin32::MeasureGlyphCore(GlyphId glyphId)
 {
-    auto fontForGlyph = EnsureFontResourceLoaded(glyphId);
-    if (fontForGlyph != mSelectedFont) {
-        ::SelectObject(mDeviceContext, fontForGlyph);
-        mSelectedFont = fontForGlyph;
-    }
+    EnsureFontSelected(EnsureFontResourceLoaded(glyphId));
 
     TEXTMETRIC textMetrics = { 0 };
     ::GetTextMetrics(mDeviceContext, &textMetrics);
@@ -249,13 +290,25 @@ bool TextBitmapGeneratorWin32::AllocateBitmapCore(int width, int height)
     return true;
 }
 
+void TextBitmapGeneratorWin32::RenderGlyphCore(float x, float y, GlyphId glyphId) const
+{
+    auto fontSpecs = GetFontSpecs(GETFONTID(glyphId));
+    auto iterator = mFontResources.find(fontSpecs.face);
+    auto pThis = const_cast<TextBitmapGeneratorWin32 *>(this);
+    pThis->EnsureFontSelected(iterator->second);
+}
+
 const unsigned char* TextBitmapGeneratorWin32::GetBitmapDataCore(void) const
 {
     return mpBitmapBits;
 }
 
-void TextBitmapGeneratorWin32::PlaceGlyphs(bool measurementPass)
+void TextBitmapGeneratorWin32::EnsureFontSelected(HFONT fontForGlyph)
 {
+    if (fontForGlyph != mSelectedFont) {
+        ::SelectObject(mDeviceContext, fontForGlyph);
+        mSelectedFont = fontForGlyph;
+    }
 }
 
 HFONT TextBitmapGeneratorWin32::EnsureFontResourceLoaded(GlyphId glyphId)
