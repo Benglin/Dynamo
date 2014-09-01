@@ -179,8 +179,14 @@ bool TextBitmapGenerator::PlaceAllGlyphsOnBitmap(int width, int height) const
             break; // There is no space for this glyph.
 
         // Render the glyph on the underlying bitmap.
-        RenderGlyphCore(x, y, iterator->first);
-        x = x + gm.extendedWidth;
+        RenderGlyphParams renderGlyphParams = { 0 };
+        renderGlyphParams.x = x;
+        renderGlyphParams.y = y;
+        renderGlyphParams.glyphId = iterator->first;
+        renderGlyphParams.metrics = iterator->second;
+        RenderGlyphCore(renderGlyphParams);
+
+        x = x + gm.extendedWidth; // Advance to the next character.
     }
 
     return (iterator == mpCachedGlyphs->end()); // Placed all the glyphs?
@@ -295,12 +301,17 @@ bool TextBitmapGeneratorWin32::AllocateBitmapCore(int width, int height)
     return true;
 }
 
-void TextBitmapGeneratorWin32::RenderGlyphCore(float x, float y, GlyphId glyphId) const
+void TextBitmapGeneratorWin32::RenderGlyphCore(const RenderGlyphParams& params) const
 {
-    auto fontSpecs = GetFontSpecs(GETFONTID(glyphId));
+    auto fontSpecs = GetFontSpecs(GETFONTID(params.glyphId));
     auto iterator = mFontResources.find(fontSpecs.face);
     auto pThis = const_cast<TextBitmapGeneratorWin32 *>(this);
     pThis->EnsureFontSelected(iterator->second);
+
+    const auto x = params.x + params.metrics.horzRenderOffset;
+    const auto y = params.y + params.metrics.vertRenderOffset;
+    const auto character = GETCHARACTER(params.glyphId);
+    TextOut(mDeviceContext, ((int) x), ((int) y), &character, 1);
 }
 
 const unsigned char* TextBitmapGeneratorWin32::GetBitmapDataCore(void) const
