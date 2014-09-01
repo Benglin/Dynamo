@@ -162,6 +162,8 @@ bool TextBitmapGenerator::PlaceAllGlyphsOnBitmap(int width, int height) const
 {
     float x = 0.0f, y = 0.0f;
     float currentLineHeight = 0.0f;
+    const float invWidth = 1.0f / width;
+    const float invHeight = 1.0f / height;
 
     auto iterator = mpCachedGlyphs->begin();
     for (; iterator != mpCachedGlyphs->end(); ++iterator)
@@ -173,6 +175,7 @@ bool TextBitmapGenerator::PlaceAllGlyphsOnBitmap(int width, int height) const
         if (((int)(x + gm.extendedWidth)) > width) {
             x = 0.0f;
             y = y + currentLineHeight;
+            currentLineHeight = 0.0f;
         }
 
         if (((int)(y + gm.extendedHeight)) > height)
@@ -185,6 +188,12 @@ bool TextBitmapGenerator::PlaceAllGlyphsOnBitmap(int width, int height) const
         renderGlyphParams.glyphId = iterator->first;
         renderGlyphParams.metrics = iterator->second;
         RenderGlyphCore(renderGlyphParams);
+
+        gm.texCoords[0] = x * invWidth; // Left.
+        gm.texCoords[1] = y * invHeight; // Top.
+        gm.texCoords[2] = ((x + gm.extendedWidth) * invWidth); // Right.
+        gm.texCoords[3] = ((y + gm.extendedHeight) * invHeight); // Bottom.
+        iterator->second = gm; // Update glyph metrics in the map.
 
         x = x + gm.extendedWidth; // Advance to the next character.
     }
