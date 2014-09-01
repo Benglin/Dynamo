@@ -217,6 +217,8 @@ TextBitmapGeneratorWin32::TextBitmapGeneratorWin32() :
     mBitmapHeight(0)
 {
     mDeviceContext = ::CreateCompatibleDC(nullptr);
+    ::SetBkMode(mDeviceContext, TRANSPARENT);
+    ::SetTextColor(mDeviceContext, RGB(0xff, 0xff, 0xff));
 }
 
 TextBitmapGeneratorWin32::~TextBitmapGeneratorWin32()
@@ -270,6 +272,7 @@ GlyphMetrics TextBitmapGeneratorWin32::MeasureGlyphCore(GlyphId glyphId)
     // Offset for the actual glyph rendering w.r.t. top/left corner.
     glyphMetrics.horzRenderOffset = TextBitmapGenerator::Margin;
     glyphMetrics.vertRenderOffset = TextBitmapGenerator::Margin;
+    glyphMetrics.horzRenderOffset -= ((float) widths.abcfA);
     glyphMetrics.vertRenderOffset -= ((float) textMetrics.tmInternalLeading);
 
     // Add extra padding around the character.
@@ -346,6 +349,8 @@ HFONT TextBitmapGeneratorWin32::EnsureFontResourceLoaded(GlyphId glyphId)
     LOGFONT lf = { 0 };
     lf.lfHeight = fontSpecs.height;
     lf.lfWeight = FW_NORMAL;
+    lf.lfCharSet = DEFAULT_CHARSET;
+    lf.lfQuality = CLEARTYPE_QUALITY;
 
     if (HASFLAG(fontSpecs.flags, FontFlags::Bold))
         lf.lfWeight = FW_BOLD;
