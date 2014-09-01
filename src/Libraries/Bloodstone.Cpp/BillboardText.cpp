@@ -252,6 +252,11 @@ GlyphMetrics TextBitmapGeneratorWin32::MeasureGlyphCore(GlyphId glyphId)
     glyphMetrics.characterHeight = ((float) height);
     glyphMetrics.advance = widths.abcfA + widths.abcfB + widths.abcfC;
 
+    // Offset for the actual glyph rendering w.r.t. top/left corner.
+    glyphMetrics.horzRenderOffset = TextBitmapGenerator::Margin;
+    glyphMetrics.vertRenderOffset = TextBitmapGenerator::Margin;
+    glyphMetrics.vertRenderOffset -= ((float) textMetrics.tmInternalLeading);
+
     // Add extra padding around the character.
     const auto margins = TextBitmapGenerator::Margin * 2.0f;
     glyphMetrics.extendedWidth = glyphMetrics.characterWidth + margins;

@@ -61,6 +61,8 @@ namespace Dynamo { namespace Bloodstone {
         float characterHeight;
         float extendedWidth;
         float extendedHeight;
+        float horzRenderOffset;
+        float vertRenderOffset;
         float texCoords[4];
         float advance;
     };
