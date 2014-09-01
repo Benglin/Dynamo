@@ -62,6 +62,11 @@ TextBitmapGenerator::TextBitmapGenerator() :
 
 TextBitmapGenerator::~TextBitmapGenerator()
 {
+    if (mpGlyphBitmap != nullptr) {
+        delete mpGlyphBitmap;
+        mpGlyphBitmap = nullptr;
+    }
+
     if (mpCachedGlyphs != nullptr) {
         delete mpCachedGlyphs;
         mpCachedGlyphs = nullptr;
@@ -122,8 +127,17 @@ const GlyphBitmap* TextBitmapGenerator::GenerateBitmap()
 
     mGlyphsToCache.clear(); // Done caching all glyphs.
 
+    int width = 256, height = 256; // Initial size if no bitmap was created.
+    if (mpGlyphBitmap != nullptr) {
+        width = mpGlyphBitmap->Width();
+        height = mpGlyphBitmap->Height();
+    }
+
+    // Begin placing all glyphs onto the glyph bitmap.
+
     mContentUpdated = false;
-    mpGlyphBitmap = this->GenerateBitmapCore();
+    delete mpGlyphBitmap;
+    mpGlyphBitmap = new GlyphBitmap(width, height, GetBitmapDataCore());
     return mpGlyphBitmap;
 }
 
@@ -138,16 +152,16 @@ TextBitmapGeneratorWin32::TextBitmapGeneratorWin32() :
     mSelectedFont(nullptr),
     mPrevBitmap(nullptr),
     mCurrBitmap(nullptr),
-    mpGlyphBitmap(nullptr)
+    mpBitmapBits(nullptr),
+    mBitmapWidth(0),
+    mBitmapHeight(0)
 {
     mDeviceContext = ::CreateCompatibleDC(nullptr);
-    CreateBitmap(256, 256);
 }
 
 TextBitmapGeneratorWin32::~TextBitmapGeneratorWin32()
 {
-    delete mpGlyphBitmap;   // No null check required.
-    mpGlyphBitmap = nullptr;
+    mpBitmapBits = nullptr; // Buffer owned by mCurrBitmap.
 
     if (mSelectedFont != nullptr) {
         ::SelectObject(mDeviceContext, mSelectedFont);
@@ -204,17 +218,14 @@ GlyphMetrics TextBitmapGeneratorWin32::MeasureGlyphCore(GlyphId glyphId)
     return glyphMetrics;
 }
 
-GlyphBitmap* TextBitmapGeneratorWin32::GenerateBitmapCore() const
+bool TextBitmapGeneratorWin32::AllocateBitmapCore(int width, int height)
 {
-    return mpGlyphBitmap;
-}
+    if (width == mBitmapWidth && (height == mBitmapHeight))
+        return true; // Requested to create bitmap of same size.
 
-void TextBitmapGeneratorWin32::PlaceGlyphs(bool measurementPass)
-{
-}
+    mBitmapWidth = width;
+    mBitmapHeight = height;
 
-void TextBitmapGeneratorWin32::CreateBitmap(int width, int height)
-{
     // Destroy existing, if any.
     if (mCurrBitmap != nullptr) {
         SelectObject(mDeviceContext, mPrevBitmap);
@@ -224,20 +235,27 @@ void TextBitmapGeneratorWin32::CreateBitmap(int width, int height)
 
     BITMAPINFO bitmapInfo = { 0 };
     bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bitmapInfo.bmiHeader.biWidth = width;
-    bitmapInfo.bmiHeader.biHeight = height;
+    bitmapInfo.bmiHeader.biWidth = mBitmapWidth;
+    bitmapInfo.bmiHeader.biHeight = mBitmapHeight;
     bitmapInfo.bmiHeader.biPlanes = 1;
     bitmapInfo.bmiHeader.biBitCount = 32;
     bitmapInfo.bmiHeader.biCompression = BI_RGB;
 
-    unsigned char* pBitmapBits = nullptr;
+    mpBitmapBits = nullptr;
     mCurrBitmap = CreateDIBSection(mDeviceContext, &bitmapInfo,
-        DIB_RGB_COLORS, ((void **) &pBitmapBits), nullptr, 0);
+        DIB_RGB_COLORS, ((void **) &mpBitmapBits), nullptr, 0);
 
     mPrevBitmap = ((HBITMAP) ::SelectObject(mDeviceContext, mCurrBitmap));
+    return true;
+}
 
-    delete mpGlyphBitmap;
-    mpGlyphBitmap = new GlyphBitmap(width, height, pBitmapBits);
+const unsigned char* TextBitmapGeneratorWin32::GetBitmapDataCore(void) const
+{
+    return mpBitmapBits;
+}
+
+void TextBitmapGeneratorWin32::PlaceGlyphs(bool measurementPass)
+{
 }
 
 HFONT TextBitmapGeneratorWin32::EnsureFontResourceLoaded(GlyphId glyphId)

@@ -98,11 +98,13 @@ namespace Dynamo { namespace Bloodstone {
 
     protected:
         virtual GlyphMetrics MeasureGlyphCore(GlyphId glyphId) = 0;
-        virtual GlyphBitmap* GenerateBitmapCore() const = 0;
+        virtual bool AllocateBitmapCore(int width, int height) = 0;
+        virtual const unsigned char* GetBitmapDataCore(void) const = 0;
 
         const static float Margin;
 
     private:
+
         bool mContentUpdated;
         FontId mCurrentFontId;
         GlyphBitmap* mpGlyphBitmap;
@@ -122,7 +124,8 @@ namespace Dynamo { namespace Bloodstone {
 
     protected:
         virtual GlyphMetrics MeasureGlyphCore(GlyphId glyphId);
-        virtual GlyphBitmap* GenerateBitmapCore() const;
+        virtual bool AllocateBitmapCore(int width, int height);
+        virtual const unsigned char* GetBitmapDataCore(void) const;
 
     private:
         void PlaceGlyphs(bool measurementPass);
@@ -134,7 +137,8 @@ namespace Dynamo { namespace Bloodstone {
         HBITMAP mPrevBitmap, mCurrBitmap;
         std::map<std::wstring, HFONT> mFontResources;
 
-        GlyphBitmap* mpGlyphBitmap;
+        int mBitmapWidth, mBitmapHeight;
+        unsigned char* mpBitmapBits;
     };
 
 #endif
