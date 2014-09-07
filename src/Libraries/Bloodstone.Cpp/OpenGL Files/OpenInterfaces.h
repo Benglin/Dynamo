@@ -208,6 +208,7 @@ namespace Dynamo { namespace Bloodstone { namespace OpenGL {
         virtual IShaderProgram* CreateShaderProgramCore(ShaderName shaderName) const;
         virtual IVertexBuffer* CreateVertexBufferCore(void) const;
         virtual IBillboardVertexBuffer* CreateBillboardVertexBufferCore(void) const;
+        virtual ITexture2d* CreateTexture2dCore(const GlyphBitmap* pBitmapData) const;
         virtual void BeginRenderFrameCore(HDC deviceContext) const;
         virtual void ActivateShaderProgramCore(IShaderProgram* pShaderProgram) const;
         virtual void RenderVertexBufferCore(IVertexBuffer* pVertexBuffer) const;

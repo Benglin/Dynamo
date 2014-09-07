@@ -192,6 +192,11 @@ IBillboardVertexBuffer* GraphicsContext::CreateBillboardVertexBufferCore(void) c
     return new BillboardVertexBuffer(this);
 }
 
+ITexture2d* GraphicsContext::CreateTexture2dCore(const GlyphBitmap* pBitmapData) const
+{
+    return nullptr;
+}
+
 void GraphicsContext::BeginRenderFrameCore(HDC deviceContext) const
 {
     RECT rcClient;
