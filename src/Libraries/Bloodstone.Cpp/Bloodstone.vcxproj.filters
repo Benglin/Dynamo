@@ -95,6 +95,9 @@
     <ClCompile Include="BillboardText.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OpenGL Files\Texture.cpp">
+      <Filter>OpenGL Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources\Resource.rc">

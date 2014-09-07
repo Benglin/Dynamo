@@ -582,6 +582,20 @@ namespace Dynamo { namespace Bloodstone {
         virtual ~ITexture2d()
         {
         }
+
+        void BindToShaderProgram(IShaderProgram* pShaderProgram)
+        {
+            this->BindToShaderProgramCore(pShaderProgram);
+        }
+
+        void Activate(void) const
+        {
+            this->ActivateCore();
+        }
+
+    protected:
+        virtual void BindToShaderProgramCore(IShaderProgram* pShaderProgram) = 0;
+        virtual void ActivateCore(void) const = 0;
     };
 
     class IGraphicsContext

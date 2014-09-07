@@ -126,6 +126,7 @@
     <ClCompile Include="OpenGL Files\Constants.cpp" />
     <ClCompile Include="OpenGL Files\GraphicsContext.cpp" />
     <ClCompile Include="OpenGL Files\Shaders.cpp" />
+    <ClCompile Include="OpenGL Files\Texture.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

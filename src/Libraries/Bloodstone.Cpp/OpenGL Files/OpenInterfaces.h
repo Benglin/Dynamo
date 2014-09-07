@@ -415,6 +415,24 @@ namespace Dynamo { namespace Bloodstone { namespace OpenGL {
         GLuint mVertexBufferId;
     };
 
+    class Texture2d : public Dynamo::Bloodstone::ITexture2d
+    {
+    public:
+        Texture2d(const IGraphicsContext* pGraphicsContext);
+        ~Texture2d(void);
+        void SetBitmapData(const BitmapData* pBitmapData);
+
+    protected:
+        virtual void BindToShaderProgramCore(IShaderProgram* pShaderProgram);
+        virtual void ActivateCore(void) const;
+
+    private:
+        void AllocateTexture(int width, int height);
+
+        GLuint mTextureId;
+        GLint mTexAttribLoc;
+    };
+
 } } }
 
 #endif
