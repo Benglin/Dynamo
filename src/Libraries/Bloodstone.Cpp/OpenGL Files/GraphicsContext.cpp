@@ -192,7 +192,7 @@ IBillboardVertexBuffer* GraphicsContext::CreateBillboardVertexBufferCore(void) c
     return new BillboardVertexBuffer(this);
 }
 
-ITexture2d* GraphicsContext::CreateTexture2dCore(const GlyphBitmap* pBitmapData) const
+ITexture2d* GraphicsContext::CreateTexture2dCore(const BitmapData* pBitmapData) const
 {
     return nullptr;
 }

@@ -5,7 +5,7 @@
 namespace Dynamo { namespace Bloodstone {
 
     class IGraphicsContext; // Forward declaration.
-    class GlyphBitmap; // Forward declaration.
+    class BitmapData; // Forward declaration.
 
     class GeometryData
     {
@@ -645,7 +645,7 @@ namespace Dynamo { namespace Bloodstone {
             return this->CreateBillboardVertexBufferCore();
         }
 
-        ITexture2d* CreateTexture2d(const GlyphBitmap* pBitmapData) const
+        ITexture2d* CreateTexture2d(const BitmapData* pBitmapData) const
         {
             return this->CreateTexture2dCore(pBitmapData);
         }
@@ -694,7 +694,7 @@ namespace Dynamo { namespace Bloodstone {
 
         virtual IVertexBuffer* CreateVertexBufferCore(void) const = 0;
         virtual IBillboardVertexBuffer* CreateBillboardVertexBufferCore(void) const = 0;
-        virtual ITexture2d* CreateTexture2dCore(const GlyphBitmap* pBitmapData) const = 0;
+        virtual ITexture2d* CreateTexture2dCore(const BitmapData* pBitmapData) const = 0;
         virtual void BeginRenderFrameCore(HDC deviceContext) const = 0;
         virtual void ActivateShaderProgramCore(IShaderProgram* pShaderProgram) const = 0;
         virtual void RenderVertexBufferCore(IVertexBuffer* pVertexBuffer) const = 0;

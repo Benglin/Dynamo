@@ -5,25 +5,25 @@
 using namespace Dynamo::Bloodstone;
 
 // ================================================================================
-// GlyphBitmap
+// BitmapData
 // ================================================================================
 
-GlyphBitmap::GlyphBitmap(int width, int height, const unsigned char* pBitmapData) : 
+BitmapData::BitmapData(int width, int height, const unsigned char* pBitmapData) : 
     mPixelWidth(width), mPixelHeight(height), mpBitmapData(pBitmapData)
 {
 }
 
-int GlyphBitmap::Width() const
+int BitmapData::Width() const
 {
     return mPixelWidth;
 }
 
-int GlyphBitmap::Height() const
+int BitmapData::Height() const
 {
     return mPixelHeight;
 }
 
-const unsigned char* GlyphBitmap::Data() const
+const unsigned char* BitmapData::Data() const
 {
     return mpBitmapData;
 }
@@ -111,7 +111,7 @@ const FontSpecs& TextBitmapGenerator::GetFontSpecs(FontId fontId) const
     return (mFontSpecs.find(fontId))->second;
 }
 
-const GlyphBitmap* TextBitmapGenerator::GenerateBitmap()
+const BitmapData* TextBitmapGenerator::GenerateBitmap()
 {
     if (mContentUpdated == false)
         return mpGlyphBitmap;
@@ -154,7 +154,7 @@ const GlyphBitmap* TextBitmapGenerator::GenerateBitmap()
 
     mContentUpdated = false;
     delete mpGlyphBitmap;
-    mpGlyphBitmap = new GlyphBitmap(width, height, GetBitmapDataCore());
+    mpGlyphBitmap = new BitmapData(width, height, GetBitmapDataCore());
     return mpGlyphBitmap;
 }
 

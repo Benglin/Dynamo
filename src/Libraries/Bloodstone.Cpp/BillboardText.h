@@ -67,10 +67,10 @@ namespace Dynamo { namespace Bloodstone {
         float advance;
     };
 
-    class GlyphBitmap
+    class BitmapData
     {
     public:
-        GlyphBitmap(int width, int height, const unsigned char* pBitmapData);
+        BitmapData(int width, int height, const unsigned char* pBitmapData);
         int Width() const;
         int Height() const;
         const unsigned char* Data() const;
@@ -103,7 +103,7 @@ namespace Dynamo { namespace Bloodstone {
         FontId CacheFont(const FontSpecs& fontSpecs);
         void CacheGlyphs(const std::vector<GlyphId>& glyphs);
         const FontSpecs& GetFontSpecs(FontId fontId) const;
-        const GlyphBitmap* GenerateBitmap();
+        const BitmapData* GenerateBitmap();
 
     protected:
         virtual GlyphMetrics MeasureGlyphCore(GlyphId glyphId) = 0;
@@ -118,7 +118,7 @@ namespace Dynamo { namespace Bloodstone {
 
         bool mContentUpdated;
         FontId mCurrentFontId;
-        GlyphBitmap* mpGlyphBitmap;
+        BitmapData* mpGlyphBitmap;
         GlyphComparer mGlyphComparer;
         std::vector<GlyphId> mGlyphsToCache;
         std::map<FontId, FontSpecs> mFontSpecs;
