@@ -10,6 +10,7 @@ using namespace Dynamo::Bloodstone::OpenGL;
 INITGLPROC(PFNGLBINDTEXTUREPROC,                 glBindTexture);
 INITGLPROC(PFNGLCLEARPROC,                       glClear);
 INITGLPROC(PFNGLCLEARCOLORPROC,                  glClearColor);
+INITGLPROC(PFNGLDELETETEXTURESPROC,              glDeleteTextures);
 INITGLPROC(PFNGLDISABLEPROC,                     glDisable);
 INITGLPROC(PFNGLDRAWARRAYSPROC,                  glDrawArrays);
 INITGLPROC(PFNGLENABLEPROC,                      glEnable);

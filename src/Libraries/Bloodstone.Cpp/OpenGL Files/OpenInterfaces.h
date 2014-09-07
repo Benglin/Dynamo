@@ -47,6 +47,7 @@ namespace Dynamo { namespace Bloodstone { namespace OpenGL {
             GETGLPROC(PFNGLBINDTEXTUREPROC,                 glBindTexture);
             GETGLPROC(PFNGLCLEARPROC,                       glClear);
             GETGLPROC(PFNGLCLEARCOLORPROC,                  glClearColor);
+            GETGLPROC(PFNGLDELETETEXTURESPROC,              glDeleteTextures);
             GETGLPROC(PFNGLDISABLEPROC,                     glDisable);
             GETGLPROC(PFNGLDRAWARRAYSPROC,                  glDrawArrays);
             GETGLPROC(PFNGLENABLEPROC,                      glEnable);
@@ -106,6 +107,7 @@ namespace Dynamo { namespace Bloodstone { namespace OpenGL {
             GETLEGACYPROC(glBindTexture);
             GETLEGACYPROC(glClear);
             GETLEGACYPROC(glClearColor);
+            GETLEGACYPROC(glDeleteTextures);
             GETLEGACYPROC(glDisable);
             GETLEGACYPROC(glDrawArrays);
             GETLEGACYPROC(glEnable);
@@ -132,6 +134,7 @@ namespace Dynamo { namespace Bloodstone { namespace OpenGL {
         DEFGLPROC(PFNGLBINDTEXTUREPROC,                 glBindTexture);
         DEFGLPROC(PFNGLCLEARPROC,                       glClear);
         DEFGLPROC(PFNGLCLEARCOLORPROC,                  glClearColor);
+        DEFGLPROC(PFNGLDELETETEXTURESPROC,              glDeleteTextures);
         DEFGLPROC(PFNGLDISABLEPROC,                     glDisable);
         DEFGLPROC(PFNGLDRAWARRAYSPROC,                  glDrawArrays);
         DEFGLPROC(PFNGLENABLEPROC,                      glEnable);

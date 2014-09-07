@@ -15,7 +15,7 @@ Texture2d::Texture2d(const IGraphicsContext* pGraphicsContext) :
 Texture2d::~Texture2d(void)
 {
     if (mTextureId != 0) {
-        // GL::glDeleteTextures(1, &mTextureId);
+        GL::glDeleteTextures(1, &mTextureId);
         mTextureId = 0;
         mTexAttribLoc = -1;
     }
