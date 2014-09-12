@@ -9,6 +9,8 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
+using Autodesk.DesignScript.Interfaces;
+
 using Dynamo.Interfaces;
 using Dynamo.Models;
 using Dynamo.Selection;

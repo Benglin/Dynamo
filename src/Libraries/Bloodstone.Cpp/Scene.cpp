@@ -52,7 +52,7 @@ void Scene::Initialize(int width, int height)
 
     mpBillboardTextGroup = new BillboardTextGroup(pGraphicsContext);
 
-#if 1 // Temporary demo code section.
+#if 0 // Temporary demo code section.
 
     auto flags = FontFlags::Bold | FontFlags::Underline;
     FontSpecs fontSpecs(L"Consolas");
