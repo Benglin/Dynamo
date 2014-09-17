@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Dynamo.Nodes.Search;
 using Dynamo.Search;
 using Dynamo.Search.SearchElements;
+using Dynamo.ViewModels;
 
 namespace Dynamo.UI.Controls
 {
@@ -25,7 +26,7 @@ namespace Dynamo.UI.Controls
         // Specifies if all Lists (CreateMembers, QueryMembers and ActionMembers) are not empty
         // and should be presented on StandardPanel.
         private bool areAllListsPresented;
-        private ClassInformation castedDataContext;
+        private StandardPanelViewModel viewModel;
 
         public StandardPanel()
         {
@@ -42,18 +43,18 @@ namespace Dynamo.UI.Controls
             var senderTag = (sender as FrameworkElement).Tag.ToString();
 
             // User clicked on selected header. No need to change ItemsSource.
-            if (senderTag == castedDataContext.CurrentDisplayMode.ToString())
+            if (senderTag == viewModel.CurrentDisplayMode.ToString())
                 return;
 
             if (senderTag == QueryHeaderTag)
             {
-                castedDataContext.CurrentDisplayMode = ClassInformation.DisplayMode.Query;
-                secondaryMembers.ItemsSource = castedDataContext.QueryMembers;
+                viewModel.CurrentDisplayMode = StandardPanelViewModel.DisplayMode.Query;
+                secondaryMembers.ItemsSource = viewModel.QueryMembers;
             }
             else
             {
-                castedDataContext.CurrentDisplayMode = ClassInformation.DisplayMode.Action;
-                secondaryMembers.ItemsSource = castedDataContext.ActionMembers;
+                viewModel.CurrentDisplayMode = StandardPanelViewModel.DisplayMode.Action;
+                secondaryMembers.ItemsSource = viewModel.ActionMembers;
             }
 
             TruncateSecondaryMembers();
@@ -83,54 +84,54 @@ namespace Dynamo.UI.Controls
 
         private void GridDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            castedDataContext = this.DataContext as ClassInformation;
-            if (castedDataContext == null)
+            viewModel = this.DataContext as StandardPanelViewModel;
+            if (viewModel == null)
                 return;
 
-            bool hasCreateMembers = castedDataContext.CreateMembers.Any();
-            bool hasActionMembers = castedDataContext.ActionMembers.Any();
-            bool hasQueryMembers = castedDataContext.QueryMembers.Any();
+            bool hasCreateMembers = viewModel.CreateMembers.Any();
+            bool hasActionMembers = viewModel.ActionMembers.Any();
+            bool hasQueryMembers = viewModel.QueryMembers.Any();
 
             areAllListsPresented = hasCreateMembers && hasActionMembers && hasQueryMembers;
 
             // Hide all headers by default.
-            castedDataContext.IsPrimaryHeaderVisible = false;
-            castedDataContext.IsSecondaryHeaderLeftVisible = false;
-            castedDataContext.IsSecondaryHeaderRightVisible = false;
+            viewModel.IsPrimaryHeaderVisible = false;
+            viewModel.IsSecondaryHeaderLeftVisible = false;
+            viewModel.IsSecondaryHeaderRightVisible = false;
 
             // Set default values.
-            castedDataContext.PrimaryHeaderGroup = SearchElementGroup.Create;
-            castedDataContext.SecondaryHeaderLeftGroup = SearchElementGroup.Query;
-            castedDataContext.SecondaryHeaderRightGroup = SearchElementGroup.Action;
+            viewModel.PrimaryHeaderGroup = SearchElementGroup.Create;
+            viewModel.SecondaryHeaderLeftGroup = SearchElementGroup.Query;
+            viewModel.SecondaryHeaderRightGroup = SearchElementGroup.Action;
 
-            castedDataContext.CurrentDisplayMode = ClassInformation.DisplayMode.None;
+            viewModel.CurrentDisplayMode = StandardPanelViewModel.DisplayMode.None;
 
             // Case when CreateMembers list is not empty.
             // We should present CreateMembers in primaryMembers.            
             if (hasCreateMembers)
             {
-                castedDataContext.IsPrimaryHeaderVisible = true;
-                primaryMembers.ItemsSource = castedDataContext.CreateMembers;
+                viewModel.IsPrimaryHeaderVisible = true;
+                primaryMembers.ItemsSource = viewModel.CreateMembers;
 
                 if (hasQueryMembers)
                 {
-                    castedDataContext.IsSecondaryHeaderLeftVisible = true;
+                    viewModel.IsSecondaryHeaderLeftVisible = true;
 
-                    secondaryMembers.ItemsSource = castedDataContext.QueryMembers;
+                    secondaryMembers.ItemsSource = viewModel.QueryMembers;
                 }
 
                 if (hasActionMembers)
                 {
-                    castedDataContext.IsSecondaryHeaderRightVisible = true;
+                    viewModel.IsSecondaryHeaderRightVisible = true;
 
                     if (!hasQueryMembers)
-                        secondaryMembers.ItemsSource = castedDataContext.ActionMembers;
+                        secondaryMembers.ItemsSource = viewModel.ActionMembers;
                 }
 
                 // For case when all lists are presented we should specify
                 // correct CurrentDisplayMode.
                 if (hasQueryMembers && hasActionMembers)
-                    castedDataContext.CurrentDisplayMode = ClassInformation.DisplayMode.Query;
+                    viewModel.CurrentDisplayMode = StandardPanelViewModel.DisplayMode.Query;
 
                 TruncateSecondaryMembers();
                 return;
@@ -141,14 +142,14 @@ namespace Dynamo.UI.Controls
             // Depending on availibility of QueryMembers it will be shown as secondaryHeaderLeft.
             if (hasActionMembers)
             {
-                castedDataContext.IsPrimaryHeaderVisible = true;
-                castedDataContext.PrimaryHeaderGroup = SearchElementGroup.Action;
-                primaryMembers.ItemsSource = castedDataContext.ActionMembers;
+                viewModel.IsPrimaryHeaderVisible = true;
+                viewModel.PrimaryHeaderGroup = SearchElementGroup.Action;
+                primaryMembers.ItemsSource = viewModel.ActionMembers;
 
                 if (hasQueryMembers)
                 {
-                    castedDataContext.IsSecondaryHeaderLeftVisible = true;
-                    secondaryMembers.ItemsSource = castedDataContext.QueryMembers;
+                    viewModel.IsSecondaryHeaderLeftVisible = true;
+                    secondaryMembers.ItemsSource = viewModel.QueryMembers;
                 }
 
                 TruncateSecondaryMembers();
@@ -159,21 +160,21 @@ namespace Dynamo.UI.Controls
             // If QueryMembers is not empty the list will be presented in primaryMembers. 
             if (hasQueryMembers)
             {
-                castedDataContext.PrimaryHeaderGroup = SearchElementGroup.Query;
-                primaryMembers.ItemsSource = castedDataContext.QueryMembers;
+                viewModel.PrimaryHeaderGroup = SearchElementGroup.Query;
+                primaryMembers.ItemsSource = viewModel.QueryMembers;
             }
         }
 
         private void OnMoreButtonClick(object sender, RoutedEventArgs e)
         {
-            if (castedDataContext.HiddenMembers != null)
+            if (viewModel.HiddenMembers != null)
             {
                 var members = secondaryMembers.ItemsSource as IEnumerable<BrowserInternalElement>;
                 var allMembers = members.ToList();
-                allMembers.AddRange(castedDataContext.HiddenMembers);
+                allMembers.AddRange(viewModel.HiddenMembers);
 
                 secondaryMembers.ItemsSource = allMembers;
-                castedDataContext.HiddenMembers = null;
+                viewModel.HiddenMembers = null;
             }
         }
 
@@ -182,7 +183,7 @@ namespace Dynamo.UI.Controls
             var members = secondaryMembers.ItemsSource as IEnumerable<BrowserInternalElement>;
             if (members != null && members.Count() > TruncatedMembersCount)
             {
-                castedDataContext.HiddenMembers = members.Skip(TruncatedMembersCount);
+                viewModel.HiddenMembers = members.Skip(TruncatedMembersCount);
                 secondaryMembers.ItemsSource = members.Take(TruncatedMembersCount);
             }
         }

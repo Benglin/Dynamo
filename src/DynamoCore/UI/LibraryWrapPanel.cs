@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using Dynamo.Nodes.Search;
 using Dynamo.UI.Controls;
 using Dynamo.Utilities;
+using Dynamo.ViewModels;
 
 namespace Dynamo.Controls
 {
@@ -24,7 +25,7 @@ namespace Dynamo.Controls
             // ListView should never be null.
             var classListView = WPF.FindUpVisualTree<ListView>(this);
             collection = classListView.ItemsSource as ObservableCollection<BrowserItem>;
-            collection.Add(new ClassInformation());
+            collection.Add(new StandardPanelViewModel());
             classListView.SelectionChanged += OnClassViewSelectionChanged;
 
             base.OnInitialized(e);
@@ -116,7 +117,7 @@ namespace Dynamo.Controls
 
         private int GetClassInformationIndex()
         {
-            var query = collection.Select(c => c).Where(c => c is ClassInformation);
+            var query = collection.Select(c => c).Where(c => c is StandardPanelViewModel);
             var classObjectBase = query.ElementAt(0);
             return collection.IndexOf(classObjectBase);
         }
@@ -133,7 +134,7 @@ namespace Dynamo.Controls
             var classObjectBase = collection[currentClassInformationIndex];
 
             // If there is no selection, then mark the StandardPanel as hidden.
-            var classInformation = classObjectBase as ClassInformation;
+            var classInformation = classObjectBase as StandardPanelViewModel;
             if (classInformation != null && (selectedClassProspectiveIndex == -1))
                 return;
 

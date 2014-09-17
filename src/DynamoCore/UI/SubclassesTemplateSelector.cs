@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Dynamo.Nodes.Search;
+using Dynamo.ViewModels;
 
 namespace Dynamo.Controls
 {
@@ -12,7 +13,7 @@ namespace Dynamo.Controls
 
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
-            if (item is ClassInformation)
+            if (item is StandardPanelViewModel)
                 return ClassDetailsTemplate;
 
             if (item is BrowserRootElement)
