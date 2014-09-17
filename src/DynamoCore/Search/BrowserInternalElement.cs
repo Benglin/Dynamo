@@ -253,6 +253,8 @@ namespace Dynamo.Nodes.Search
 
         #endregion
 
+        #region These properties will be moved to StandardPanelViewModel in near future
+
         /// <summary>
         /// Specifies whether or not instance should be shown as StandardPanel.
         /// </summary>
@@ -311,6 +313,8 @@ namespace Dynamo.Nodes.Search
             }
         }
 
+        #endregion
+
         public ClassInformation()
             : base()
         {
@@ -319,6 +323,8 @@ namespace Dynamo.Nodes.Search
             queryMembers = new List<BrowserInternalElement>();
             Focusable = false;
         }
+
+        #region These properties stay here (ClassInformation)
 
         private List<BrowserInternalElement> createMembers;
         public IEnumerable<BrowserInternalElement> CreateMembers
@@ -337,6 +343,8 @@ namespace Dynamo.Nodes.Search
         {
             get { return this.queryMembers; }
         }
+
+        #endregion
 
         public void PopulateMemberCollections(BrowserItem element)
         {
