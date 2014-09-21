@@ -1249,7 +1249,7 @@ namespace Dynamo.Models
                         return p;
                     }
 
-                    p = new PortModel(portType, this, data.NickName)
+                    p = new PortModel(portType, this, data)
                     {
                         UsingDefaultValue = data.HasDefaultValue,
                         DefaultValueEnabled = data.HasDefaultValue
@@ -1278,7 +1278,7 @@ namespace Dynamo.Models
                         return p;
                     }
 
-                    p = new PortModel(portType, this, data.NickName)
+                    p = new PortModel(portType, this, data)
                     {
                         UsingDefaultValue = false,
                         MarginThickness = new Thickness(0, data.VerticalMargin, 0, 0)
