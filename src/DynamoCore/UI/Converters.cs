@@ -6,6 +6,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+
+using Dynamo.Nodes.Search;
 using Dynamo.UI;
 using Dynamo.Models;
 using System.Web;
@@ -19,8 +21,6 @@ using DynamoUnits;
 using Dynamo.UI.Controls;
 using Dynamo.Search.SearchElements;
 using System.Windows.Input;
-using Dynamo.Search;
-using Dynamo.Nodes.Search;
 
 namespace Dynamo.Controls
 {
@@ -1681,31 +1681,6 @@ namespace Dynamo.Controls
                 return rootElement.ClassDetails;
 
             return rootElement;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    /// This converter displays correct header text on StandarPanel
-    /// by using SearchElement as value parameter.
-    public class SearchElementGroupToHeaderConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            switch ((SearchElementGroup)value)
-            {
-                case SearchElementGroup.Create:
-                    return "CREATE";
-                case SearchElementGroup.Action:
-                    return "ACTIONS";
-                case SearchElementGroup.Query:
-                    return "QUERY";
-                default:
-                    return "Header is undefined";
-            }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
