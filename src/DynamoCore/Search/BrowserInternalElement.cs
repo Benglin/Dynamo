@@ -232,11 +232,12 @@ namespace Dynamo.Nodes.Search
     {
         #region BrowserItem abstract members implementation
 
+        private ObservableCollection<BrowserItem> items;
         public override ObservableCollection<BrowserItem> Items
         {
             get
             {
-                throw new System.NotImplementedException();
+                return items;
             }
             set
             {
@@ -319,6 +320,8 @@ namespace Dynamo.Nodes.Search
         public ClassInformation()
             : base()
         {
+            items = new ObservableCollection<BrowserItem>();
+
             createMembers = new List<BrowserInternalElement>();
             actionMembers = new List<BrowserInternalElement>();
             queryMembers = new List<BrowserInternalElement>();
