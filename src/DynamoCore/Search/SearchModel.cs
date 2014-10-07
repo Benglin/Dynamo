@@ -608,6 +608,11 @@ namespace Dynamo.Search
 
             foreach (var functionGroup in functionGroups)
             {
+                if (functionGroup.QualifiedName != "Tessellation.ConvexHull.ByPoints" &&
+                    functionGroup.QualifiedName != "Tessellation.Delaunay.ByParametersOnSurface" &&
+                    functionGroup.QualifiedName != "Tessellation.Delaunay.ByPoints")
+                    continue;
+
                 var functions = functionGroup.Functions.ToList();
                 if (!functions.Any())
                     continue;

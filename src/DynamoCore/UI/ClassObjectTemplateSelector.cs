@@ -15,7 +15,7 @@ namespace Dynamo.Controls
             if (item is ClassInformation)
                 return ClassDetailsTemplate;
 
-            if (item is BrowserInternalElement)
+            if (item is BrowserItem)
                 return ClassObjectTemplate;
 
             const string message = "Unknown object bound to collection";
