@@ -493,7 +493,8 @@
                              BorderBrush="Transparent"
                              ItemContainerStyle="{DynamicResource ListBoxTopResultStyle}"
                              ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                             ItemsSource="{Binding Members}">
+                             ItemsSource="{Binding Members}"
+                             KeyDown="MethodButtonKeyDown">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border BorderThickness="2,0,0,0"
@@ -549,6 +550,8 @@
                                             <Style TargetType="{x:Type ListViewItem}">
                                                 <EventSetter Event="PreviewMouseLeftButtonDown"
                                                              Handler="OnClassButtonCollapse" />
+                                                <EventSetter Event="KeyDown"
+                                                             Handler="OnClassButtonKeyDown" />
 
                                                 <Setter Property="Template">
                                                     <Setter.Value>
@@ -601,7 +604,8 @@
                                              BorderBrush="Transparent"
                                              BorderThickness="0"
                                              ItemContainerStyle="{DynamicResource ListBoxMemberGroupsStyle}"
-                                             ItemsSource="{Binding MemberGroups}">
+                                             ItemsSource="{Binding MemberGroups}"
+                                             Name="MemberGroupsListBox">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel>
@@ -613,7 +617,9 @@
                                                              BorderBrush="Transparent"
                                                              ItemContainerStyle="{DynamicResource ListBoxMembersStyle}"
                                                              ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                                             ItemsSource="{Binding Members}">
+                                                             ItemsSource="{Binding Members}"
+                                                             Name="MembersListBox"
+                                                             KeyDown="MethodButtonKeyDown">
                                                         <ListBox.ItemTemplate>
                                                             <DataTemplate>
                                                                 <ContentControl Template="{StaticResource MemberControlTemplate}" />
