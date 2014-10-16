@@ -493,7 +493,8 @@ namespace Dynamo.Search
             for (var i = 1; i < count; i++)
             {
                 // All next members are namespaces.
-                currentCat = TryAddChildCategory(currentCat, splitCat[i], resourceAssembly);
+                currentCat = TryAddChildCategory(currentCat, splitCat[i], nodeType: nodeType,
+                    resourceAssembly: resourceAssembly);
             }
 
             // We sure, that the last member is class.
@@ -512,7 +513,7 @@ namespace Dynamo.Search
         /// <param name="assembly">Assembly, where icon for class button can be found</param>
         /// <returns>The newly created category</returns>
         internal BrowserItem TryAddChildCategory(BrowserItem parent, string childCategoryName,
-                                                 string resourceAssembly = "")
+            ElementType nodeType = ElementType.Regular, string resourceAssembly = "")
         {
             var newCategoryName = parent.Name + Configurations.CategoryDelimiter + childCategoryName;
 
@@ -528,9 +529,9 @@ namespace Dynamo.Search
                 parentItem = grandParent as BrowserInternalElement;
             }
 
-            if (ContainsCategory(newCategoryName))
+            if (ContainsCategory(newCategoryName, nodeType))
             {
-                return GetCategoryByName(newCategoryName);
+                return GetCategoryByName(newCategoryName, nodeType);
             }
 
             var tempCat = new BrowserInternalElement(childCategoryName, parent, resourceAssembly);
