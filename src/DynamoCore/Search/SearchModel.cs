@@ -608,19 +608,19 @@ namespace Dynamo.Search
         /// </summary>
         /// <param name="categoryName"></param>
         /// <returns></returns>
-        internal bool ContainsCategory(string categoryName, ElementType elementType = ElementType.Regular)
+        internal bool ContainsCategory(string categoryName, ElementType nodeType = ElementType.Regular)
         {
-            return GetCategoryByName(categoryName, elementType) != null;
+            return GetCategoryByName(categoryName, nodeType) != null;
         }
 
-        internal BrowserItem GetCategoryByName(string categoryName, ElementType elementType = ElementType.Regular)
+        internal BrowserItem GetCategoryByName(string categoryName, ElementType nodeType = ElementType.Regular)
         {
             var split = SplitCategoryName(categoryName);
             if (!split.Any())
                 return null;
 
             BrowserItem cat;
-            if (elementType == ElementType.Regular)
+            if (nodeType == ElementType.Regular)
                 cat = (BrowserItem)BrowserRootCategories.FirstOrDefault(x => x.Name == split[0]);
             else
                 cat = (BrowserItem)AddonRootCategories.FirstOrDefault(x => x.Name == split[0]);
