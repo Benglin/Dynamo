@@ -306,55 +306,58 @@ namespace Dynamo.Search
             this.BrowserRootCategories.ToList().ForEach(x => x.RecursivelySort());
         }
 
-        internal void RemoveEmptyRootCategory(string categoryName)
+        internal void RemoveEmptyRootCategory(string categoryName, ElementType nodeType = ElementType.Regular)
         {
             if (categoryName.Contains(Configurations.CategoryDelimiter))
             {
-                RemoveEmptyCategory(categoryName);
+                RemoveEmptyCategory(categoryName, nodeType);
                 return;
             }
 
-            var cat = GetCategoryByName(categoryName);
+            var cat = GetCategoryByName(categoryName, nodeType);
             if (cat == null)
             {
                 return;
             }
 
-            RemoveEmptyRootCategory((BrowserRootElement)cat);
+            RemoveEmptyRootCategory((BrowserRootElement)cat, nodeType);
         }
 
-        internal void RemoveEmptyRootCategory(BrowserRootElement rootEle)
+        internal void RemoveEmptyRootCategory(BrowserRootElement rootEle, ElementType nodeType = ElementType.Regular)
         {
-            if (!ContainsCategory(rootEle.Name))
+            if (!ContainsCategory(rootEle.Name, nodeType))
                 return;
 
-            BrowserRootCategories.Remove(rootEle);
+            if (nodeType == ElementType.Regular)
+                BrowserRootCategories.Remove(rootEle);
+            else
+                AddonRootCategories.Remove(rootEle);
         }
 
         /// <summary>
         /// Remove and empty category from browser and search by name. Useful when a single item is removed.
         /// </summary>
         /// <param name="categoryName">The category name, including delimiters</param>
-        internal void RemoveEmptyCategory(string categoryName)
+        internal void RemoveEmptyCategory(string categoryName, ElementType nodeType=ElementType.Regular)
         {
-            var currentCat = GetCategoryByName(categoryName);
+            var currentCat = GetCategoryByName(categoryName, nodeType);
             if (currentCat == null)
             {
                 return;
             }
 
-            RemoveEmptyCategory(currentCat);
+            RemoveEmptyCategory(currentCat, nodeType);
         }
 
         /// <summary>
         /// Remove an empty category from browser and search.  Useful when a single item is removed.
         /// </summary>
         /// <param name="ele"></param>
-        internal void RemoveEmptyCategory(BrowserItem ele)
+        internal void RemoveEmptyCategory(BrowserItem ele, ElementType nodeType = ElementType.Regular)
         {
             if (ele is BrowserRootElement && ele.Items.Count == 0)
             {
-                RemoveEmptyRootCategory(ele as BrowserRootElement);
+                RemoveEmptyRootCategory(ele as BrowserRootElement, nodeType);
                 return;
             }
 
@@ -363,7 +366,7 @@ namespace Dynamo.Search
                 var internalEle = ele as BrowserInternalElement;
 
                 internalEle.Parent.Items.Remove(internalEle);
-                RemoveEmptyCategory(internalEle.Parent);
+                RemoveEmptyCategory(internalEle.Parent, nodeType);
             }
         }
 
@@ -892,7 +895,7 @@ namespace Dynamo.Search
             foreach (var node in nodes)
             {
                 RemoveNode(nodeName);
-                RemoveEmptyCategory(node);
+                RemoveEmptyCategory(node, (node as NodeSearchElement).ElementType);
             }
 
         }
@@ -917,7 +920,7 @@ namespace Dynamo.Search
             foreach (var node in nodes)
             {
                 RemoveNode(node.Guid);
-                RemoveEmptyCategory(node);
+                RemoveEmptyCategory(node, node.ElementType);
             }
 
         }
