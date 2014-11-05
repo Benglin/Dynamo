@@ -44,6 +44,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\extern\NUnit\nunit.framework.dll</HintPath>
       <Private>False</Private>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\..\..\extern\NUnit\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="ProtoGeometry">
