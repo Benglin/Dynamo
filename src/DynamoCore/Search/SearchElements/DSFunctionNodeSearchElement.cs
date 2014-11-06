@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
-using DynCmd = Dynamo.ViewModels.DynamoViewModel;
+using System.Windows.Media.Imaging;
 using Dynamo.DSEngine;
+using Dynamo.Library;
+using Utils = Dynamo.Nodes.Utilities;
 
 namespace Dynamo.Search.SearchElements
 {
@@ -10,16 +13,21 @@ namespace Dynamo.Search.SearchElements
         internal readonly FunctionDescriptor FunctionDescriptor;
         private string _displayString;
 
-        public DSFunctionNodeSearchElement(string displayString, FunctionDescriptor functionDescriptorItem) :
-            base(displayString, functionDescriptorItem.Description, new List<string> { })
+        public DSFunctionNodeSearchElement(string displayString, FunctionDescriptor functionItem, SearchElementGroup group) :
+            base(displayString, functionItem.Summary, new List<string> { }, group,
+                    functionItem.DisplayName, functionItem.Assembly,
+                    functionItem.InputParameters, functionItem.ReturnType)
         {
             _displayString = displayString;
-            FunctionDescriptor = functionDescriptorItem;
+            FunctionDescriptor = functionItem;
         }
 
         public override NodeSearchElement Copy()
         {
-            return new DSFunctionNodeSearchElement(_displayString, FunctionDescriptor);
+            var copiedNode = new DSFunctionNodeSearchElement(_displayString, FunctionDescriptor, Group);
+            copiedNode.ElementType = ElementType;
+
+            return copiedNode;
         }
 
         public override bool Equals(object obj)
@@ -43,6 +51,65 @@ namespace Dynamo.Search.SearchElements
         public bool Equals(DSFunctionNodeSearchElement other)
         {
             return this.FunctionDescriptor == other.FunctionDescriptor;
+        }
+
+        protected override string GetResourceName(ResourceType resourceType, bool disambiguate = false)
+        {
+            switch (resourceType)
+            {
+                case ResourceType.SmallIcon:
+                case ResourceType.LargeIcon:
+                {
+                    string name = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.QualifiedName);
+
+                    if (string.IsNullOrEmpty(name)) 
+                        name = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.Name); 
+
+                    // Usual case.
+                    if (!disambiguate)
+                        return name;
+
+                    // Case for overloaded methods.
+                    if (name == FunctionDescriptor.QualifiedName)
+                    {
+                        return Utils.TypedParametersToString(FunctionDescriptor);
+                    }
+                    else
+                    {
+                        // Some nodes contain names with invalid symbols like %, <, >, etc. In this 
+                        // case the value of "FunctionDescriptor.Name" property should be used. For 
+                        // an example, "DynamoUnits.SUnit.%" to be renamed as "DynamoUnits.SUnit.mod".
+                        string shortName = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.Name);
+                        return Utils.TypedParametersToString(FunctionDescriptor, name + shortName);
+                    }
+                }
+            }
+
+            throw new InvalidOperationException("Unhandled resourceType");
+        }
+
+        protected override string GenerateOutputParameters()
+        {
+            if (FunctionDescriptor.Type == FunctionType.Constructor) 
+                return FunctionDescriptor.UnqualifedClassName;
+
+            return base.GenerateOutputParameters();
+        }
+
+        protected override List<Tuple<string, string>> GenerateInputParameters()
+        {
+            string vartype = string.Empty;
+            string varname = string.Empty;
+
+            var className = FunctionDescriptor.ClassName;
+
+            vartype = className.Split('.').Last();
+            varname = vartype[0].ToString().ToLowerInvariant();
+
+            List<Tuple<string, string>>  inputParameters = new List<Tuple<string, string>>();
+            inputParameters.Add(Tuple.Create(varname, vartype));
+
+            return inputParameters;
         }
     }
 }

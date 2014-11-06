@@ -10,9 +10,11 @@ using Dynamo.Models;
 using Dynamo.UI;
 using Dynamo.Utilities;
 using Dynamo.ViewModels;
+using Dynamo.Search;
 
 using DynCmd = Dynamo.Models.DynamoModel;
 using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 using System.Xml;
@@ -297,6 +299,91 @@ namespace Dynamo.Nodes
         #endregion
     }
 
+    public class CodeNodeTextBox : DynamoTextBox
+    {
+
+        bool shift, enter;
+        public CodeNodeTextBox(string s)
+            : base(s)
+        {
+            shift = enter = false;
+
+            //Remove the select all when focused feature
+            RemoveHandler(GotKeyboardFocusEvent, focusHandler);
+
+            //Allow for event processing after textbook has been focused to
+            //help set the Caret position
+            selectAllWhenFocused = false;
+
+            //Set style for Watermark
+            this.SetResourceReference(TextBox.StyleProperty, "CodeBlockNodeTextBox");
+            this.Tag = "Your code goes here";
+        }
+
+
+        /// <summary>
+        /// To allow users to remove focus by pressing Shift Enter. Uses two bools (shift / enter)
+        /// and sets them when pressed/released
+        /// </summary>
+        #region Key Press Event Handlers
+        protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.LeftShift || e.Key == Key.RightShift)
+            {
+                shift = true;
+            }
+            else if (e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                enter = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                HandleEscape();
+            }
+            if (shift == true && enter == true)
+            {
+                OnRequestReturnFocusToSearch();
+                shift = enter = false;
+            }
+        }
+        protected override void OnPreviewKeyUp(KeyEventArgs e)
+        {
+            if (e.Key == Key.LeftShift || e.Key == Key.RightShift)
+            {
+                shift = false;
+            }
+            else if (e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                enter = false;
+            }
+        }
+        #endregion
+
+        protected override void OnTextChanged(TextChangedEventArgs e)
+        {
+            e.Handled = true; //hide base
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            Pending = true;
+            base.OnLostFocus(e);
+        }
+
+        private void HandleEscape()
+        {
+            var text = this.Text;
+            var cb = DataContext as CodeBlockNodeModel;
+
+            if (cb == null || cb.Code != null && text.Equals(cb.Code))
+                OnRequestReturnFocusToSearch();
+            else
+                (this as TextBox).Text = (DataContext as CodeBlockNodeModel).Code;
+        }
+    }
 }
 
 namespace Dynamo.UI.Controls
@@ -375,6 +462,100 @@ namespace Dynamo.UI.Controls
         {
             get { return ((Side)GetValue(AttachmentSideProperty)); }
             set { SetValue(AttachmentSideProperty, value); }
+        }
+    }
+
+    public class LibraryToolTipPopup : Popup
+    {
+        private Dynamo.UI.Views.ToolTipWindow tooltip = new Dynamo.UI.Views.ToolTipWindow();
+        private DispatcherTimer dispatcherTimer = new DispatcherTimer();
+
+
+        public LibraryToolTipPopup()
+        {
+            this.Placement = PlacementMode.Custom;
+            this.AllowsTransparency = true;
+            this.CustomPopupPlacementCallback = PlacementCallback;
+            this.Child = tooltip;
+            this.dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 500);
+            this.dispatcherTimer.Tick += CloseLibraryToolTipPopup;
+            this.Loaded += LoadMainDynamoWindow;
+        }
+
+        // We should load main window after Popup has been initialized.
+        // If we try to load it before, we will get null.
+        private void LoadMainDynamoWindow(object sender, RoutedEventArgs e)
+        {
+            var mainDynamoWindow = WPF.FindUpVisualTree<DynamoView>(this);
+
+            // When Dynamo window goes behind another app, the tool-tip should be hidden right 
+            // away. We cannot use CloseLibraryToolTipPopup because it only hides the tool-tip 
+            // window after a pause.
+            mainDynamoWindow.Deactivated += (Sender, args) =>
+            {
+                this.DataContext = null;
+            };
+        }
+
+        public void SetDataContext(object dataContext)
+        {
+            if (dataContext == null)
+            {
+                dispatcherTimer.Start();
+                return;
+            }
+            dispatcherTimer.Stop();
+            this.DataContext = dataContext;
+
+            // This line is needed to change position of Popup.
+            // As position changed PlacementCallback is called and
+            // Popup placed correctly.            
+            this.HorizontalOffset++;
+
+            // Moving tooltip back.
+            this.HorizontalOffset--;
+        }
+
+        private void CloseLibraryToolTipPopup(object sender, EventArgs e)
+        {
+            if (!this.IsMouseOver)
+                this.DataContext = null;
+        }
+
+        private CustomPopupPlacement[] PlacementCallback(Size popup, Size target, Point offset)
+        {
+            double gap = Configurations.ToolTipTargetGapInPixels;
+            PopupPrimaryAxis primaryAxis = PopupPrimaryAxis.None;
+            var dynamoWindow = WPF.FindUpVisualTree<DynamoView>(this.PlacementTarget);
+            Point targetLocation = this.PlacementTarget
+                .TransformToAncestor(dynamoWindow)
+                .Transform(new Point(0, 0));
+
+            // If target location in less then 0, that means target item was scrolled to th left side.
+            // So, we add some gap, and use abs of this negative value to locate tooltip.
+            if (targetLocation.X < 0) targetLocation.X -= gap * 2;
+
+            // Count width.
+            double x = 0;
+            x = WPF.FindUpVisualTree<SearchView>(this.PlacementTarget).ActualWidth
+                + gap + Math.Abs(targetLocation.X);
+
+            // Count height.
+            var availableHeight = dynamoWindow.ActualHeight - popup.Height
+                - (targetLocation.Y + Configurations.NodeButtonHeight);
+
+            double y = 0;
+            if (availableHeight < Configurations.BottomPanelHeight)
+                y = availableHeight - (Configurations.BottomPanelHeight + gap * 4);
+
+            return new CustomPopupPlacement[]
+            {
+                new CustomPopupPlacement()
+                {
+                    Point = new Point(x, y),
+                    PrimaryAxis = PopupPrimaryAxis.Horizontal
+                }
+            };
         }
     }
 }
