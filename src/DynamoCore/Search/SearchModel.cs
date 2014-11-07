@@ -10,6 +10,8 @@ using Dynamo.Nodes.Search;
 using Dynamo.Search.SearchElements;
 using Dynamo.UI;
 using Dynamo.Utilities;
+using Dynamo.DSEngine;
+using Microsoft.Practices.Prism.ViewModel;
 
 namespace Dynamo.Search
 {
