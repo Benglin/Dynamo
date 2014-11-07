@@ -2,6 +2,9 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 
+using Dynamo.Controls;
+using Dynamo.Nodes.Search;
+
 namespace Dynamo.UI.Views
 {
     /// <summary>
@@ -41,7 +44,11 @@ namespace Dynamo.UI.Views
         private void OnClassButtonCollapse(object sender, MouseButtonEventArgs e)
         {
             var classButton = sender as ListViewItem;
-            if ((classButton == null) || !classButton.IsSelected) return;
+            if ((classButton == null) || !classButton.IsSelected)
+            {
+                LibraryWrapPanel.AssumedItem = classButton.Content as BrowserInternalElement;
+                return;
+            }
 
             classButton.IsSelected = false;
             e.Handled = true;
