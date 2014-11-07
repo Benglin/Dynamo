@@ -1,23 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 
 using Autodesk.DesignScript.Geometry;
-
-using DSRevitNodesTests.Conversion;
 
 using NUnit.Framework;
 
 using Revit.Elements;
 using Revit.GeometryConversion;
 
+using RevitTestServices;
+
 using RTF.Framework;
 
-namespace DSRevitNodesTests.GeometryConversion
+namespace RevitNodesTests.GeometryConversion
 {
     [TestFixture]
-    public class RevitToProtoMeshTests : GeometricRevitNodeTest
+    public class RevitToProtoMeshTests : RevitNodeTestBase
     {
         [Test]
         [TestModel(@".\topography.rvt")]

@@ -15,18 +15,25 @@ namespace Revit.GeometryConversion
     {
         #region Proto -> Revit types
 
-        public static Autodesk.Revit.DB.BoundingBoxXYZ ToRevitType(this Autodesk.DesignScript.Geometry.BoundingBox bb, bool convertUnits = true)
+        public static Autodesk.Revit.DB.BoundingBoxXYZ ToRevitBoundingBox(
+            Autodesk.DesignScript.Geometry.CoordinateSystem cs,
+            Autodesk.DesignScript.Geometry.Point minPoint,
+            Autodesk.DesignScript.Geometry.Point maxPoint, bool convertUnits = true)
         {
             var rbb = new BoundingBoxXYZ();
             rbb.Enabled = true;
 
-            // placeholder until we can get coordinate system from bounding box
-            rbb.Transform = Transform.Identity;
+            rbb.Transform = cs.ToTransform(convertUnits);
 
-            rbb.Max = bb.MaxPoint.ToXyz(convertUnits);
-            rbb.Min = bb.MinPoint.ToXyz(convertUnits);
+            rbb.Max = maxPoint.ToXyz(convertUnits);
+            rbb.Min = minPoint.ToXyz(convertUnits);
 
             return rbb;
+        }
+
+        public static Autodesk.Revit.DB.BoundingBoxXYZ ToRevitType(this Autodesk.DesignScript.Geometry.BoundingBox bb, bool convertUnits = true)
+        {
+            return ToRevitBoundingBox(bb.ContextCoordinateSystem, bb.MinPoint, bb.MaxPoint, convertUnits);
         }
 
         public static Autodesk.Revit.DB.XYZ ToRevitType(this Autodesk.DesignScript.Geometry.Point pt, bool convertUnits = true)
@@ -107,6 +114,25 @@ namespace Revit.GeometryConversion
             return uvs;
         }
 
+        internal static Autodesk.DesignScript.Geometry.UV[] ToDSUvs(this double[][] uvArr)
+        {
+            var uvs = new Autodesk.DesignScript.Geometry.UV[uvArr.Length];
+            var count = 0;
+            foreach (var row in uvArr)
+            {
+                if (row.Length != 2)
+                {
+                    throw new Exception("Each element of the input array should be length 2");
+                }
+                else
+                {
+                    uvs[count++] = Autodesk.DesignScript.Geometry.UV.ByCoordinates(row[0], row[1]);
+                }
+            }
+
+            return uvs;
+        }
+
         #endregion
 
         #region Revit -> Proto types
@@ -114,8 +140,10 @@ namespace Revit.GeometryConversion
         public static Autodesk.DesignScript.Geometry.BoundingBox ToProtoType(this Autodesk.Revit.DB.BoundingBoxXYZ xyz, bool convertUnits = true)
         {
             xyz.Enabled = true;
-            var corners = new[] { xyz.Min.ToPoint(convertUnits), xyz.Max.ToPoint(convertUnits) };
-            return Autodesk.DesignScript.Geometry.BoundingBox.ByGeometry(corners);
+
+            return Autodesk.DesignScript.Geometry.BoundingBox.ByCornersCoordinateSystem(
+                xyz.Min.ToPoint(convertUnits), xyz.Max.ToPoint(convertUnits),
+                xyz.Transform.ToCoordinateSystem(convertUnits));
         }
 
         public static Autodesk.DesignScript.Geometry.Point ToPoint(this XYZ xyz, bool convertUnits = true)

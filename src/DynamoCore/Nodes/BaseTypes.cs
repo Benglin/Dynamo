@@ -16,6 +16,8 @@ using System.IO;
 using Dynamo.UI;
 using System.Web;
 using System.Text;
+using Dynamo.Library;
+using Dynamo.DSEngine;
 
 namespace Dynamo.Nodes
 {
@@ -30,8 +32,7 @@ namespace Dynamo.Nodes
         public const string CORE_INPUT = "Core.Input";
         public const string CORE_STRINGS = "Core.Strings";
         public const string CORE_LISTS_CREATE = "Core.List.Create";
-        public const string CORE_LISTS_MODIFY = "Core.List.Modify";
-        public const string CORE_LISTS_EVALUATE = "Core.List.Evaluate";
+        public const string CORE_LISTS_ACTION = "Core.List.Actions";        
         public const string CORE_LISTS_QUERY = "Core.List.Query";
         public const string CORE_VIEW = "Core.View";
         public const string CORE_ANNOTATE = "Core.Annotate";
@@ -39,6 +40,7 @@ namespace Dynamo.Nodes
         public const string CORE_TIME = "Core.Time";
         public const string CORE_SCRIPTING = "Core.Scripting";
         public const string CORE_FUNCTIONS = "Core.Functions";
+        public const string CORE_IO = "Core.File";
 
         public const string LOGIC = "Core.Logic";
         public const string LOGIC_MATH_ARITHMETIC = "Logic.Math.Arithmetic";
@@ -49,7 +51,6 @@ namespace Dynamo.Nodes
         public const string LOGIC_MATH_OPTIMIZE = "Logic.Math.Optimize";
         public const string LOGIC_EFFECT = "Logic.Effect";
         public const string LOGIC_COMPARISON = "Logic.Comparison";
-        public const string LOGIC_CONDITIONAL = "Core.Logic.Conditional";
         public const string LOGIC_LOOP = "Logic.Loop";
 
 
@@ -139,6 +140,60 @@ namespace Dynamo.Nodes
             {
                 return value.Remove(desiredLength - 1) + "...";
             }
+        }
+
+        /// <summary>
+        /// This method returns a name for the icon based on name of the node.
+        /// </summary>
+        /// <param name="descriptor">Function descriptor, that contains all info about node.</param>
+        /// <param name="overridePrefix">
+        /// overridePrefix is used as default value for generating node icon name.
+        /// If overridePrefix is empty, it uses QualifiedName property.
+        /// e.g. Autodesk.DesignScript.Geometry.CoordinateSystem.ByOrigin
+        /// </param>
+        public static string TypedParametersToString(FunctionDescriptor descriptor, string overridePrefix = "")
+        {
+            var builder = new StringBuilder();
+
+            foreach (TypedParameter tp in descriptor.Parameters)
+            {
+                string typeOfParameter = tp.Type;
+
+                // Check if there simbols like "[]".
+                // And remove them, according how much we found.
+                // e.g. bool[][] -> bool2
+                int squareBrackets = typeOfParameter.Count(x => x == '[');
+                if (squareBrackets > 0)
+                {
+                    if (typeOfParameter.Contains("[]..[]"))
+                    {
+                        // Remove square brackets.
+                        typeOfParameter = typeOfParameter.Replace("[]..[]", "");
+                        // Add number of them.
+                        typeOfParameter = String.Concat(typeOfParameter, "N");
+                    }
+                    else
+                    {
+                        // Remove square brackets.
+                        typeOfParameter =
+                            typeOfParameter.Remove(typeOfParameter.Length - squareBrackets * 2);
+                        // Add number of them.
+                        typeOfParameter = String.Concat(typeOfParameter, squareBrackets.ToString());
+                    }
+                }
+
+                if (builder.Length > 0)
+                    builder.Append("-");
+
+                typeOfParameter = typeOfParameter.Split('.').Last();
+                builder.Append(typeOfParameter);
+            }
+
+            // If the caller does not supply a prefix, use default logic to generate one.
+            if (string.IsNullOrEmpty(overridePrefix))
+                overridePrefix = NormalizeAsResourceName(descriptor.QualifiedName);
+
+            return overridePrefix + "." + builder.ToString();
         }
 
         /// <summary>
@@ -1003,7 +1058,7 @@ namespace Dynamo.Nodes
                 }
 
                 RegisterInputPorts();
-                ClearError();
+                ClearRuntimeError();
             }
             catch (Exception e)
             {
@@ -1631,7 +1686,7 @@ namespace Dynamo.Nodes
                     }
 
                     RegisterInputPorts();
-                    ClearError();
+                    ClearRuntimeError();
 
                     ArgumentLacing = InPortData.Any() ? LacingStrategy.Longest : LacingStrategy.Disabled;
                 }

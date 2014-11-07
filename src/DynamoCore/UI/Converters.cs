@@ -6,6 +6,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Linq;
+
 
 using Dynamo.Nodes.Search;
 using Dynamo.UI;
@@ -45,6 +47,29 @@ namespace Dynamo.Controls
         }
     }
 
+    public class PrettyDateConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var dateString = value as string;
+            if (dateString != null) return PrettyDate(dateString);
+
+            return "Unknown date format";
+        }
+
+        private string PrettyDate(string json_string)
+        {
+            var d = DateTime.Parse(json_string);
+
+            return d.ToString("d MMM yyyy", CultureInfo.CreateSpecificCulture("en-US"));
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return null;
+        }
+    }
+
     public class PackageSearchStateToStringConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter,
@@ -68,7 +93,7 @@ namespace Dynamo.Controls
                 }
                 else if (st == PackageManagerSearchViewModel.PackageSearchState.SYNCING)
                 {
-                    return "Synchronizing package list with server...";
+                    return "Syncing with server...";
                 }
             }
 
@@ -213,14 +238,31 @@ namespace Dynamo.Controls
         }
     }
 
+    // This converter expects the following properties to be bound through XAML 
+    // (these properties are also to be bound in the exact order as stated here):
+    // 
+    //      SearchViewModel.SearchRootCategories.Count (int)
+    //      SearchViewModel.SearchAddonsVisibility (bool)
+    //      SearchViewModel.SearchText (string)
+    //
     public class SearchResultsToVisibilityConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            if (values[0] is int && (int)values[0] == 0 && !string.IsNullOrEmpty(values[1] as string))
-            {
+            const string message = "Wrong properties bound to SearchResultsToVisibilityConverter";
+
+            if (values.Length != 3)
+                throw new ArgumentException(message);
+
+            if (!(values[0] is int) || !(values[1] is bool) || !(values[2] is string))
+                return Visibility.Collapsed;
+
+            var count = (int)values[0];
+            var addOnVisible = (bool)values[1];
+            var text = (string)values[2];
+
+            if (count == 0 && (addOnVisible == false) && !string.IsNullOrEmpty(text))
                 return Visibility.Visible;
-            }
 
             return Visibility.Collapsed;
         }
@@ -1732,6 +1774,192 @@ namespace Dynamo.Controls
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
+        }
+    }
+
+    // It's used for ClassDetails and ClassObject itself. ClassDetails should be not focusable,
+    // in contrast to ClassObject.
+    // Also decides, should be category underlined or not.
+    public class ElementTypeToBoolConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is NodeSearchElement) 
+                return false;
+            if (value is BrowserInternalElement)
+                return true;
+            if (value is BrowserInternalElementForClasses)
+                return true;
+
+            if (value is BrowserRootElement)
+            {
+                var rootElement = value as BrowserRootElement;
+                return !rootElement.Items.OfType<BrowserInternalElementForClasses>().Any();
+            }
+            return false;
+        }
+
+        public object ConvertBack(
+            object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class RootElementToBoolConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return (value is BrowserRootElement);
+        }
+
+        public object ConvertBack(
+            object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // Used in addons treeview. Element, that is just under root shouldn't have dotted line at the left side.
+    public class HasParentRootElement : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is BrowserRootElement) return true;
+            if (value is BrowserInternalElement)
+            {
+                return (value as BrowserInternalElement).Parent is BrowserRootElement; 
+            }
+            else return false;
+        }
+
+        public object ConvertBack(
+            object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class MultiBoolToVisibilityConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            bool allTrue = true;
+            foreach (var value in values)
+                // If at least one will be false, the result will be false.
+                allTrue = allTrue && ((bool)value);
+
+            return allTrue ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object[] ConvertBack(
+            object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class NullValueToCollapsedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null) return Visibility.Collapsed;
+            return Visibility.Visible;
+        }
+
+        public object ConvertBack(
+            object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // Depending on the number of points in FullCategoryName margin will be done.
+    // E.g. Geometry.Tesselation -> Margin="10,0,0,0"
+    // E.g. RootCategory.Namespace1.Namespace2 -> Margin="20,0,0,0"
+    public class FullCategoryNameToMarginConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var incomingString = value as string;
+
+            if (string.IsNullOrEmpty(incomingString)) return new Thickness(5, 0, 0, 0);
+
+            var numberOfPoints = incomingString.Count(x => x == '.');
+            return new Thickness(5 + 20 * numberOfPoints, 0, 20, 0);
+        }
+
+        public object ConvertBack(
+            object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    //Converter that will be used, if number of found classes equals 0. Then classes will be collapsed.
+    public class IntToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if ((int)value > 0)
+                return Visibility.Visible;
+
+            return Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // Converter is used to specify Margin of highlight rectangle. 
+    // This rectangle highlights first instance of search phrase.
+    //
+    // Input parameters:
+    //     values[0] (TextBlock) - name of member. Part of this text rectangle should highlight.
+    //     values[1] (SearchViewModel) - properties SearchText and RegularTypeface are used.
+    public class SearchHighlightMarginConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values.Length != 2)
+                return new ArgumentException();
+
+            var textBlock = values[0] as TextBlock;
+            var viewModel = values[1] as SearchViewModel;
+            var searchText = viewModel.SearchText;
+            var typeface = viewModel.RegularTypeface;
+            var fullText = textBlock.Text;
+
+            var index = fullText.IndexOf(searchText, StringComparison.CurrentCultureIgnoreCase);
+            if (index == -1)
+                return new Thickness(0, 0, textBlock.ActualWidth, textBlock.ActualHeight);
+
+            double rightMargin = textBlock.ActualWidth -
+                ComputeTextWidth(fullText.Substring(0, index + searchText.Length), typeface, textBlock);
+
+            double leftMargin = textBlock.ActualWidth - rightMargin -
+                ComputeTextWidth(fullText.Substring(index, searchText.Length), typeface, textBlock);
+
+            return new Thickness(leftMargin, 0, rightMargin, 0);
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+        private double ComputeTextWidth(string text, Typeface typeface, TextBlock textBlock)
+        {
+            var formattedText = new FormattedText(text,
+                CultureInfo.CurrentUICulture,
+                FlowDirection.LeftToRight,
+                typeface,
+                textBlock.FontSize,
+                textBlock.Foreground);
+
+            return formattedText.Width;
         }
     }
 }

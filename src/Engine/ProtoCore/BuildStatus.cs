@@ -47,6 +47,7 @@ namespace ProtoCore
             kFileNotFound,
             kAlreadyImported,
             kMultipleSymbolFound,
+            kMultipleSymbolFoundFromName,
             kWarnMax
         }
 
@@ -84,7 +85,8 @@ namespace ProtoCore
             public const string kUsingNonStaticMemberInStaticContext = "'{0}' is not a static property, so cannot be assigned to static properties or used in static methods.";
             public const string kFileNotFound = "File : '{0}' not found";
             public const string kAlreadyImported = "File : '{0}' is already imported";
-            public const string kMultipleSymbolFound = "Multiple definitions for '{0}' are found as {1}";
+            public const string kMultipleSymbolFound = "Multiple definitions for '{0}' are found as {1}";   
+            public const string kMultipleSymbolFoundFromName = "Multiple definitions for '{0}' are found as {1}";   
         }
 
         public struct ErrorEntry
@@ -102,6 +104,7 @@ namespace ProtoCore
             public int Line;
             public int Column;
             public Guid GraphNodeGuid;
+            public int AstID;
             public string FileName;
         }
     }
@@ -464,7 +467,17 @@ namespace ProtoCore
         {
             warnings.Clear();
         }
-        
+
+        public void ClearWarningsForAst(int astID)
+        {
+            warnings.RemoveAll(w => w.AstID.Equals(astID));
+        }
+
+        public void ClearWarningsForGraph(Guid guid)
+        {
+            warnings.RemoveAll(w => w.GraphNodeGuid.Equals(guid));
+        }
+
         public void ClearErrors()
         {
             errors.Clear();
@@ -541,7 +554,25 @@ namespace ProtoCore
             throw new BuildHaltException(msg);
         }
 
-        public void LogWarning(BuildData.WarningID warningID, string message, string fileName = null, int line = -1, int col = -1, System.Guid guid = default(Guid))
+        /// <summary>
+        /// Logs the warning where the usage of a symbol (symbolName) cannot be 
+        /// resolved because it collides with multiple symbols(collidingSymbolNames) 
+        /// </summary>
+        /// <param name="symbolUsage"></param>
+        /// <param name="duplicateSymbolNames"></param>
+        public void LogSymbolConflictWarning(string symbolName, string[] collidingSymbolNames)
+        {
+            string message = string.Format(BuildData.WarningMessage.kMultipleSymbolFoundFromName, symbolName, "");
+            message += String.Join(", ", collidingSymbolNames);
+            LogWarning(BuildData.WarningID.kMultipleSymbolFoundFromName, message);
+        }
+
+        public void LogWarning(BuildData.WarningID warningID, 
+                               string message, 
+                               string fileName = null, 
+                               int line = -1, 
+                               int col = -1, 
+                               AssociativeGraph.GraphNode graphNode = null)
         { 
             var entry = new BuildData.WarningEntry 
             { 
@@ -549,7 +580,8 @@ namespace ProtoCore
                 Message = message, 
                 Line = line, 
                 Column = col, 
-                GraphNodeGuid = guid,
+                GraphNodeGuid = graphNode == null ? default(Guid) : graphNode.guid,
+                AstID = graphNode == null? DSASM.Constants.kInvalidIndex : graphNode.OriginalAstID,
                 FileName = fileName 
             };
             warnings.Add(entry);

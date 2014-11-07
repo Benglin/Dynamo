@@ -1,14 +1,13 @@
 ﻿using Autodesk.DesignScript.Geometry;
 
-using DSRevitNodesTests;
-
 using NUnit.Framework;
-using Point = Autodesk.DesignScript.Geometry.Point;
 
-namespace DSCoreNodesTests
+using RevitTestServices;
+
+namespace RevitNodesTests
 {
     [TestFixture]
-    class GeometrySanityCheck : GeometricRevitNodeTest
+    class GeometrySanityCheck : RevitNodeTestBase
     {
         /// <summary>
         /// Example of calling ProtoGeometry methods from C#

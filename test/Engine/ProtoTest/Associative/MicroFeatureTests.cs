@@ -83,6 +83,23 @@ namespace ProtoTest.Associative
         }
 
         [Test]
+        [Category("Failure")]
+        public void TestDuplicateFunctionParams()
+        {
+            const string code = @"
+def test : int(a : int, a : int)
+{
+    return = a + a;
+}
+
+temp = test(1, 2);
+";
+            thisTest.RunScriptSource(code);
+            thisTest.VerifyBuildWarningCount(1);
+            thisTest.Verify("temp", null);
+        }
+
+        [Test]
         public void TestFunctionsOverload01()
         {
             String code =
@@ -1490,6 +1507,77 @@ c = f(a<1L>,b<2>);";
             Obj o = mirror.GetValue("a");
             Assert.IsTrue((Int64)mirror.GetValue("a").Payload == 1);
         }
+
+
+        [Test]
+        public void NestedBlocks002()
+        {
+            String code =
+        @"
+
+class MyObj {}
+class Obj {}
+
+def foo(i : var[]..[])
+{
+    return = [Imperative]
+    {
+        j = 10;
+        for(x in i)
+        {
+            j = 11;
+        }
+        return = j;
+    };
+}
+
+a = Obj.Obj();
+b = foo(null);";
+            ExecutionMirror mirror = thisTest.RunScriptSource(code);
+            thisTest.Verify("b", 10);
+        }
+
+
+        [Test]
+        public void NestedBlocks003()
+        {
+            String code =
+        @"
+
+class MyObj {}
+class Obj {}
+
+def goo(g : var[]..[])
+{
+    return = [Imperative]
+    {
+        if (g == null)
+        {
+        }
+        return = 11;
+    }
+}
+
+def foo(i : var[]..[])
+{
+    return = [Imperative]
+    {
+        j = 10;
+        for(x in i)
+        {
+            j = goo(null);
+        }
+        return = j;
+    };
+}
+
+a = Obj.Obj();
+b = foo(null);";
+            ExecutionMirror mirror = thisTest.RunScriptSource(code);
+            thisTest.Verify("b", 10);
+        }
+
+
         [Ignore]
         public void BitwiseOp001()
         {
@@ -2002,7 +2090,6 @@ x4 = 0..#5..10;
         }
 
         [Test]
-        [Category("Failure")]
         public void TestXLangUpdate_AssociativeTriggersAssociative01()
         {
             // Tracked in: http://adsk-oss.myjetbrains.com/youtrack/issue/MAGN-4585
@@ -2019,25 +2106,27 @@ a = 2;                ";
         }
 
         [Test]
-        [Category("Failure")]
-        public void TestXLangUpdate_ImperativeTriggersAssociative01()
+        public void TestXLangUpdate_AssociativeTriggersAssociative02()
         {
             // Tracked in: http://adsk-oss.myjetbrains.com/youtrack/issue/MAGN-4585
             String code =
-                @"x = [Imperative]
+                @"a = 1;
+x = [Associative]
 {
-    a = 1;
-    i = [Associative]
-    {
-        return = a + 10;
-    }
-    a = 2;
-    return = i;
+    return = a + 100;
 }
+
+
+y = [Associative]
+{
+    return = a + 200;
+}
+a = 10;
                 ";
             ExecutionMirror mirror = thisTest.RunScriptSource(code);
             string err = "MAGN-4585: Failure to trigger update in an inner associative block";
-            Assert.IsTrue((Int64)mirror.GetValue("x").Payload == 12, err);
+            Assert.IsTrue((Int64)mirror.GetValue("x").Payload == 110, err);
+            Assert.IsTrue((Int64)mirror.GetValue("y").Payload == 210, err);
         }
 
 
@@ -2533,16 +2622,14 @@ r = foo(3);";
             thisTest.Verify("r", new Object[] { 5.0, 6.0, 7.0 });
         }
 
-
         [Test]
         public void Test_Compare_Node_01()
         {
             string s1 = "a = 1;";
             string s2 = "a=(1);";
 
-            ProtoCore.AST.AssociativeAST.CodeBlockNode commentNode = null;
-            ProtoCore.AST.Node s1Root = GraphToDSCompiler.GraphUtilities.Parse(s1, out commentNode);
-            ProtoCore.AST.Node s2Root = GraphToDSCompiler.GraphUtilities.Parse(s2, out commentNode);
+            ProtoCore.AST.Node s1Root = ProtoCore.Utils.ParserUtils.Parse(s1);
+            ProtoCore.AST.Node s2Root = ProtoCore.Utils.ParserUtils.Parse(s2);
             bool areEqual = s1Root.Equals(s2Root);
             Assert.AreEqual(areEqual, true);
         }
@@ -2552,9 +2639,8 @@ r = foo(3);";
         {
             string s1 = "a = 1; b=2;";
             string s2 = "a=(1) ; b = (2);";
-            ProtoCore.AST.AssociativeAST.CodeBlockNode commentNode = null;
-            ProtoCore.AST.Node s1Root = GraphToDSCompiler.GraphUtilities.Parse(s1, out commentNode);
-            ProtoCore.AST.Node s2Root = GraphToDSCompiler.GraphUtilities.Parse(s2, out commentNode);
+            ProtoCore.AST.Node s1Root = ProtoCore.Utils.ParserUtils.Parse(s1);
+            ProtoCore.AST.Node s2Root = ProtoCore.Utils.ParserUtils.Parse(s2);
             bool areEqual = s1Root.Equals(s2Root);
             Assert.AreEqual(areEqual, true);
         }
@@ -2564,9 +2650,8 @@ r = foo(3);";
         {
             string s1 = "a     =   1;  c = a+1;";
             string s2 = "a = 1; c=a +    1;";
-            ProtoCore.AST.AssociativeAST.CodeBlockNode commentNode = null;
-            ProtoCore.AST.Node s1Root = GraphToDSCompiler.GraphUtilities.Parse(s1, out commentNode);
-            ProtoCore.AST.Node s2Root = GraphToDSCompiler.GraphUtilities.Parse(s2, out commentNode);
+            ProtoCore.AST.Node s1Root = ProtoCore.Utils.ParserUtils.Parse(s1);
+            ProtoCore.AST.Node s2Root = ProtoCore.Utils.ParserUtils.Parse(s2);
             bool areEqual = s1Root.Equals(s2Root);
             Assert.AreEqual(areEqual, true);
         }

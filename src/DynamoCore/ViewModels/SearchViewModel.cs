@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
-
+using System.Windows;
+using System.Windows.Media;
+using Dynamo.Models;
 using Dynamo.Nodes.Search;
 using Dynamo.Search;
 using Dynamo.Search.SearchElements;
 using Dynamo.Selection;
-
+using Dynamo.UI;
 using Microsoft.Practices.Prism.ViewModel;
 
 namespace Dynamo.ViewModels
@@ -63,6 +65,17 @@ namespace Dynamo.ViewModels
             }
         }
 
+        private SearchMemberGroup topResult;
+        public SearchMemberGroup TopResult
+        {
+            get { return topResult; }
+            set
+            {
+                topResult = value;
+                RaisePropertyChanged("TopResult");
+            }
+        }
+
         /// <summary>
         ///     SearchIconAlignment property
         /// </summary>
@@ -81,30 +94,6 @@ namespace Dynamo.ViewModels
         }
 
         /// <summary>
-        ///     SelectedIndex property
-        /// </summary>
-        /// <value>
-        ///     This is the currently selected element in the UI.
-        /// </value>
-        private int selectedIndex;
-        public int SelectedIndex
-        {
-            get { return selectedIndex; }
-            set
-            {
-                if (selectedIndex != value)
-                {
-                    if (visibleSearchResults.Count > selectedIndex)
-                        visibleSearchResults[selectedIndex].IsSelected = false;
-                    selectedIndex = value;
-                    if (visibleSearchResults.Count > selectedIndex)
-                        visibleSearchResults[selectedIndex].IsSelected = true;
-                    RaisePropertyChanged("SelectedIndex");
-                }
-            }
-        }
-
-        /// <summary>
         ///     Visible property
         /// </summary>
         /// <value>
@@ -118,6 +107,14 @@ namespace Dynamo.ViewModels
             {
                 visible = value;
                 RaisePropertyChanged("Visible");
+            }
+        }
+
+        public bool SearchAddonsVisibility
+        {
+            get 
+            {
+                return Model.AddonRootCategories.Any(cat => cat.Visibility);
             }
         }
 
@@ -143,23 +140,14 @@ namespace Dynamo.ViewModels
         /// </value>
         public ObservableCollection<SearchElementBase> SearchResults { get; private set; }
 
-        /// <summary>
-        /// A category representing the "Top Result"
-        /// </summary>
-        private BrowserRootElement topResult;
-
-        /// <summary>
-        ///     An ordered list representing all of the visible items in the browser.
-        ///     This is used to manage up-down navigation through the menu.
-        /// </summary>
-        private List<BrowserItem> visibleSearchResults = new List<BrowserItem>();
-
         private bool searchScrollBarVisibility = true;
         public bool SearchScrollBarVisibility
         {
             get { return searchScrollBarVisibility; }
             set { searchScrollBarVisibility = value; RaisePropertyChanged("SearchScrollBarVisibility"); }
         }
+
+        public Typeface RegularTypeface { get; private set; }
 
         public SearchModel Model { get; private set; }
         private readonly DynamoViewModel dynamoViewModel;
@@ -177,26 +165,18 @@ namespace Dynamo.ViewModels
         }
 
         private void InitializeCore()
-        {
-            SelectedIndex = 0;
+        {   
             SearchResults = new ObservableCollection<SearchElementBase>();
             Visible = false;
             searchText = "";
             searchIconAlignment = System.Windows.HorizontalAlignment.Left;
 
-            topResult = this.Model.AddRootCategoryToStart("Top Result");
+            var fontFamily = new FontFamily(SharedDictionaryManager.DynamoModernDictionaryUri, "../../Fonts/#Open Sans");
+            RegularTypeface = new Typeface(fontFamily, FontStyles.Normal, FontWeights.Normal,
+                FontStretches.Normal);
 
             this.Model.RequestSync += ModelOnRequestSync;
             this.Model.Executed += ExecuteElement;
-        }
-
-        #endregion
-
-        #region Destruction
-
-        ~SearchViewModel()
-        {
-            this.Model.RequestSync -= this.ModelOnRequestSync;
         }
 
         #endregion
@@ -209,8 +189,7 @@ namespace Dynamo.ViewModels
         }
 
         /// <summary>
-        ///     Performs a search using the internal SearcText as the query and
-        ///     updates the observable SearchResults property.
+        ///     Performs a search using the internal SearcText as the query.
         /// </summary>
         internal void SearchAndUpdateResults()
         {
@@ -230,105 +209,60 @@ namespace Dynamo.ViewModels
 
             //sw.Start();
 
-            var result = this.Model.Search(query).ToList();
+            var foundNodes = this.Model.Search(query);
+            this.UpdateTopResult();
+
 
             //sw.Stop();
 
             //this.dynamoViewModel.Model.Logger.Log(String.Format("Search complete in {0}", sw.Elapsed));
 
-            // Remove old execute handler from old top result
-            if (topResult.Items.Any() && topResult.Items.First() is NodeSearchElement)
-            {
-                var oldTopResult = topResult.Items.First() as NodeSearchElement;
-                oldTopResult.Executed -= this.ExecuteElement;
-            }
-
-            // deselect the last selected item
-            if (visibleSearchResults.Count > SelectedIndex)
-            {
-                visibleSearchResults[SelectedIndex].IsSelected = false;
-            }
-
-            // clear visible results list
-            visibleSearchResults.Clear();
-
             // if the search query is empty, go back to the default treeview
             if (string.IsNullOrEmpty(query))
             {
-                foreach (var ele in this.Model.BrowserRootCategories)
+                foreach (var ele in this.Model.AddonRootCategories)
                 {
                     ele.CollapseToLeaves();
                     ele.SetVisibilityToLeaves(true);
                 }
 
-                // hide the top result
-                topResult.Visibility = false;
                 return;
             }
 
             // otherwise, first collapse all
-            foreach (var root in this.Model.BrowserRootCategories)
+            foreach (var root in this.Model.AddonRootCategories)
             {
                 root.CollapseToLeaves();
                 root.SetVisibilityToLeaves(false);
             }
 
-            // if there are any results, add the top result 
-            if (result.Any() && result.ElementAt(0) is NodeSearchElement)
+            foreach (NodeSearchElement ele in foundNodes)
             {
-                topResult.Items.Clear();
+                if (ele.ElementType == SearchModel.ElementType.Regular)
+                    continue;
 
-                var firstRes = (result.ElementAt(0) as NodeSearchElement);
-
-                var copy = firstRes.Copy();
-                copy.Executed += this.ExecuteElement;
-
-                var catName = MakeShortCategoryString(firstRes.FullCategoryName);
-
-                var breadCrumb = new BrowserInternalElement(catName, topResult);
-                breadCrumb.AddChild(copy);
-                topResult.AddChild(breadCrumb);
-
-                topResult.SetVisibilityToLeaves(true);
-                copy.ExpandToRoot();
-            }
-
-            // for all of the other results, show them in their category
-            foreach (var ele in result)
-            {
-                ele.Visibility = true;
                 ele.ExpandToRoot();
+                ele.Visibility = true;
             }
 
-            // create an ordered list of visible search results
-            var baseBrowserItem = new BrowserRootElement("root");
-            foreach (var root in Model.BrowserRootCategories)
-            {
-                baseBrowserItem.Items.Add(root);
-            }
+            RaisePropertyChanged("SearchAddonsVisibility");
 
-            baseBrowserItem.GetVisibleLeaves(ref visibleSearchResults);
-
-            if (visibleSearchResults.Any())
-            {
-                this.SelectedIndex = 0;
-                visibleSearchResults[0].IsSelected = true;
-            }
-
-            SearchResults.Clear();
-            visibleSearchResults.ToList()
-                .ForEach(x => SearchResults.Add((NodeSearchElement)x));
-
+            // SearchResults doesn't used everywhere.
+            // It is populated for making connected tests as successful.
+            SearchResults = new ObservableCollection<SearchElementBase>(foundNodes);
         }
 
-        private static string MakeShortCategoryString(string fullCategoryName)
+        internal static string ShortenCategoryName(string fullCategoryName)
         {
-            var catName = fullCategoryName.Replace(".", " > ");
+            if (string.IsNullOrEmpty(fullCategoryName))
+                return string.Empty;
+
+            var catName = fullCategoryName.Replace(Configurations.CategoryDelimiter.ToString(), " " + Configurations.ShortenedCategoryDelimiter + " ");
 
             // if the category name is too long, we strip off the interior categories
             if (catName.Length > 50)
             {
-                var s = catName.Split('>').Select(x => x.Trim()).ToList();
+                var s = catName.Split(Configurations.ShortenedCategoryDelimiter).Select(x => x.Trim()).ToList();
                 if (s.Count() > 4)
                 {
                     s = new List<string>()
@@ -339,40 +273,31 @@ namespace Dynamo.ViewModels
                                             s[s.Count - 2],
                                             s[s.Count - 1]
                                         };
-                    catName = String.Join(" > ", s);
+                    catName = String.Join(" " + Configurations.ShortenedCategoryDelimiter + " ", s);
                 }
             }
 
             return catName;
         }
 
-        #endregion
-
-        #region Selection
-
-        /// <summary>
-        ///     Increments the selected element by 1, unless it is the last element already
-        /// </summary>
-        public void SelectNext()
+        private void UpdateTopResult()
         {
-            if (SelectedIndex == SearchResults.Count - 1
-                || SelectedIndex == -1)
+            if (!Model.SearchRootCategories.Any())
+            {
+                TopResult = null;
                 return;
+            }
 
-            SelectedIndex = SelectedIndex + 1;
+            // If SearchRootCategories has at least 1 element, it has at least 1 member. 
+            var firstMemberGroup = Model.SearchRootCategories.First().
+                MemberGroups.First();
+
+            var topMemberGroup = new SearchMemberGroup(firstMemberGroup.FullyQualifiedName);
+            topMemberGroup.AddMember(firstMemberGroup.Members.First());
+
+            TopResult = topMemberGroup;
         }
-
-        /// <summary>
-        ///     Decrements the selected element by 1, unless it is the first element already
-        /// </summary>
-        public void SelectPrevious()
-        {
-            if (SelectedIndex <= 0)
-                return;
-
-            SelectedIndex = SelectedIndex - 1;
-        }
-
+        
         #endregion
 
         #region Search field manipulation
@@ -424,13 +349,7 @@ namespace Dynamo.ViewModels
         /// </summary>
         public void PopulateSearchTextWithSelectedResult()
         {
-            if (SearchResults.Count == 0) return;
-
-            // none of the elems are selected, return 
-            if (SelectedIndex == -1)
-                return;
-
-            SearchText = SearchResults[SelectedIndex].Name;
+            // TODO: implement it for new navigation system
         }
 
         #endregion
@@ -438,21 +357,11 @@ namespace Dynamo.ViewModels
         #region Execution
 
         /// <summary>
-        ///     Runs the Execute() method of the current selected SearchElementBase object
-        ///     amongst the SearchResults.
+        ///     Runs the Execute() method of the current selected SearchElementBase object.
         /// </summary>
         public void Execute()
         {
-            // none of the elems are selected, return 
-            if (SelectedIndex == -1)
-                return;
-
-            if (visibleSearchResults.Count <= SelectedIndex)
-                return;
-
-            if (!(visibleSearchResults[SelectedIndex] is SearchElementBase)) return;
-
-            ExecuteElement(visibleSearchResults[SelectedIndex] as SearchElementBase);
+            // TODO: implement it for new navigation system
         }
 
         private void ExecuteElement(SearchElementBase searchElement)
@@ -471,7 +380,7 @@ namespace Dynamo.ViewModels
             // create node
             var guid = Guid.NewGuid();
             this.dynamoViewModel.ExecuteCommand(
-                new DynamoViewModel.CreateNodeCommand(guid, element.FunctionDescriptor.MangledName, 0, 0, true, true));
+                new DynamoModel.CreateNodeCommand(guid, element.FunctionDescriptor.MangledName, 0, 0, true, true));
 
             // select node
             var placedNode = dynamoViewModel.Model.Nodes.Find((node) => node.GUID == guid);
@@ -489,7 +398,7 @@ namespace Dynamo.ViewModels
             // create node
             var guid = Guid.NewGuid();
             dynamoViewModel.ExecuteCommand(
-                new DynamoViewModel.CreateNodeCommand(guid, name, 0, 0, true, true));
+                new DynamoModel.CreateNodeCommand(guid, name, 0, 0, true, true));
 
             // select node
             var placedNode = dynamoViewModel.Model.Nodes.Find((node) => node.GUID == guid);
@@ -505,7 +414,7 @@ namespace Dynamo.ViewModels
             // create node
             var guid = Guid.NewGuid();
             dynamoViewModel.ExecuteCommand(
-                new DynamoViewModel.CreateNodeCommand(guid, element.FullName, 0, 0, true, true));
+                new DynamoModel.CreateNodeCommand(guid, element.FullName, 0, 0, true, true));
 
             // select node
             var placedNode = dynamoViewModel.Model.Nodes.Find((node) => node.GUID == guid);

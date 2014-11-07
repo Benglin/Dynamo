@@ -3,7 +3,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Dynamo.Nodes.Search;
+using Dynamo.Search.SearchElements;
 using Dynamo.UI.Controls;
 using Dynamo.Utilities;
 
@@ -13,8 +15,13 @@ namespace Dynamo.Controls
     {
         /// <summary>
         /// Field specifies the prospective index of selected class in collection.
+        /// It is also used to guard against unnecessary "OrderListItems" 
+        /// calls which repaints the UI. Here its value is set to "-2" to ensure that 
+        /// "OrderListItems" method gets called at least once at the beginning (i.e. 
+        /// when "ListView.SelectedIndex" is "-1", which would have avoided the first
+        /// "OrderListItems" if "currentSelectedIndex" is set to "-1").
         /// </summary>
-        private int selectedClassProspectiveIndex = -1;
+        private int selectedClassProspectiveIndex = -2;
         private double classObjectWidth = double.NaN;
         private ObservableCollection<BrowserItem> collection;
         private BrowserInternalElement currentClass;
@@ -29,8 +36,112 @@ namespace Dynamo.Controls
             collection = classListView.ItemsSource as ObservableCollection<BrowserItem>;
             collection.Add(new ClassInformation());
             classListView.SelectionChanged += OnClassViewSelectionChanged;
+            this.KeyDown += OnLibraryWrapPanelKeyDown;
 
             base.OnInitialized(e);
+        }
+
+        private void OnLibraryWrapPanelKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            var classButton = Keyboard.FocusedElement as ListBoxItem;
+
+            // Enter collapses and expands class button.
+            if (e.Key == Key.Enter)
+            {
+                classButton.IsSelected = !classButton.IsSelected;
+                e.Handled = true;
+                return;
+            }
+
+            var buttonsWrapPanel = sender as LibraryWrapPanel;
+            var listButtons = buttonsWrapPanel.Children;
+
+            // If focused element is NodeSearchElement, that means focused element is inside expanded class.
+            if (classButton.DataContext is NodeSearchElement)
+            {
+                // If user presses Up, we have to move back to selected class.
+                if (e.Key == Key.Up)
+                {
+                    var selectedClassButton = listButtons.OfType<ListViewItem>().
+                        Where(button => button.IsSelected).FirstOrDefault();
+                    if (selectedClassButton != null) selectedClassButton.Focus();
+                    e.Handled = true;
+                    return;
+                }
+                // Otherwise, let user move inside expanded class.
+                return;
+            }
+
+            // If class is selected, we should move down to ClassDetails.
+            else if (e.Key == Key.Down)
+            {
+                if (classButton.IsSelected)
+                {
+                    int classInfoIndex = GetClassInformationIndex();
+                    var standardPanel = listButtons[classInfoIndex];
+                    var firstMemberList = WPF.FindChild<ListBox>(standardPanel, "primaryMembers");
+                    var generator = firstMemberList.ItemContainerGenerator;
+                    (generator.ContainerFromIndex(0) as ListBoxItem).Focus();
+
+                    e.Handled = true;
+                    return;
+                }
+            }
+
+            var selectedIndex = listButtons.IndexOf(classButton);
+            int itemsPerRow = (int)Math.Floor(buttonsWrapPanel.ActualWidth / classButton.ActualWidth);
+
+            int newIndex = GetIndexNextSelectedItem(e.Key, selectedIndex, itemsPerRow);
+
+            // If index is out of range class list, that means we have to move to previous category
+            // or to next member group.
+            if ((newIndex < 0) || (newIndex > listButtons.Count))
+            {
+                e.Handled = false;
+                return;
+            }
+
+            // Set focus on new item.
+            listButtons[newIndex].Focus();
+
+            e.Handled = true;
+            return;
+        }
+
+        private int GetIndexNextSelectedItem(Key key, int selectedIndex, int itemsPerRow)
+        {
+            int newIndex = -1;
+            int selectedRowIndex = selectedIndex / itemsPerRow + 1;
+
+            switch (key)
+            {
+                case Key.Right:
+                    {
+                        newIndex = selectedIndex + 1;
+                        int availableIndex = selectedRowIndex * itemsPerRow - 1;
+                        if (newIndex > availableIndex) newIndex = selectedIndex;
+                        break;
+                    }
+                case Key.Left:
+                    {
+                        newIndex = selectedIndex - 1;
+                        int availableIndex = (selectedRowIndex - 1) * itemsPerRow;
+                        if (newIndex < availableIndex) newIndex = selectedIndex;
+                        break;
+                    }
+                case Key.Down:
+                    {
+                        newIndex = selectedIndex + itemsPerRow + 1;
+                        // +1 because one of items is always ClassInformation.
+                        break;
+                    }
+                case Key.Up:
+                    {
+                        newIndex = selectedIndex - itemsPerRow;
+                        break;
+                    }
+            }
+            return newIndex;
         }
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
@@ -66,7 +177,7 @@ namespace Dynamo.Controls
             double x = 0, y = 0, currentRowHeight = 0;
 
             int itemsPerRow = (int)Math.Floor(finalSize.Width / classObjectWidth);
-            double sizeBetweenItems = (finalSize.Width - itemsPerRow*classObjectWidth) / (itemsPerRow+1);
+            double sizeBetweenItems = (finalSize.Width - itemsPerRow * classObjectWidth) / (itemsPerRow + 1);
 
 
             foreach (UIElement child in this.Children)
@@ -104,7 +215,19 @@ namespace Dynamo.Controls
 
         private void OnClassViewSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var index = ((sender as ListView).SelectedIndex);
+            var selectedIndex = (sender as ListView).SelectedIndex;
+
+            // As focus moves within the class details, class button gets selected which 
+            // triggers a selection change. During a selection change the items in the 
+            // wrap panel gets reordered through "OrderListItems", but this is not always 
+            // necessary. Here we determine if the "translatedIndex" is the same as
+            // "selectedClassProspectiveIndex", if so simply returns to avoid a repainting.
+            var translatedIndex = TranslateSelectionIndex(selectedIndex);
+            if (selectedClassProspectiveIndex == translatedIndex)
+                return;
+
+            selectedClassProspectiveIndex = translatedIndex;
+
             int classInfoIndex = GetClassInformationIndex();
 
             // Something went wrong, AssumedItem and SelectedItem must be the same.
@@ -126,7 +249,7 @@ namespace Dynamo.Controls
             // is invoked to deselect the item. This causes 'OnClassViewSelectionChanged' to be 
             // called again, with 'SelectedIndex' set to '-1', indicating that no item is selected,
             // in which case we need to hide the standard panel.
-            if (index == -1)
+            if (selectedClassProspectiveIndex == -1)
             {
                 if (classInfoIndex != -1)
                     (collection[classInfoIndex] as ClassInformation).ClassDetailsVisibility = false;
@@ -134,10 +257,11 @@ namespace Dynamo.Controls
                 return;
             }
             else
+            {
                 (collection[classInfoIndex] as ClassInformation).ClassDetailsVisibility = true;
+            }
 
-            selectedClassProspectiveIndex = TranslateSelectionIndex(index);
-            currentClass = collection[index] as BrowserInternalElement;
+            currentClass = collection[selectedIndex] as BrowserInternalElement;
             OrderListItems(); // Selection change, we may need to reorder items.
         }
 

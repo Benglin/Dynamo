@@ -51,6 +51,7 @@ namespace Dynamo.Nodes.Search
                 if (classDetails == null && IsPlaceholder)
                 {
                     classDetails = new ClassInformation();
+                    classDetails.IsRootCategoryDetails = true;
                     classDetails.PopulateMemberCollections(this);
                 }
 
@@ -112,6 +113,10 @@ namespace Dynamo.Nodes.Search
                     // Get dis-ambiguous resource name and try again.
                     name = GetResourceName(ResourceType.SmallIcon, true);
                     icon = GetIcon(name + Dynamo.UI.Configurations.SmallIconPostfix);
+
+                    // If there is no icon, use default.
+                    if (icon == null)
+                        icon = LoadDefaultIcon();
                 }
                 return icon;
             }
@@ -194,7 +199,6 @@ namespace Dynamo.Nodes.Search
             this._name = "Default";
             this.Parent = null;
             this.OldParent = null;
-            this.Focusable = true;
         }
 
         public BrowserInternalElement(string name, BrowserItem parent, string _assembly = "")
@@ -203,7 +207,6 @@ namespace Dynamo.Nodes.Search
             this.assembly = _assembly;
             this.Parent = parent;
             this.OldParent = null;
-            this.Focusable = true;
         }
 
         public string FullCategoryName { get; set; }
@@ -227,6 +230,67 @@ namespace Dynamo.Nodes.Search
             if (cust != null)
                 icon = cust.LoadIconInternal(fullNameOfIcon);
             return icon;
+        }
+
+        private BitmapSource LoadDefaultIcon()
+        {
+            var cust = LibraryCustomizationServices.GetForAssembly(Dynamo.UI.Configurations.DefaultAssembly);
+            return cust.LoadIconInternal(Dynamo.UI.Configurations.DefaultIcon);
+        }
+    }
+
+    public class BrowserInternalElementForClasses : BrowserItem
+    {
+        private string name;
+        public override string Name
+        {
+            get { return name; }
+        }
+
+        /// <summary>
+        ///     The classes inside of the browser item
+        /// </summary>
+        private ObservableCollection<BrowserItem> classesItems = new ObservableCollection<BrowserItem>();
+        public override ObservableCollection<BrowserItem> Items 
+        {
+            get { return classesItems; }
+            set { classesItems = value; } 
+        }
+
+        public BrowserItem Parent { get; set; }
+
+        public BrowserInternalElementForClasses(string name, BrowserItem parent)
+        {
+            this.name = name;
+            this.Parent = parent;
+        }
+
+        public bool ContainsClass(string className)
+        {
+            var searchedClass = Items.FirstOrDefault(x => x.Name == className);
+            return searchedClass != null;
+        }
+
+
+        /// <summary>
+        /// Tries  to get child category, in fact child class.
+        /// If class was not found, then creates it.
+        /// </summary>
+        /// <param name="childCategoryName">Name of searched class</param>
+        /// <param name="resourceAssembly">Assembly with icons</param>
+        /// <returns></returns>
+        public BrowserItem GetChildCategory(string childCategoryName, string resourceAssembly)
+        {
+            // Find among all presented classes requested class.
+            var allPresentedClasses = Items;
+            var requestedClass = allPresentedClasses.FirstOrDefault(x => x.Name == childCategoryName);
+            if (requestedClass != null) return requestedClass;
+
+            //  Add new class, if it wasn't found.
+            var tempClass = new BrowserInternalElement(childCategoryName, this, resourceAssembly);
+            tempClass.FullCategoryName = Parent.Name + childCategoryName;
+            Items.Add(tempClass);
+            return tempClass;
         }
     }
 
@@ -256,6 +320,11 @@ namespace Dynamo.Nodes.Search
         private bool hideClassDetails = false;
 
         /// <summary>
+        /// Specifies whether or not parent is root category (BrowserRootElement).
+        /// </summary>
+        public bool IsRootCategoryDetails { get; set; }
+
+        /// <summary>
         /// Specifies whether or not instance should be shown as StandardPanel.
         /// </summary>
         public bool ClassDetailsVisibility
@@ -265,6 +334,7 @@ namespace Dynamo.Nodes.Search
                 // If a caller sets the 'ClassDetailsVisibility' to 'false',
                 // then it is intended that we hide away the class details.
                 hideClassDetails = !value;
+                RaisePropertyChanged("ClassDetailsVisibility");
             }
 
             get
@@ -324,7 +394,6 @@ namespace Dynamo.Nodes.Search
             createMembers = new List<BrowserInternalElement>();
             actionMembers = new List<BrowserInternalElement>();
             queryMembers = new List<BrowserInternalElement>();
-            Focusable = false;
         }
 
         private List<BrowserInternalElement> createMembers;

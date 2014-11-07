@@ -3,6 +3,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using Dynamo.DSEngine;
+using Dynamo.Library;
+using Utils = Dynamo.Nodes.Utilities;
 
 namespace Dynamo.Search.SearchElements
 {
@@ -22,7 +24,10 @@ namespace Dynamo.Search.SearchElements
 
         public override NodeSearchElement Copy()
         {
-            return new DSFunctionNodeSearchElement(_displayString, FunctionDescriptor, Group);
+            var copiedNode = new DSFunctionNodeSearchElement(_displayString, FunctionDescriptor, Group);
+            copiedNode.ElementType = ElementType;
+
+            return copiedNode;
         }
 
         public override bool Equals(object obj)
@@ -53,79 +58,58 @@ namespace Dynamo.Search.SearchElements
             switch (resourceType)
             {
                 case ResourceType.SmallIcon:
-                {
-                    string name = String.Empty;
-
-                    // Usual case.
-                    if (!disambiguate)
-                    {
-                        name = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.QualifiedName);
-
-                        // Case for operators. Operators should use FunctionDescriptor.Name property.
-                        if (string.IsNullOrEmpty(name))
-                            name = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.Name);
-
-                        return name;
-                    }
-
-                    // Case for overloaded methods.
-                    return TypedParametersToString(this.FunctionDescriptor);
-                }
                 case ResourceType.LargeIcon:
                 {
-                    string name = String.Empty;
+                    string name = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.QualifiedName);
+
+                    if (string.IsNullOrEmpty(name)) 
+                        name = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.Name); 
 
                     // Usual case.
                     if (!disambiguate)
-                    {
-                        name = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.QualifiedName);
-
-                        // Case for operators. Operators should use FunctionDescriptor.Name property.
-                        if (string.IsNullOrEmpty(name))
-                            name = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.Name);
-
                         return name;
-                    }
 
                     // Case for overloaded methods.
-                    return TypedParametersToString(this.FunctionDescriptor);
+                    if (name == FunctionDescriptor.QualifiedName)
+                    {
+                        return Utils.TypedParametersToString(FunctionDescriptor);
+                    }
+                    else
+                    {
+                        // Some nodes contain names with invalid symbols like %, <, >, etc. In this 
+                        // case the value of "FunctionDescriptor.Name" property should be used. For 
+                        // an example, "DynamoUnits.SUnit.%" to be renamed as "DynamoUnits.SUnit.mod".
+                        string shortName = Nodes.Utilities.NormalizeAsResourceName(FunctionDescriptor.Name);
+                        return Utils.TypedParametersToString(FunctionDescriptor, name + shortName);
+                    }
                 }
             }
 
             throw new InvalidOperationException("Unhandled resourceType");
         }
 
-        internal static string TypedParametersToString(FunctionDescriptor descriptor)
+        protected override string GenerateOutputParameters()
         {
-            string iconName = descriptor.QualifiedName + ".";
-            List<Tuple<string, string>> listInputs = new List<Tuple<string, string>>();
-            if (descriptor.InputParameters == null) return String.Empty;
+            if (FunctionDescriptor.Type == FunctionType.Constructor) 
+                return FunctionDescriptor.UnqualifedClassName;
 
-            foreach (var parameter in descriptor.InputParameters)
-                listInputs.Add(parameter);
+            return base.GenerateOutputParameters();
+        }
 
-            for (int i = 0; i < listInputs.Count; i++)
-            {
-                string typeOfParameter = listInputs[i].Item2;
+        protected override List<Tuple<string, string>> GenerateInputParameters()
+        {
+            string vartype = string.Empty;
+            string varname = string.Empty;
 
-                // Check if there simbols like "[]".
-                // And remove them, according how much we found.
-                // e.g. bool[][] -> bool2
-                int squareBrackets = typeOfParameter.Count(x => x == '[');
-                if (squareBrackets > 0)
-                {
-                    // Remove square brackets.
-                    typeOfParameter =
-                        typeOfParameter.Remove(typeOfParameter.Length - squareBrackets*2);
-                    // Add number of them.
-                    typeOfParameter = String.Concat(typeOfParameter, squareBrackets.ToString());
-                }
-                if (i != 0)
-                    iconName += "-" + typeOfParameter;
-                else
-                    iconName += typeOfParameter;
-            }
-            return iconName;
+            var className = FunctionDescriptor.ClassName;
+
+            vartype = className.Split('.').Last();
+            varname = vartype[0].ToString().ToLowerInvariant();
+
+            List<Tuple<string, string>>  inputParameters = new List<Tuple<string, string>>();
+            inputParameters.Add(Tuple.Create(varname, vartype));
+
+            return inputParameters;
         }
     }
 }

@@ -1,11 +1,23 @@
-﻿namespace Dynamo.Core.Threading
-{
-#if ENABLE_DYNAMO_SCHEDULER
+﻿#if ENABLE_DYNAMO_SCHEDULER
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using Dynamo.DSEngine;
+using Dynamo.Models;
+
+namespace Dynamo.Core.Threading
+{
     class SetTraceDataAsyncTask : AsyncTask
     {
         private EngineController engineController;
         private IEnumerable<KeyValuePair<Guid, List<string>>> traceData;
+
+        internal override TaskPriority Priority
+        {
+            get { return TaskPriority.Highest; }
+        }
 
         internal SetTraceDataAsyncTask(DynamoScheduler scheduler)
             : base(scheduler)
@@ -57,6 +69,6 @@
 
         #endregion
     }
+}
 
 #endif
-}

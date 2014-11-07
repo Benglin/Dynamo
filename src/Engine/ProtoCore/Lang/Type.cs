@@ -415,7 +415,14 @@ namespace ProtoCore
                 //We're being asked to convert an array into an array
                 //walk over the structure converting each othe elements
 
-                if (targetType.UID == (int)PrimitiveType.kTypeVar && targetType.rank == DSASM.Constants.kArbitraryRank && core.Heap.IsTemporaryPointer(sv))
+                var hpe = core.Heap.GetHeapElement(sv);
+#if GC_REFERENCE_COUNTING
+                var isTemporary = hpe.Active && hpe.Refcount == 0;
+#else
+                var isTemporary = false;
+#endif
+
+                if (targetType.UID == (int)PrimitiveType.kTypeVar && targetType.rank == DSASM.Constants.kArbitraryRank && isTemporary)
                 {
                     return sv;
                 }
@@ -460,7 +467,7 @@ namespace ProtoCore
                     //Upcast once
                     StackValue coercedValue = Coerce(sv, newTargetType, core);
                     GCUtils.GCRetain(coercedValue, core);
-                    StackValue newSv = HeapUtils.StoreArray(new StackValue[] { coercedValue }, null, core);
+                    StackValue newSv = core.Heap.AllocateArray(new StackValue[] { coercedValue }, null);
                     return newSv;
                 }
                 else
@@ -475,7 +482,7 @@ namespace ProtoCore
                     //Upcast once
                     StackValue coercedValue = Coerce(sv, newTargetType, core);
                     GCUtils.GCRetain(coercedValue, core);
-                    StackValue newSv = HeapUtils.StoreArray(new StackValue[] { coercedValue }, null, core);
+                    StackValue newSv = core.Heap.AllocateArray(new StackValue[] { coercedValue }, null);
                     return newSv;
                 }
             }
@@ -525,7 +532,9 @@ namespace ProtoCore
                     {
                         if (sv.metaData.type == (int)PrimitiveType.kTypeDouble)
                         {
-                            core.RuntimeStatus.LogWarning(RuntimeData.WarningID.kTypeConvertionCauseInfoLoss, ProtoCore.RuntimeData.WarningMessage.kConvertDoubleToInt);
+                            //TODO(lukechurch): Once the API is improved (MAGN-5174)
+                            //Replace this with a log entry notification
+                            //core.RuntimeStatus.LogWarning(RuntimeData.WarningID.kTypeConvertionCauseInfoLoss, ProtoCore.RuntimeData.WarningMessage.kConvertDoubleToInt);
                         }
                         return sv.ToInteger();
                     }

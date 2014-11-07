@@ -20,6 +20,16 @@ namespace Dynamo.Nodes.Search
         public void RecursivelySort()
         {
             this.Items = new ObservableCollection<BrowserItem>(this.Items.OrderBy(x => x.Name));
+
+            // BrowserInternalElementForClasses object, if any, must 
+            // always appear before any other nested namespaces. 
+            var classes = this.Items.OfType<BrowserInternalElementForClasses>().FirstOrDefault();
+            if (classes != null)
+            {
+                this.Items.Remove(classes);
+                this.Items.Insert(0, classes);
+            }
+
             this.Items.ToList().ForEach(x=>x.RecursivelySort());
         }
 
@@ -87,6 +97,7 @@ namespace Dynamo.Nodes.Search
             this.IsExpanded = false;
             foreach (var ele in Items)
             {
+                if (ele is ClassInformation) continue;
                 ele.CollapseToLeaves();
             }
         }
@@ -99,6 +110,7 @@ namespace Dynamo.Nodes.Search
             this.Visibility = visibility;
             foreach (var ele in Items)
             {
+                if (ele is ClassInformation) continue;
                 ele.SetVisibilityToLeaves(visibility);
             }
         }
@@ -117,38 +129,6 @@ namespace Dynamo.Nodes.Search
             {
                 _visibility = value;
                 RaisePropertyChanged("Visibility");
-            }
-        }
-
-        /// <summary>
-        /// Whether the item is focusable or not, used when creates LibraryView.
-        /// Used to make StandardPanel not clickable, i.e. ClassObjectTemplate.Focusable - true,
-        /// ClassDetailsTemplate.Focusable - false.
-        /// </summary>
-        private bool _focusable = false;
-        public bool Focusable
-        {
-            get
-            {
-                return _focusable;
-            }
-            set
-            {
-                _focusable = value;
-            }
-        }
-
-        /// <summary>
-        /// Whether the item is selected or not
-        /// </summary>
-        private bool _isSelected = false;
-        public bool IsSelected
-        {
-            get { return _isSelected; }
-            set
-            {
-                _isSelected = value;
-                RaisePropertyChanged("IsSelected");
             }
         }
 

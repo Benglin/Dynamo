@@ -14,16 +14,30 @@
         <controls:BoolToVisibilityCollapsedConverter x:Key="BoolToVisibilityCollapsedConverter" />
         <controls:BrowserItemToBooleanConverter x:Key="BrowserItemToBooleanConverter" />
         <controls:DisplayModeToTextDecorationsConverter x:Key="DisplayModeToTextDecorationsConverter" />
+        <controls:MultiBoolToVisibilityConverter x:Key="MultiBoolToVisibilityConverter" />
+        <controls:BooleanToBrushConverter x:Key="BooleanToBrushConverter"
+                                          TrueBrush="#333333"
+                                          FalseBrush="#272727" />
+
+        <Style TargetType="{x:Type ScrollViewer}">
+            <Setter Property="HorizontalScrollBarVisibility"
+                    Value="Hidden" />
+            <EventSetter Event="PreviewMouseWheel"
+                         Handler="OnShiftMouseWheel" />
+        </Style>
+
         <Style x:Key="ListBoxItemStyle"
                TargetType="{x:Type ListBoxItem}">
-            <Setter Property="Background"
-                    Value="#272727" />
             <Setter Property="BorderBrush"
                     Value="Transparent" />
             <Setter Property="BorderThickness"
                     Value="1" />
             <Setter Property="Height"
                     Value="40" />
+            <Setter Property="ScrollViewer.CanContentScroll"
+                    Value="True" />
+            <Setter Property="FocusVisualStyle"
+                    Value="{x:Null}" />
 
             <Setter Property="Template">
                 <Setter.Value>
@@ -33,22 +47,24 @@
                                               Content="{TemplateBinding Content}" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsMouseOver"
-                                               Value="True" />
-                                    <Condition Property="IsSelected"
-                                               Value="False" />
-                                </MultiTrigger.Conditions>
+                            <Trigger Property="IsMouseOver"
+                                     Value="True">
                                 <Setter Property="Background"
                                         Value="#444444" />
-                            </MultiTrigger>
+                            </Trigger>
+                            <Trigger Property="IsFocused"
+                                     Value="True">
+                                <Setter Property="Background"
+                                        Value="#444444" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <EventSetter Event="PreviewMouseLeftButtonDown"
                          Handler="OnMouseLeftButtonDown" />
+            <EventSetter Event="KeyDown"
+                         Handler="OnMemberButtonKeyDown" />
             <EventSetter Event="MouseEnter"
                          Handler="OnListBoxItemMouseEnter" />
             <EventSetter Event="MouseLeave"
@@ -98,11 +114,17 @@
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
-    <Border Padding="0,10,0,10"
-            Visibility="{Binding Path=ClassDetailsVisibility,
-                               Converter={StaticResource BoolToVisibilityCollapsedConverter}}">
+    <Border Padding="0,10,0,10">
+        <Border.Visibility>
+            <Binding Path="ClassDetailsVisibility"
+                     Converter="{StaticResource BoolToVisibilityCollapsedConverter}" />
+        </Border.Visibility>
+        <Border.Background>
+            <Binding Path="IsRootCategoryDetails"
+                     Converter="{StaticResource BooleanToBrushConverter}" />
+        </Border.Background>
         <Grid DataContextChanged="GridDataContextChanged"
-              Background="#272727">
+              KeyDown="OnMainGridKeyDown">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -132,8 +154,7 @@
                      Grid.Row="1"
                      Background="Transparent"
                      BorderBrush="Transparent"
-                     ItemContainerStyle="{DynamicResource ListBoxItemStyle}"
-                     ScrollViewer.HorizontalScrollBarVisibility="Hidden">
+                     ItemContainerStyle="{DynamicResource ListBoxItemStyle}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -157,10 +178,14 @@
             </ListBox>
             <Border Padding="0,10,0,10"
                     Grid.Row="2">
+                <Border.Visibility>
+                    <Binding Path="IsSecondaryHeaderLeftVisible"
+                             Converter="{StaticResource BoolToVisibilityCollapsedConverter}" />
+                </Border.Visibility>
                 <StackPanel Orientation="Horizontal"
                             Margin="16,0,0,0">
                     <TextBlock x:Name="secondaryHeaderLeft"
-                               Tag="Query"
+                               Tag="Action"
                                PreviewMouseDown="OnHeaderMouseDown"
                                VerticalAlignment="Center"
                                FontSize="9"
@@ -179,7 +204,7 @@
                                         <Pen.Thickness>
                                             <Binding Path="CurrentDisplayMode"
                                                      Converter="{StaticResource DisplayModeToTextDecorationsConverter}"
-                                                     ConverterParameter="Query" />
+                                                     ConverterParameter="Action" />
                                         </Pen.Thickness>
                                     </Pen>
                                 </TextDecoration.Pen>
@@ -191,12 +216,14 @@
                              Width="3"
                              Margin="0,0,13.5,0">
                         <Ellipse.Visibility>
-                            <Binding Path="IsSecondaryHeaderRightVisible"
-                                     Converter="{StaticResource BoolToVisibilityCollapsedConverter}" />
+                            <MultiBinding Converter="{StaticResource MultiBoolToVisibilityConverter}">
+                                <Binding Path="IsSecondaryHeaderRightVisible" />
+                                <Binding Path="IsSecondaryHeaderLeftVisible" />
+                            </MultiBinding>
                         </Ellipse.Visibility>
                     </Ellipse>
                     <TextBlock x:Name="secondaryHeaderRight"
-                               Tag="Action"
+                               Tag="Query"
                                PreviewMouseDown="OnHeaderMouseDown"
                                VerticalAlignment="Center"
                                FontSize="9"
@@ -214,7 +241,7 @@
                                         <Pen.Thickness>
                                             <Binding Path="CurrentDisplayMode"
                                                      Converter="{StaticResource DisplayModeToTextDecorationsConverter}"
-                                                     ConverterParameter="Action" />
+                                                     ConverterParameter="Query" />
                                         </Pen.Thickness>
                                     </Pen>
                                 </TextDecoration.Pen>
@@ -261,7 +288,6 @@
                 </Button.Visibility>
             </Button>
             <uicontrols:LibraryToolTipPopup x:Name="libraryToolTipPopup"
-                                            AttachmentSide="Right"
                                             StaysOpen="True"
                                             AllowsTransparency="True"
                                             MouseLeave="OnPopupMouseLeave">

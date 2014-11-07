@@ -12,6 +12,7 @@ using Dynamo.Utilities;
 using Dynamo.ViewModels;
 using TextBox = System.Windows.Controls.TextBox;
 using UserControl = System.Windows.Controls.UserControl;
+using Dynamo.Search.SearchElements;
 
 namespace Dynamo.Search
 {
@@ -42,7 +43,7 @@ namespace Dynamo.Search
 
             InitializeComponent();
             Loaded += OnSearchViewLoaded;
-            Dispatcher.ShutdownStarted += OnDispatcherShutdownStarted;
+            Unloaded += OnSearchViewUnloaded;
 
             SearchTextBox.IsVisibleChanged += delegate
             {
@@ -59,7 +60,7 @@ namespace Dynamo.Search
             searchForegroundBrushHover.Freeze();
         }
 
-        private void OnDispatcherShutdownStarted(object sender, EventArgs e)
+        private void OnSearchViewUnloaded(object sender, EventArgs e)
         {
             this.viewModel.RequestFocusSearch -= OnSearchViewModelRequestFocusSearch;
             this.viewModel.RequestReturnFocusToSearch -= OnSearchViewModelRequestReturnFocusToSearch;
@@ -78,7 +79,6 @@ namespace Dynamo.Search
 
             this.viewModel.RequestFocusSearch += OnSearchViewModelRequestFocusSearch;
             this.viewModel.RequestReturnFocusToSearch += OnSearchViewModelRequestReturnFocusToSearch;
-
         }
 
         private void OnSearchViewMouseLeave(object sender, MouseEventArgs e)
@@ -196,15 +196,7 @@ namespace Dynamo.Search
 
                 case Key.Tab:
                     viewModel.PopulateSearchTextWithSelectedResult();
-                    break;
-
-                case Key.Down:
-                    viewModel.SelectNext();
-                    break;
-
-                case Key.Up:
-                    viewModel.SelectPrevious();
-                    break;
+                    break;                                    
             }
         }
 
@@ -237,29 +229,7 @@ namespace Dynamo.Search
             if (binding != null)
                 binding.UpdateSource();
 
-            // Do not search.
-            // Search functionality isn't ready for now.
-            //this.viewModel.SearchCommand.Execute(null);
-        }
-
-        // Not used anywhere.
-        public void ListBoxItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            ((SearchViewModel)DataContext).Execute();
-        }
-
-        // Not used anywhere.
-        public void ListBoxItem_Click(object sender, RoutedEventArgs e)
-        {
-            ((ListBoxItem)sender).IsSelected = true;
-            Keyboard.Focus(this.SearchTextBox);
-        }
-
-        // Not used anywhere.
-        private void Back_Click(object sender, RoutedEventArgs e)
-        {
-            ((SearchViewModel)DataContext).RemoveLastPartOfSearchText();
-            Keyboard.Focus(this.SearchTextBox);
+            this.viewModel.SearchCommand.Execute(null);
         }
 
         private void OnTreeViewScrollViewerPreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
@@ -352,5 +322,24 @@ namespace Dynamo.Search
             }
         }
 
+        private void OnSearchTextBoxKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Down) return;
+            var topResult = WPF.FindChild<ListBox>(this, "topResultListBox");
+            if (topResult != null) topResult.Focus();
+        }
+
+        private void OnLibraryContainerViewPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Up) return;
+            var topResult = WPF.FindChild<ListBox>(this, "topResultListBox");
+            if ((topResult != null) && (topResult.IsFocused)) SearchTextBox.Focus();
+        }
+
+        private void OnLibraryViewPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Escape) return;
+            SearchTextBox.Text = "";
+        }
     }
 }

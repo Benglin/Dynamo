@@ -2,9 +2,12 @@
 using Revit.Elements;
 using NUnit.Framework;
 using RevitServices.Persistence;
+
+using RevitTestServices;
+
 using RTF.Framework;
 
-namespace DSRevitNodesTests.Elements
+namespace RevitNodesTests.Elements
 {
     [TestFixture]
     public class ModelTextTypeTests : RevitNodeTestBase

@@ -1,15 +1,20 @@
 ﻿using System;
 
 using Autodesk.DesignScript.Geometry;
+
+using NUnit.Framework;
+
 using Revit.Elements;
 using Revit.GeometryConversion;
-using NUnit.Framework;
+
+using RevitTestServices;
+
 using RTF.Framework;
 
-namespace DSRevitNodesTests.Conversion
+namespace RevitNodesTests.GeometryConversion
 {
     [TestFixture]
-    public class BoundingBoxTests : GeometricRevitNodeTest
+    public class BoundingBoxTests : RevitNodeTestBase
     {
 
         public static double BoundingBoxVolume(BoundingBox bb)
@@ -65,6 +70,32 @@ namespace DSRevitNodesTests.Conversion
             min.ShouldBeApproximately((Point)pt.InHostUnits().Translate(boxOffsetBottom));
             max.ShouldBeApproximately((Point)pt.InHostUnits().Translate(boxOffsetTop));
 
+        }
+
+        [Test]
+        public void ToRevitBoundingBox_Method_PreservesValues()
+        {
+            var csOrigin = Point.ByCoordinates(1, 2, 3);
+            var csX = Vector.ByCoordinates(0, 1, 0);
+            var csY = Vector.ByCoordinates(0, 0, 1);
+
+            var cs = CoordinateSystem.ByOriginVectors(csOrigin, csX, csY);
+
+            var minPoint = Point.ByCoordinates(-2, -2, -2);
+            var maxPoint = Point.ByCoordinates(2, 2, 2);
+
+            Autodesk.Revit.DB.BoundingBoxXYZ boundingBoxXYZ = GeometryPrimitiveConverter.ToRevitBoundingBox(
+                cs,
+                minPoint,
+                maxPoint);
+
+            boundingBoxXYZ.Min.ShouldBeApproximately(minPoint.InHostUnits());
+            boundingBoxXYZ.Max.ShouldBeApproximately(maxPoint.InHostUnits());
+
+            boundingBoxXYZ.Transform.Origin.ShouldBeApproximately(csOrigin.InHostUnits());
+
+            boundingBoxXYZ.Transform.BasisX.ShouldBeApproximately(csX);
+            boundingBoxXYZ.Transform.BasisY.ShouldBeApproximately(csY);
         }
     }
 }

@@ -51,6 +51,11 @@ namespace Dynamo.Search.SearchElements
         private SearchElementGroup _group;
         public SearchElementGroup Group { get { return _group; } }
 
+        /// <summary>
+        /// Property specifies how Node was created.
+        /// </summary>
+        public SearchModel.ElementType ElementType { get; set; }
+
         private List<Tuple<string, string>> _inputParameters;
         public IEnumerable<Tuple<string, string>> InputParameters
         {
@@ -58,15 +63,21 @@ namespace Dynamo.Search.SearchElements
             {
                 if (_inputParameters == null)
                 {
-                    _inputParameters = new List<Tuple<string, string>>();
-                    _inputParameters.Add(Tuple.Create<string, string>("", "none"));
+                    _inputParameters = GenerateInputParameters();
                 }
                 return _inputParameters;
             }
         }
 
         private string _outputParameters;
-        public string OutputParameters { get { return _outputParameters; } }
+
+        public string OutputParameters
+        {
+            get
+            {
+                return GenerateOutputParameters();
+            }
+        }
 
         private bool _searchable = true;
         public override bool Searchable { get { return _searchable; } }
@@ -138,6 +149,7 @@ namespace Dynamo.Search.SearchElements
                                           this._group, this._fullName, this.Assembly,
                                           this._inputParameters, this._outputParameters);
             f.FullCategoryName = this.FullCategoryName;
+            f.ElementType = this.ElementType;
             return f;
         }
 
@@ -190,6 +202,19 @@ namespace Dynamo.Search.SearchElements
             }
 
             throw new InvalidOperationException("Unhandled resourceType");
+        }
+
+        protected virtual string GenerateOutputParameters()
+        {
+            return _outputParameters;
+        }
+
+
+        protected virtual List<Tuple<string, string>> GenerateInputParameters()
+        {
+            List<Tuple<string, string>> inputPar = new List<Tuple<string, string>>();
+            inputPar.Add(Tuple.Create("", "none"));
+            return inputPar;
         }
     }
 }

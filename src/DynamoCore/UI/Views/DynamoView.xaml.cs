@@ -331,7 +331,11 @@ namespace Dynamo.Controls
         {
             if (_aboutWindow == null)
             {
-                _aboutWindow = new AboutWindow(model);
+                _aboutWindow = new AboutWindow(model)
+                {
+                    Owner = this,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
                 _aboutWindow.Closed += (sender, args) => _aboutWindow = null;
                 _aboutWindow.Show();
 
@@ -341,12 +345,16 @@ namespace Dynamo.Controls
             _aboutWindow.Focus();
         }
 
-        private PackageManagerPublishView _pubPkgView;
+        private PublishPackageView _pubPkgView;
         void DynamoViewModelRequestRequestPackageManagerPublish(PublishPackageViewModel model)
         {
             if (_pubPkgView == null)
             {
-                _pubPkgView = new PackageManagerPublishView(model);
+                _pubPkgView = new PublishPackageView(model)
+                {
+                    Owner = this,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
                 _pubPkgView.Closed += (sender, args) => _pubPkgView = null;
                 _pubPkgView.Show();
 
@@ -367,7 +375,12 @@ namespace Dynamo.Controls
 
             if (_searchPkgsView == null)
             {
-                _searchPkgsView = new PackageManagerSearchView(_pkgSearchVM);
+                _searchPkgsView = new PackageManagerSearchView(_pkgSearchVM)
+                {
+                    Owner = this,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+
                 _searchPkgsView.Closed += (sender, args) => _searchPkgsView = null;
                 _searchPkgsView.Show();
 
@@ -383,8 +396,12 @@ namespace Dynamo.Controls
         {
             if (_installedPkgsView == null)
             {
-                _installedPkgsView = new InstalledPackagesView(new InstalledPackagesViewModel(dynamoViewModel, 
-                    dynamoViewModel.Model.Loader.PackageLoader));
+                _installedPkgsView = new InstalledPackagesView(new InstalledPackagesViewModel(dynamoViewModel,
+                    dynamoViewModel.Model.Loader.PackageLoader))
+                {
+                    Owner = this,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
                 _installedPkgsView.Closed += (sender, args) => _installedPkgsView = null;
                 _installedPkgsView.Show();
 
@@ -545,7 +562,10 @@ namespace Dynamo.Controls
                     categoryBox = { Text = e.Category },
                     DescriptionInput = { Text = e.Description },
                     nameView = { Text = e.Name },
-                    nameBox = { Text = e.Name }
+                    nameBox = { Text = e.Name },
+                    // center the prompt
+                    Owner = this,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
                 };
 
                 if (e.CanEditName)
@@ -599,24 +619,24 @@ namespace Dynamo.Controls
 
         private void WindowClosing(object sender, CancelEventArgs e)
         {
-            if (dynamoViewModel.exitInvoked)
+            // Test cases that make use of views (e.g. recorded tests) have 
+            // their own tear down logic as part of the test set-up (mainly 
+            // because DynamoModel should stay long enough for verification
+            // code to verify data much later than the window closing).
+            // 
+            if (DynamoModel.IsTestMode)
                 return;
 
-            var res = dynamoViewModel.AskUserToSaveWorkspacesOrCancel();
-            if (!res)
+            var sp = new DynamoViewModel.ShutdownParams(
+                shutdownHost: false,
+                allowCancellation: true,
+                closeDynamoView: false);
+
+            if (dynamoViewModel.PerformShutdownSequence(sp))
             {
-                e.Cancel = true;
-                return;
+                SizeChanged -= DynamoView_SizeChanged;
+                LocationChanged -= DynamoView_LocationChanged;
             }
-
-            SizeChanged -= DynamoView_SizeChanged;
-            LocationChanged -= DynamoView_LocationChanged;
-
-            if (!DynamoModel.IsTestMode)
-            {
-                dynamoViewModel.Model.ShutDown(false);
-            }
-
         }
 
         private void WindowClosed(object sender, EventArgs e)
@@ -624,6 +644,7 @@ namespace Dynamo.Controls
             Debug.WriteLine("Dynamo window closed.");
 
             dynamoViewModel.Model.RequestLayoutUpdate -= vm_RequestLayoutUpdate;
+            dynamoViewModel.RequestViewOperation -= DynamoViewModelRequestViewOperation;
 
             //PACKAGE MANAGER
             dynamoViewModel.RequestPackagePublishDialog -= DynamoViewModelRequestRequestPackageManagerPublish;
@@ -1104,6 +1125,7 @@ namespace Dynamo.Controls
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
+                this.Activate();
                 // Note that you can have more than one file.
                 var files = (string[])e.Data.GetData(DataFormats.FileDrop);
 

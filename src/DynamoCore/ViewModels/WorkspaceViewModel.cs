@@ -31,7 +31,7 @@ namespace Dynamo.ViewModels
     {
         #region Properties and Fields
 
-        internal readonly DynamoViewModel DynamoViewModel;
+        public DynamoViewModel DynamoViewModel { get; private set; }
         public readonly WorkspaceModel Model;
 
         private bool _canFindNodesFromElements = false;
@@ -451,7 +451,7 @@ namespace Dynamo.ViewModels
             }
 
             Guid nodeID = Guid.NewGuid();
-            var command = new DynamoViewModel.ConvertNodesToCodeCommand(nodeID);
+            var command = new DynamoModel.ConvertNodesToCodeCommand(nodeID);
             this.DynamoViewModel.ExecuteCommand(command);
         }
 

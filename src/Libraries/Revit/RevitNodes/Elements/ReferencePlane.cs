@@ -1,15 +1,12 @@
-﻿using System;
-using Autodesk.DesignScript.Geometry;
-using Autodesk.Revit.DB;
-using Autodesk.Revit.Exceptions;
-using Autodesk.Revit.UI;
+﻿using Autodesk.Revit.DB;
+
 using DSNodeServices;
-using Revit.Elements;
+
 using Revit.GeometryConversion;
 using Revit.GeometryReferences;
 using RevitServices.Persistence;
 using RevitServices.Transactions;
-using ArgumentException = System.ArgumentException;
+
 using ArgumentNullException = System.ArgumentNullException;
 using Line = Autodesk.DesignScript.Geometry.Line;
 using Plane = Autodesk.DesignScript.Geometry.Plane;
@@ -51,7 +48,7 @@ namespace Revit.Elements
         /// <param name="referencePlane"></param>
         private ReferencePlane( Autodesk.Revit.DB.ReferencePlane referencePlane)
         {
-            this.InternalReferencePlane = referencePlane;
+            InternalSetReferencePlane(referencePlane);
         }
 
         /// <summary>
@@ -61,7 +58,7 @@ namespace Revit.Elements
         /// <param name="freeEnd"></param>
         /// <param name="normal"></param>
         /// <param name="view"></param>
-        private ReferencePlane(XYZ bubbleEnd, XYZ freeEnd, XYZ normal, Autodesk.Revit.DB.View view )
+        private ReferencePlane(XYZ bubbleEnd, XYZ freeEnd, XYZ normal, View view )
         {
             //Phase 1 - Check to see if the object exists and should be rebound
             var oldEle =
@@ -106,8 +103,7 @@ namespace Revit.Elements
 
             TransactionManager.Instance.TransactionTaskDone();
 
-            ElementBinder.SetElementForTrace(this.InternalElement);
-
+            ElementBinder.SetElementForTrace(InternalReferencePlane);
         }
 
         #endregion
@@ -120,9 +116,9 @@ namespace Revit.Elements
         /// <param name="rp"></param>
         private void InternalSetReferencePlane(Autodesk.Revit.DB.ReferencePlane rp)
         {
-            this.InternalReferencePlane = rp;
-            this.InternalElementId = rp.Id;
-            this.InternalUniqueId = rp.UniqueId;
+            InternalReferencePlane = rp;
+            InternalElementId = rp.Id;
+            InternalUniqueId = rp.UniqueId;
         }
 
         /// <summary>
@@ -135,7 +131,7 @@ namespace Revit.Elements
         {
             TransactionManager.Instance.EnsureInTransaction(Document);
 
-            var refPlane = this.InternalReferencePlane;
+            var refPlane = InternalReferencePlane;
 
             XYZ oldBubbleEnd = refPlane.BubbleEnd;
             XYZ oldFreeEnd = refPlane.FreeEnd;
@@ -169,7 +165,7 @@ namespace Revit.Elements
         /// <summary>
         /// Get the internal Geometric Plane
         /// </summary>
-        public Autodesk.DesignScript.Geometry.Plane Plane
+        public Plane Plane
         {
             get
             {
@@ -197,7 +193,7 @@ namespace Revit.Elements
         /// </summary>
         /// <param name="line">The line where the bubble wil be located at the start</param>
         /// <returns></returns>
-        public static ReferencePlane ByLine( Autodesk.DesignScript.Geometry.Line line )
+        public static ReferencePlane ByLine( Line line )
         {
             if (line == null)
             {
@@ -251,6 +247,5 @@ namespace Revit.Elements
         }
 
         #endregion
-
     }
 }

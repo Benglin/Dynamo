@@ -13,7 +13,7 @@ using Dynamo.UI.Prompts;
 using Dynamo.Utilities;
 using Dynamo.ViewModels;
 
-using DynCmd = Dynamo.ViewModels.DynamoViewModel;
+using DynCmd = Dynamo.Models.DynamoModel;
 
 using Dynamo.UI.Controls;
 
@@ -71,7 +71,7 @@ namespace Dynamo.Controls
             InitializeComponent();
 
             Loaded += new RoutedEventHandler(OnNodeViewLoaded);
-            Dispatcher.ShutdownStarted += Dispatcher_ShutdownStarted;
+            Unloaded += new RoutedEventHandler(OnNodeViewUnloaded);
             inputGrid.Loaded += new RoutedEventHandler(inputGrid_Loaded);
 
             this.nodeBorder.SizeChanged += OnSizeChanged;
@@ -80,7 +80,7 @@ namespace Dynamo.Controls
             Canvas.SetZIndex(this, 1);
         }
 
-        void Dispatcher_ShutdownStarted(object sender, EventArgs e)
+        private void OnNodeViewUnloaded(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine("Node view unloaded.");
 

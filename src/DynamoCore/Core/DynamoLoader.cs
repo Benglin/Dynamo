@@ -13,6 +13,8 @@ using Autodesk.DesignScript.Runtime;
 using Dynamo.PackageManager;
 
 using DynamoUtilities;
+using Dynamo.Search;
+using Dynamo.DSEngine;
 
 namespace Dynamo.Utilities
 {
@@ -40,7 +42,7 @@ namespace Dynamo.Utilities
         public DynamoLoader(DynamoModel model)
         {
             this.dynamoModel = model;
-            this.PackageLoader = new PackageLoader(dynamoModel);
+            this.PackageLoader = new PackageLoader(this, dynamoModel.Logger);
         }
 
         #region Methods
@@ -138,13 +140,18 @@ namespace Dynamo.Utilities
                    t.IsSubclassOf(typeof(NodeModel));
         }
 
+        internal bool ContainsNodeModelSubType(Assembly assem)
+        {
+            return assem.GetTypes().Any(IsNodeSubType);
+        }
+
         /// <summary>
         ///     Enumerate the types in an assembly and add them to DynamoController's
         ///     dictionaries and the search view model.  Internally catches exceptions and sends the error 
         ///     to the console.
         /// </summary>
         /// <Returns>The list of node types loaded from this assembly</Returns>
-        public List<Type> LoadNodesFromAssembly(Assembly assembly)
+        public List<Type> LoadNodesFromAssembly(Assembly assembly, SearchModel.ElementType nodesType = SearchModel.ElementType.Regular)
         {
             if (assembly == null)
                 throw new ArgumentNullException("assembly");
@@ -198,12 +205,11 @@ namespace Dynamo.Utilities
                                     continue;
                             }
                         }
-
                         string typeName;
 
                         if (attribs.Length > 0 && !isDeprecated && !isMetaNode && isDSCompatible && !isHidden)
                         {
-                            searchViewModel.Add(t);
+                            searchViewModel.Add(t, nodesType);
                             typeName = (attribs[0] as NodeNameAttribute).Name;
                         }
                         else
@@ -302,5 +308,6 @@ namespace Dynamo.Utilities
         }
 
         #endregion
+
     }
 }
