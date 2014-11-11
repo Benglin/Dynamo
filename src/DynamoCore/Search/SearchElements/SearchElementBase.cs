@@ -127,7 +127,10 @@ namespace Dynamo.Search.SearchElements
 
         [DataMember]
         public IEnumerable<string> ReturnKeys { get; private set; }
-        
+
+        [DataMember]
+        public IEnumerable<object> DefaultValues { get; private set; }
+
         public LibraryItem(SearchElementBase node, DynamoModel dynamoModel)
         {
             Category = node.FullCategoryName;
@@ -178,11 +181,13 @@ namespace Dynamo.Search.SearchElements
             {
                 Parameters = newElement.InPorts.Select(elem => elem.PortName);
                 ReturnKeys = newElement.OutPorts.Select(elem => elem.PortName);
+                DefaultValues = newElement.InPortData.Select(elem => elem.DefaultValue);
             }
             else
             {
                 Parameters = new[] { "Input" };
                 ReturnKeys = new[] { "Output" };
+                DefaultValues = new object[0];
             }
         }
     }
