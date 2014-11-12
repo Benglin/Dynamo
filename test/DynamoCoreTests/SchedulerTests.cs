@@ -4,7 +4,6 @@ using System.Reflection;
 using Dynamo.Core.Threading;
 using Dynamo.Interfaces;
 using Dynamo.Models;
-using Dynamo.Tests;
 
 using DynamoUtilities;
 
@@ -15,7 +14,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using ProtoCore.AST;
+using TaskPriority = Dynamo.Core.Threading.AsyncTask.TaskPriority;
 
 namespace Dynamo
 {
@@ -325,10 +324,14 @@ namespace Dynamo
 
     internal class FakeDelegateBasedAsyncTask : DelegateBasedAsyncTask
     {
-        private readonly FakeAsyncTaskData data;
+        private FakeAsyncTaskData data;
 
-        internal FakeDelegateBasedAsyncTask(FakeAsyncTaskData data)
-            : base(data.Scheduler)
+        internal FakeDelegateBasedAsyncTask(DelegateBasedParams initParams)
+            : base(initParams)
+        {
+        }
+
+        internal void Initialize(FakeAsyncTaskData data)
         {
             this.data = data;
         }
@@ -1183,6 +1186,84 @@ namespace Dynamo
             }
         }
 
+        [Test]
+        public void TestTaskQueuePreProcessing04()
+        {
+            var tasksToSchedule = new List<AsyncTask>()
+            {
+                MakeDelegateBasedAsyncTask(),                       // Normal
+                MakeAggregateRenderPackageAsyncTask(Guid.Empty),    // Normal
+                MakeUpdateGraphAsyncTask(),                         // AboveNormal
+                MakeUpdateRenderPackageAsyncTask(Guid.Empty),       // Normal
+                MakeNotifyRenderPackagesReadyAsyncTask(),           // Normal
+                MakeAggregateRenderPackageAsyncTask(Guid.Empty)     // Normal
+            };
+
+            var scheduler = dynamoModel.Scheduler;
+            foreach (var stubAsyncTask in tasksToSchedule)
+            {
+                scheduler.ScheduleForExecution(stubAsyncTask);
+            }
+
+            schedulerThread.GetSchedulerToProcessTasks();
+
+            var expected = new List<string>
+            {
+                "FakeUpdateGraphAsyncTask: 2",
+                "FakeDelegateBasedAsyncTask: 0",
+                "FakeUpdateRenderPackageAsyncTask: 3",
+                "FakeNotifyRenderPackagesReadyAsyncTask: 4",
+                "FakeAggregateRenderPackageAsyncTask: 5"
+            };
+
+            Assert.AreEqual(expected.Count, results.Count);
+
+            int index = 0;
+            foreach (var actual in results)
+            {
+                Assert.AreEqual(expected[index++], actual);
+            }
+        }
+
+        [Test]
+        public void TestTaskQueuePreProcessing05()
+        {
+            var tasksToSchedule = new List<AsyncTask>()
+            {
+                MakeDelegateBasedAsyncTask(TaskPriority.Critical),  // Critical
+                MakeAggregateRenderPackageAsyncTask(Guid.Empty),    // Normal
+                MakeUpdateGraphAsyncTask(),                         // AboveNormal
+                MakeUpdateRenderPackageAsyncTask(Guid.Empty),       // Normal
+                MakeNotifyRenderPackagesReadyAsyncTask(),           // Normal
+                MakeAggregateRenderPackageAsyncTask(Guid.Empty)     // Normal
+            };
+
+            var scheduler = dynamoModel.Scheduler;
+            foreach (var stubAsyncTask in tasksToSchedule)
+            {
+                scheduler.ScheduleForExecution(stubAsyncTask);
+            }
+
+            schedulerThread.GetSchedulerToProcessTasks();
+
+            var expected = new List<string>
+            {
+                "FakeDelegateBasedAsyncTask: 0",
+                "FakeUpdateGraphAsyncTask: 2",
+                "FakeUpdateRenderPackageAsyncTask: 3",
+                "FakeNotifyRenderPackagesReadyAsyncTask: 4",
+                "FakeAggregateRenderPackageAsyncTask: 5"
+            };
+
+            Assert.AreEqual(expected.Count, results.Count);
+
+            int index = 0;
+            foreach (var actual in results)
+            {
+                Assert.AreEqual(expected[index++], actual);
+            }
+        }
+
         #endregion
 
         #region Test Setup, TearDown, Helper Methods
@@ -1253,9 +1334,19 @@ namespace Dynamo
             return new FakeCompileCustomNodeAsyncTask(MakeAsyncTaskData());
         }
 
-        private AsyncTask MakeDelegateBasedAsyncTask()
+        private AsyncTask MakeDelegateBasedAsyncTask(
+            TaskPriority priority = TaskPriority.Normal)
         {
-            return new FakeDelegateBasedAsyncTask(MakeAsyncTaskData());
+            var task = new FakeDelegateBasedAsyncTask(
+                new DelegateBasedParams()
+                {
+                    DynamoScheduler = dynamoModel.Scheduler,
+                    ActionToPerform = new Action(() => { }),
+                    TaskPriority = priority
+                });
+
+            task.Initialize(MakeAsyncTaskData());
+            return task;
         }
 
         private AsyncTask MakeNotifyRenderPackagesReadyAsyncTask()
