@@ -11,8 +11,8 @@ using Dynamo.Applications;
 using Dynamo.Applications.Models;
 using Dynamo.Core.Threading;
 using Dynamo.Interfaces;
-using Dynamo.Tests;
 using Dynamo.ViewModels;
+using Dynamo.Tests;
 
 using NUnit.Framework;
 
@@ -100,7 +100,7 @@ namespace RevitTestServices
                     {
                         StartInTestMode = true,
                         DynamoCorePath = Path.GetFullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\..\"),
-                        Context = "Revit 2014",
+                        Context = "Revit 2015",
                         SchedulerThread = new TestSchedulerThread()
                     });
 
@@ -140,6 +140,7 @@ namespace RevitTestServices
                 SketchPlane sp2 = SketchPlane.Create(DocumentManager.Instance.CurrentDBDocument, p2);
                 Curve c1 = Line.CreateBound(XYZ.Zero, new XYZ(1, 0, 0));
                 Curve c2 = Line.CreateBound(new XYZ(0, 0, 5), new XYZ(1, 0, 5));
+
                 mc1 = DocumentManager.Instance.CurrentUIDocument.Document.FamilyCreate.NewModelCurve(c1, sp1);
                 mc2 = DocumentManager.Instance.CurrentUIDocument.Document.FamilyCreate.NewModelCurve(c2, sp2);
 
@@ -162,6 +163,7 @@ namespace RevitTestServices
 
                 SketchPlane sp1 = SketchPlane.Create(DocumentManager.Instance.CurrentDBDocument, p1);
                 Curve c1 = Line.CreateBound(XYZ.Zero, new XYZ(1, 0, 0));
+
                 mc1 = DocumentManager.Instance.CurrentUIDocument.Document.FamilyCreate.NewModelCurve(c1, sp1);
 
                 trans.Commit();
