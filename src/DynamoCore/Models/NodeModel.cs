@@ -1354,6 +1354,19 @@ namespace Dynamo.Models
                 return true;
             }
 
+            if (name == "UsingDefault" )
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    return true;
+
+                var arr = value.Split(';');
+                for (int i = 0; i < arr.Length; i ++)
+                {
+                    InPorts[i].UsingDefaultValue = !bool.Parse(arr[i]);
+                }
+                return true;
+            }
+
             return base.UpdateValueCore(name, value);
         }
 
