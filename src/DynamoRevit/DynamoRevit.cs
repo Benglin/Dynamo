@@ -1,4 +1,3 @@
-using Dynamo.Applications;
 
 #region
 using System;
@@ -14,13 +13,13 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
 
+using Dynamo.Applications;
 using Dynamo.Applications.Models;
 using Dynamo.Controls;
 using Dynamo.Core;
 using Dynamo.Core.Threading;
 using Dynamo.Models;
 using Dynamo.Services;
-using Dynamo.Utilities;
 using Dynamo.ViewModels;
 
 using DynamoUnits;
@@ -31,6 +30,7 @@ using RevitServices.Persistence;
 using RevitServices.Transactions;
 using RevitServices.Threading;
 
+using TaskPriority = Dynamo.Core.Threading.AsyncTask.TaskPriority;
 using MessageBox = System.Windows.Forms.MessageBox;
 using Autodesk.Revit.DB.Events;
 
@@ -54,11 +54,23 @@ namespace RevitServices.Threading
             set { idle = value; }
         }
 
-        public static void ExecuteOnIdleAsync(Action p)
+        internal static void ExecuteOnIdleAsync(Action p)
+        {
+            ExecuteOnIdleAsync(p, TaskPriority.Normal);
+        }
+
+        internal static void ExecuteOnIdleAsync(Action p, TaskPriority priority)
         {
             var scheduler = DynamoRevit.RevitDynamoModel.Scheduler;
-            var task = new DelegateBasedAsyncTask(scheduler);
-            task.Initialize(p);
+
+            var task = new DelegateBasedAsyncTask(
+                new DelegateBasedParams()
+                {
+                    DynamoScheduler = scheduler,
+                    ActionToPerform = p,
+                    TaskPriority = priority
+                });
+
             scheduler.ScheduleForExecution(task);
         }
     }
