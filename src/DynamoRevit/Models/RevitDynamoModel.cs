@@ -11,6 +11,8 @@ using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
 
+using Dynamo.Core.Threading;
+
 using ProtoCore;
 using DSIronPython;
 using DSNodeServices;
@@ -27,6 +29,7 @@ using RevitServices.Threading;
 using RevitServices.Transactions;
 
 using Element = Autodesk.Revit.DB.Element;
+using TaskPriority = Dynamo.Core.Threading.AsyncTask.TaskPriority;
 
 namespace Dynamo.Applications.Models
 {
@@ -263,7 +266,13 @@ namespace Dynamo.Applications.Models
 
         public override void ResetEngine(bool markNodesAsDirty = false)
         {
-            IdlePromise.ExecuteOnIdleAsync(ResetEngineInternal);
+            // Reset engine is more critical than anything else in the system,
+            // setting the task priority to TaskPriority.Critical so it comes 
+            // before everything else (even SetTraceDataAsyncTask).
+            // 
+            const TaskPriority taskPriority = TaskPriority.Critical;
+            IdlePromise.ExecuteOnIdleAsync(ResetEngineInternal, taskPriority);
+
             if (markNodesAsDirty)
                 Nodes.ForEach(n => n.RequiresRecalc = true);
         }
