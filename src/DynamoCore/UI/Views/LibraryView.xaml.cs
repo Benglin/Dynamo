@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Dynamo.Nodes.Search;
 
 namespace Dynamo.UI.Views
 {
@@ -41,7 +42,9 @@ namespace Dynamo.UI.Views
         private void OnClassButtonMouseUp(object sender, MouseButtonEventArgs e)
         {
             var classButton = sender as ListViewItem;
-            if (classButton == null) return;
+            // ClassInformation cannot be selected or unselected.
+            // Just leave it.
+            if (classButton == null || classButton.DataContext is ClassInformation) return;
 
             classButton.IsSelected = !classButton.IsSelected;
             classButton.BringIntoView();

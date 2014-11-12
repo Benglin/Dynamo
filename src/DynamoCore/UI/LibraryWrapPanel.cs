@@ -39,9 +39,18 @@ namespace Dynamo.Controls
             base.OnInitialized(e);
         }
 
+        // When class detail is very long and takes the whole place, it forces scrollviewer to repaint itself.
+        // Because of this repaint scrollviewer makes double selection.
+        // That's why we handle mouse down and process mouse up.
         private void OnLibraryWrapPanelMouseDown(object sender, MouseButtonEventArgs e)
         {
-            e.Handled = true; 
+            var originalSender = (e.OriginalSource as FrameworkElement).DataContext;
+            // We should handle only case, when class button was pressed to avoid double selection.
+            // But if member button or button inside StandardPanel(i.e. "action" or "query") was pressed,
+            // then it works as usual.
+            if (originalSender is NodeSearchElement || originalSender is ClassInformation)
+                return;
+            e.Handled = true;
         }
 
         private void OnLibraryWrapPanelKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
