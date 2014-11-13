@@ -138,10 +138,6 @@ namespace Dynamo.Search
 
             switch (e.Key)
             {
-                case Key.Return:
-                    viewModel.Execute();
-                    break;
-
                 case Key.Delete:
                     if (DynamoSelection.Instance.Selection.Count > 0)
                     {
@@ -196,7 +192,31 @@ namespace Dynamo.Search
 
                 case Key.Tab:
                     viewModel.PopulateSearchTextWithSelectedResult();
-                    break;                                    
+                    break;
+
+                case Key.Down:
+                case Key.Up:
+                case Key.Enter:
+                    {
+                        var key = e.Key;                    // Key to send
+                        PresentationSource target = PresentationSource.FromVisual(librarySearchView.HighlightedItem);
+                        var routedEvent = Keyboard.KeyDownEvent; // Event to send
+
+                        // For the first time set top result as HighlightedItem. 
+                        if (target == null)
+                        {
+                            librarySearchView.HighlightedItem = WPF.FindChild<ListBox>(this, "");
+                            target = PresentationSource.FromVisual(librarySearchView.HighlightedItem);
+                        }
+
+
+                        librarySearchView.HighlightedItem.RaiseEvent(new KeyEventArgs(
+                                                                            Keyboard.PrimaryDevice,
+                                                                            target,
+                                                                            0,
+                                                                            key) { RoutedEvent = routedEvent });
+                        break;
+                    }
             }
         }
 
@@ -320,20 +340,6 @@ namespace Dynamo.Search
                 else
                     viewModel.SearchIconAlignment = System.Windows.HorizontalAlignment.Left;
             }
-        }
-
-        private void OnSearchTextBoxKeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Down) return;
-            var topResult = WPF.FindChild<ListBox>(this, "topResultListBox");
-            if (topResult != null) topResult.Focus();
-        }
-
-        private void OnLibraryContainerViewPreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Up) return;
-            var topResult = WPF.FindChild<ListBox>(this, "topResultListBox");
-            if ((topResult != null) && (topResult.IsFocused)) SearchTextBox.Focus();
         }
 
         private void OnLibraryViewPreviewKeyDown(object sender, KeyEventArgs e)
