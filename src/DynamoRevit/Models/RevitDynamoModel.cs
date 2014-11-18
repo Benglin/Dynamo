@@ -264,17 +264,49 @@ namespace Dynamo.Applications.Models
 
 #endif
 
+        /// <summary>
+        /// This method is typically called when a new workspace is opened or
+        /// when user forcefully resets the engine in the event of an error.
+        /// </summary>
+        /// <param name="markNodesAsDirty">RequiresRecalc property of all nodes
+        /// in the home workspace will be set to 'true' if this parameter is 
+        /// true.</param>
+        /// 
         public override void ResetEngine(bool markNodesAsDirty = false)
         {
-            // Reset engine is more critical than anything else in the system,
-            // setting the task priority to TaskPriority.Critical so it comes 
-            // before everything else (even SetTraceDataAsyncTask).
-            // 
-            const TaskPriority taskPriority = TaskPriority.Critical;
-            IdlePromise.ExecuteOnIdleAsync(ResetEngineInternal, taskPriority);
+            AsyncTaskCompletedHandler handler = HandleResetEngineCompletion;
+            if (markNodesAsDirty || DynamicRunEnabled)
+                handler = OnResetMarkNodesAsDirty;
 
-            if (markNodesAsDirty)
-                Nodes.ForEach(n => n.RequiresRecalc = true);
+            IdlePromise.ExecuteOnIdleAsync(ResetEngineInternal, handler);
+        }
+
+        /// <summary>
+        /// This event handler is called if 'markNodesAsDirty' in a 
+        /// prior call to RevitDynamoModel.ResetEngine was set to 'true'.
+        /// </summary>
+        /// <param name="asyncTask">The DelegateBasedAsyncTask that was scheduled
+        /// for execution in RevitDynamoModel.ResetEngine method.</param>
+        /// 
+        private void OnResetMarkNodesAsDirty(AsyncTask asyncTask)
+        {
+            Nodes.ForEach(n => n.RequiresRecalc = true);
+            HandleResetEngineCompletion(asyncTask);
+        }
+
+        /// <summary>
+        /// This event handler is called when DelegateBasedAsyncTask scheduled 
+        /// in RevitDynamoModel.ResetEngine is completed. If dynamic run is 
+        /// enabled, this method kicks start another round of evaluation based 
+        /// on the newly created engine.
+        /// </summary>
+        /// <param name="asyncTask">The DelegateBasedAsyncTask that was scheduled
+        /// for execution in RevitDynamoModel.ResetEngine method.</param>
+        /// 
+        private void HandleResetEngineCompletion(AsyncTask asyncTask)
+        {
+            if (DynamicRunEnabled)
+                RunExpression();
         }
 
         public void SetRunEnabledBasedOnContext(Autodesk.Revit.DB.View newView)
