@@ -21,7 +21,7 @@ void main(void)
     vec4 ndcPosition = proj * view * model * vec4(inPosition, 1.0);
     vec4 ndcOffsetted = ndcPosition / ndcPosition.w;
 
-    gl_Position = vec4(ndcOffsetted.xy + spriteSize, 0.0, 1.0);
+    gl_Position = vec4(ndcOffsetted.xy + spriteSize, ndcOffsetted.z, 1.0);
 
     // For downstream fragment shader.
     vertColor = inColor;
