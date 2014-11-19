@@ -519,16 +519,24 @@ namespace Dynamo.Search
 
         public bool Add(CustomNodeInfo nodeInfo)
         {
+<<<<<<< HEAD
             var group = SearchElementGroup.None;
             ProcessNodeCategory(nodeInfo.Category, ref group);
 
             var nodeEle = new CustomNodeSearchElement(nodeInfo, group);
             nodeEle.Executed += this.OnExecuted;
 
+=======
+            var nodeEle = new CustomNodeSearchElement(nodeInfo);
+>>>>>>> d13b627d66a95034dc620805f2b4a7c65c07e6e3
             if (SearchDictionary.Contains(nodeEle))
             {
+                // Second node with the same GUID should rewrite the original node. 
+                // Original node is removed from tree.
                 return this.Refactor(nodeInfo);
             }
+
+            nodeEle.Executed += this.OnExecuted;
 
             SearchDictionary.Add(nodeEle, nodeEle.Name);
             SearchDictionary.Add(nodeEle, nodeInfo.Category + "." + nodeEle.Name);
