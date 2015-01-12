@@ -3,17 +3,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 using Dynamo;
+using Dynamo.Core.Threading;
 using Dynamo.Models;
 using Dynamo.Nodes;
 using Dynamo.Utilities;
 using DynamoWebServer.Responses;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
-using System.Threading;
-using Dynamo.Core.Threading;
+
+using ProtoCore.Mirror;
 
 namespace DynamoWebServer.Messages
 {
@@ -30,6 +33,7 @@ namespace DynamoWebServer.Messages
         private AutoResetEvent nextRunAllowed = new AutoResetEvent(false);
         private bool evaluationTookPlace = false;
         private int maxMsToWait = 20000;
+        private const string NULL_STRING = "null";
 
         public MessageHandler(DynamoModel dynamoModel)
         {
@@ -441,10 +445,14 @@ namespace DynamoWebServer.Messages
 
         private string GetValue(NodeModel node)
         {
-            string data = "null";
+            string data = NULL_STRING;
             if (node.CachedValue != null)
             {
-                if (node.CachedValue.IsCollection)
+                if (node.Name == "Watch")
+                {
+                    data = JsonConvert.SerializeObject(GenerateWatchData(node.CachedValue));
+                }
+                else if (node.CachedValue.IsCollection)
                 {
                     data = "Array";
                 }
@@ -471,6 +479,44 @@ namespace DynamoWebServer.Messages
             }
 
             return data;
+        }
+
+        private object GenerateWatchData(MirrorData data)
+        {
+            if (data.IsCollection)
+            {
+                var list = new List<object>();
+                var elements = data.GetElements();
+
+                foreach (var mirrorData in elements)
+                {
+                    list.Add( mirrorData.IsCollection
+                            ? GenerateWatchData(mirrorData)
+                            : GetSingleObjectPreview(mirrorData));
+                }
+
+                return list.ToArray();
+            }
+
+            return GetSingleObjectPreview(data);
+        }
+
+        private object GetSingleObjectPreview(MirrorData data)
+        {
+            if (data.Data != null)
+            {
+                double number;
+                return double.TryParse(data.StringData, out number)
+                    ? data.Data
+                    : data.Data.ToString();
+            }
+
+            if (data.IsNull)
+                return NULL_STRING;
+
+            return data.Class == null
+                ? NULL_STRING
+                : data.Class.ClassName;
         }
 
         private IEnumerable<ExecutedNode> GetExecutedNodes()
