@@ -12,6 +12,8 @@ namespace Dynamo.Core.Extension
         private readonly DynamoListener listener;
         private readonly MemoryStream stream;
 
+        #region Public Class Operational Methods
+
         internal ClientConnection(DynamoListener listener, Socket socket)
         {
             this.socket = socket;
@@ -45,9 +47,9 @@ namespace Dynamo.Core.Extension
                 OnSendMessageCompleted(this, e);
         }
 
-        private void OnSendMessageCompleted(object sender, SocketAsyncEventArgs e)
-        {
-        }
+        #endregion
+
+        #region Private Class Helper Methods
 
         private void BeginReceiveData()
         {
@@ -73,6 +75,10 @@ namespace Dynamo.Core.Extension
             }
         }
 
+        #endregion
+
+        #region Private Event Handlers
+
         private static void ReceiveCallback(IAsyncResult ar)
         {
             var clientConnection = ((ClientConnection)ar.AsyncState);
@@ -89,5 +95,11 @@ namespace Dynamo.Core.Extension
                 clientConnection.RemoveSelfFromClientList();
             }
         }
+
+        private void OnSendMessageCompleted(object sender, SocketAsyncEventArgs e)
+        {
+        }
+
+        #endregion
     }
 }

@@ -18,6 +18,8 @@ namespace Dynamo.Core.Extension
         private readonly List<ClientConnection> clients;
         private readonly ManualResetEvent[] events;
 
+        #region Public Class Operational Methods
+
         internal DynamoListener()
         {
             events = new[]
@@ -27,7 +29,7 @@ namespace Dynamo.Core.Extension
             };
 
             clients = new List<ClientConnection>();
-            workerThread = new Thread(ListenerThreadPro)
+            workerThread = new Thread(ListenerThreadProc)
             {
                 IsBackground = true
             };
@@ -78,7 +80,11 @@ namespace Dynamo.Core.Extension
             }
         }
 
-        private static void ListenerThreadPro(object state)
+        #endregion
+
+        #region Private Class Helper Methods
+
+        private static void ListenerThreadProc(object state)
         {
             var dynamoListener = ((DynamoListener)state);
             var events = dynamoListener.events;
@@ -103,5 +109,7 @@ namespace Dynamo.Core.Extension
             dynamoListener.events[(int)EventIndex.ReadyForConnection].Set();
             dynamoListener.AddToClientList(new ClientConnection(dynamoListener, socket));
         }
+
+        #endregion
     }
 }
