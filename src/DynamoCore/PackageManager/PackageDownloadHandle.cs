@@ -2,10 +2,6 @@
 using System.IO;
 
 using Dynamo.Core;
-using Dynamo.Models;
-
-using DynamoUtilities;
-
 using Greg.Responses;
 
 namespace Dynamo.PackageManager
@@ -66,7 +62,7 @@ namespace Dynamo.PackageManager
             return packagesDirectory + @"\" + this.Name.Replace("/", "_").Replace(@"\", "_");
         }
 
-        public bool Extract(DynamoModel dynamoModel, out Package pkg)
+        public bool Extract(string packagesDirectory, out Package pkg)
         {
             this.DownloadState = State.Installing;
 
@@ -77,7 +73,6 @@ namespace Dynamo.PackageManager
                 throw new Exception(Properties.Resources.PackageEmpty);
             }
 
-            var packagesDirectory = dynamoModel.PathManager.PackagesDirectory;
             var installedPath = BuildInstallDirectoryString(packagesDirectory);
             Directory.CreateDirectory(installedPath);
 

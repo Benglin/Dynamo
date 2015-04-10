@@ -275,7 +275,8 @@ namespace Dynamo.ViewModels
                                 }
                             }
 
-                            if (packageDownloadHandle.Extract(DynamoViewModel.Model, out dynPkg))
+                            var directory = DynamoViewModel.Model.PathManager.PackagesDirectory;
+                            if (packageDownloadHandle.Extract(directory, out dynPkg))
                             {
                                 var p = Package.FromDirectory(dynPkg.RootDirectory, DynamoViewModel.Model.Logger);
                                 DynamoViewModel.Model.PackageLoader.Load(p);
