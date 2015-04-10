@@ -134,7 +134,7 @@ namespace Dynamo.PackageManager
 
         #endregion
 
-        public Package(string directory, string name, string versionName, string license)
+        internal Package(string directory, string name, string versionName, string license)
         {
             RootDirectory = directory;
             Name = name;
@@ -148,12 +148,12 @@ namespace Dynamo.PackageManager
             Header = PackageUploadBuilder.NewPackageHeader(this);
         }
 
-        public static Package FromDirectory(string rootPath, ILogger logger)
+        internal static Package FromDirectory(string rootPath, ILogger logger)
         {
             return FromJson(Path.Combine(rootPath, "pkg.json"), logger);
         }
 
-        public static Package FromJson(string headerPath, ILogger logger)
+        internal static Package FromJson(string headerPath, ILogger logger)
         {
             try
             {
@@ -194,7 +194,7 @@ namespace Dynamo.PackageManager
 
         }
 
-        public void EnumerateAdditionalFiles()
+        internal void EnumerateAdditionalFiles()
         {
             if (String.IsNullOrEmpty(RootDirectory) || !Directory.Exists(RootDirectory)) return;
 
@@ -202,14 +202,21 @@ namespace Dynamo.PackageManager
                 RootDirectory,
                 "*",
                 SearchOption.AllDirectories)
-                .Where(x => !x.ToLower().EndsWith(".dyf") && !x.ToLower().EndsWith(".dll") && !x.ToLower().EndsWith("pkg.json") && !x.ToLower().EndsWith(".backup"))
-                .Select(x => new PackageFileInfo(RootDirectory, x));
+                .Where(x =>
+                {
+                    var xl = x.ToLower();
+                    return !xl.EndsWith(".dyf") && 
+                           !xl.EndsWith(".dll") && 
+                           !xl.EndsWith("pkg.json") &&
+                           !xl.EndsWith(".backup");
+
+                }).Select(x => new PackageFileInfo(RootDirectory, x));
 
             AdditionalFiles.Clear();
             AdditionalFiles.AddRange(nonDyfDllFiles);
         }
 
-        public IEnumerable<string> EnumerateAssemblyFilesInBinDirectory()
+        internal IEnumerable<string> EnumerateAssemblyFilesInBinDirectory()
         {
             if (String.IsNullOrEmpty(RootDirectory) || !Directory.Exists(RootDirectory)) 
                 return new List<string>();
@@ -264,7 +271,7 @@ namespace Dynamo.PackageManager
                     // IsNodeLibrary may fail, we store the warnings here and then show
                     IList<ILogMessage> warnings = new List<ILogMessage>();
 
-                    assemblies.Add(new PackageAssembly()
+                    assemblies.Add(new PackageAssembly
                     {
                         Assembly = assem,
                         IsNodeLibrary = IsNodeLibrary(nodeLibraries, assem.GetName(), ref warnings)
@@ -313,7 +320,7 @@ namespace Dynamo.PackageManager
                         return true;
                     }
                 }
-                catch (Exception _)
+                catch (Exception)
                 {
                     if (messages != null)
                     {
