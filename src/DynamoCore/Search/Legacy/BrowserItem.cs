@@ -14,29 +14,6 @@ namespace Dynamo.Search
         public abstract ObservableCollection<BrowserItem> Items { get; set; }
 
         /// <summary>
-        ///     If this is a leaf and visible, add to items, otherwise, recurse on children
-        /// </summary>
-        /// <param name="items">The accumulator</param>
-        public void GetVisibleLeaves(ref List<BrowserItem> items)
-        {
-            if (this.Visibility == true && this.Items.Count == 0)
-            {
-                items.Add(this);
-            }
-            else if (this.Visibility != true)
-            {
-                return;
-            }
-            else
-            {
-                foreach (var item in this.Items)
-                {
-                    item.GetVisibleLeaves(ref items);
-                }
-            }
-        }
-
-        /// <summary>
         /// A name (title) field for the BrowserItem
         /// </summary>
         public abstract string Name { get; }
