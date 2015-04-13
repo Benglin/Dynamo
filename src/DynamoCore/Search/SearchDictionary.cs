@@ -15,6 +15,8 @@ namespace Dynamo.Search
         private readonly Dictionary<V, Dictionary<string, double>> entryDictionary =
             new Dictionary<V, Dictionary<string, double>>();
 
+        private List<IGrouping<string, Tuple<V, double>>> tagDictionary = null;
+
         /// <summary>
         ///     All the current entries in search.
         /// </summary>
@@ -91,6 +93,7 @@ namespace Dynamo.Search
             {
                 keys = new Dictionary<string, double>();
                 entryDictionary[value] = keys;
+                tagDictionary = null; // Invalidate search dictionary.
                 OnEntryAdded(value);
             }
             foreach (var tag in tags.Select(x => x.ToLower()))
@@ -118,8 +121,14 @@ namespace Dynamo.Search
         public bool Remove(V value, string tag)
         {
             Dictionary<string, double> keys;
-            return entryDictionary.TryGetValue(value, out keys) && keys.Remove(tag)
-                && (keys.Any() || Remove(value));
+            if (entryDictionary.TryGetValue(value, out keys) && keys.Remove(tag)
+                && (keys.Any() || Remove(value)))
+            {
+                tagDictionary = null; // Invalidate search dictionary.
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -130,6 +139,8 @@ namespace Dynamo.Search
         {
             if (!entryDictionary.Remove(value))
                 return false;
+
+            tagDictionary = null; // Invalidate search dictionary.
             OnEntryRemoved(value);
             return true;
         }
@@ -253,21 +264,24 @@ namespace Dynamo.Search
         {
             var searchDict = new Dictionary<V, double>();
 
-            var tagDictionary = entryDictionary
-                .SelectMany(
-                    entryAndTags =>
-                        entryAndTags.Value.Select(
-                            tagAndWeight =>
-                                new
-                                {
-                                    Tag = tagAndWeight.Key,
-                                    Weight = tagAndWeight.Value,
-                                    Entry = entryAndTags.Key
-                                }))
-                .GroupBy(
-                    tagWeightAndEntry => tagWeightAndEntry.Tag,
-                    tagWeightAndEntry =>
-                        Tuple.Create(tagWeightAndEntry.Entry, tagWeightAndEntry.Weight)).ToList();
+            if (tagDictionary == null)
+            {
+                tagDictionary = entryDictionary
+                    .SelectMany(
+                        entryAndTags =>
+                            entryAndTags.Value.Select(
+                                tagAndWeight =>
+                                    new
+                                    {
+                                        Tag = tagAndWeight.Key,
+                                        Weight = tagAndWeight.Value,
+                                        Entry = entryAndTags.Key
+                                    }))
+                    .GroupBy(
+                        tagWeightAndEntry => tagWeightAndEntry.Tag,
+                        tagWeightAndEntry =>
+                            Tuple.Create(tagWeightAndEntry.Entry, tagWeightAndEntry.Weight)).ToList();
+            }
 
             query = query.ToLower();
 
