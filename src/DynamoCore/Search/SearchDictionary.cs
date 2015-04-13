@@ -218,7 +218,7 @@ namespace Dynamo.Search
         /// "geometry point by".
         /// </summary>
         /// <param name="key"></param>
-        /// <param name="pattern"></param>
+        /// <param name="subPatterns"></param>
         /// <returns></returns>
         private static bool MatchWithQueryString(string key, string[] subPatterns)
         {
@@ -226,7 +226,7 @@ namespace Dynamo.Search
             int currPattern = 0;
             while (index < key.Length && currPattern < subPatterns.Length)
             {
-                index = key.IndexOf(subPatterns[currPattern], index);
+                index = key.IndexOf(subPatterns[currPattern], index, StringComparison.Ordinal);
                 if (index == -1)
                     return false;
 
@@ -242,11 +242,6 @@ namespace Dynamo.Search
             return s.Split(null);
         }
 
-        private static bool ContainsSpecialCharacters(string element)
-        {
-            return element.Contains("*") || element.Contains(".") || element.Contains(" ")
-                || element.Contains("\\");
-        }
         #endregion
 
         /// <summary>
