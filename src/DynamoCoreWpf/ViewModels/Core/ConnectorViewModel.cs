@@ -46,22 +46,6 @@ namespace Dynamo.ViewModels
             }
         }
 
-        public double Left
-        {
-            get { return 0; }
-        }
-
-        public double Top
-        {
-            get { return 0; }
-        }
-
-        //Changed the connectors ZIndex to 2. Groups have ZIndex of 1.
-        public double ZIndex
-        {
-            get { return 2; }
-        }
-
         /// <summary>
         ///     The start point of the path pulled from the port's center
         /// </summary>
@@ -111,39 +95,6 @@ namespace Dynamo.ViewModels
             {
                 _curvePoint3 = value;
                 RaisePropertyChanged("CurvePoint3");
-            }
-        }
-
-        private double _dotTop;
-        public double DotTop
-        {
-            get { return _dotTop; }
-            set
-            {
-                _dotTop = value;
-                RaisePropertyChanged("DotTop");
-            }
-        }
-
-        private double _dotLeft;
-        public double DotLeft
-        {
-            get { return _dotLeft; }
-            set
-            {
-                _dotLeft = value;
-                RaisePropertyChanged("DotLeft");
-            }
-        }
-
-        private double _endDotSize = 6;
-        public double EndDotSize
-        {
-            get { return _endDotSize; }
-            set
-            {
-                _endDotSize = value;
-                RaisePropertyChanged("EndDotSize");
             }
         }
 
@@ -228,7 +179,7 @@ namespace Dynamo.ViewModels
             IsConnecting = true;
             _activeStartPort = port;
 
-            Redraw(port.Center);
+            Redraw(port.Center.X, port.Center.Y);
         }
 
         /// <summary>
@@ -351,27 +302,22 @@ namespace Dynamo.ViewModels
         /// </summary>
         public void Redraw()
         {
-            //Debug.WriteLine("Redrawing...");
             if (this.ConnectorModel.End != null)
-                this.Redraw(this.ConnectorModel.End.Center);
+            {
+                var p = ConnectorModel.End.Center;
+                this.Redraw(p.X, p.Y);
+            }
         }
 
         /// <summary>
         /// Recalculate the connector's points given the end point
         /// </summary>
-        /// <param name="p2">The position of the end point</param>
-        public void Redraw(object parameter)
+        /// <param name="x">The x-coordinate of the end point.</param>
+        /// <param name="y">The y-coordinate of the end point.</param>
+        /// 
+        public void Redraw(double x, double y)
         {
-            var p2 = new Point();
-
-            if (parameter is Point)
-            {
-                p2 = (Point) parameter;
-            } else if (parameter is Point2D)
-            {
-                p2 = ((Point2D)parameter).AsWindowsType();
-            }
-
+            var p2 = new Point(x, y);
             CurvePoint3 = p2;
 
             var offset = 0.0;
@@ -397,17 +343,9 @@ namespace Dynamo.ViewModels
                 CurvePoint2 = new Point(p2.X + offset, p2.Y);
             }
 
-            _dotTop = CurvePoint3.Y - EndDotSize / 2;
-            _dotLeft = CurvePoint3.X - EndDotSize / 2;
-
             //Update all the bindings at once.
             //http://stackoverflow.com/questions/4651466/good-way-to-refresh-databinding-on-all-properties-of-a-viewmodel-when-model-chan
             //RaisePropertyChanged(string.Empty);
-        }
-
-        private bool CanRedraw(object parameter)
-        {
-            return true;
         }
     }
 }
