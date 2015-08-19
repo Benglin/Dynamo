@@ -2056,7 +2056,7 @@ namespace Dynamo.Wpf.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Version {0}.{1}.
+        ///   Looks up a localized string similar to Version {0}.{1}.{2}.
         /// </summary>
         public static string GalleryDynamoVersion {
             get {

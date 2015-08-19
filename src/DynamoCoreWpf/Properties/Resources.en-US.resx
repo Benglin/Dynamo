@@ -1665,7 +1665,7 @@ Do you want to install the latest Dynamo update?</value>
     <value>Package Manager Terms of Use</value>
   </data>
   <data name="GalleryDynamoVersion" xml:space="preserve">
-    <value>Version {0}.{1}</value>
+    <value>Version {0}.{1}.{2}</value>
   </data>
   <data name="LearnMore" xml:space="preserve">
     <value>Learn more</value>
@@ -1876,7 +1876,7 @@ Do you want to install the latest Dynamo update?</value>
     <value>Available Previews</value>
   </data>
   <data name="PresetWarningMessage" xml:space="preserve">
-    <value>No input nodes selected. Select at least one input node to create a preset.</value>
+    <value>No input nodes selected. Select at least one input node to create a preset.</value> 
   </data>
   <data name="UnitArea" xml:space="preserve">
     <value>Area</value>
@@ -1888,10 +1888,10 @@ Do you want to install the latest Dynamo update?</value>
     <value>Volume</value>
   </data>
   <data name="Units" xml:space="preserve">
-    <value>Units:</value> 
+    <value>Units:</value>
   </data>
   <data name="PublishPackageLocally" xml:space="preserve">
-    <value>Publish Locally</value> 
+    <value>Publish Locally</value>
   </data>
   <data name="BackgroundPreviewName" xml:space="preserve">
     <value>Background Preview</value>
